@@ -1,0 +1,4 @@
+composer require maatwebsite/excel
+
+php artisan make:import SubjectsImport --model=Subject
+

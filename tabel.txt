@@ -1,0 +1,62 @@
+# --- جداول المستخدمين والصلاحيات ---
+# Laravel يأتي بـ migration لجدول users، لا حاجة لإنشائه
+php artisan make:migration create_roles_table
+php artisan make:migration create_role_user_table # جدول الربط بين المستخدمين والأدوار
+
+# --- جداول البيانات الأساسية (من تصورك الأولي مع بعض التعديلات) ---
+php artisan make:migration create_departments_table
+php artisan make:migration create_subjects_types_table
+php artisan make:migration create_subjects_categories_table
+php artisan make:migration create_rooms_types_table
+php artisan make:migration create_instructors_table
+php artisan make:migration create_subjects_table
+php artisan make:migration create_rooms_table
+php artisan make:migration create_plans_table
+php artisan make:migration create_plan_subjects_table # لربط الخطط بالمواد ومستوياتها
+php artisan make:migration create_plan_expected_counts_table
+
+# --- جداول الجدولة والأمور التشغيلية ---
+php artisan make:migration create_timeslots_table
+php artisan make:migration create_sections_table # لتعريف الشعب الدراسية
+php artisan make:migration create_generated_schedules_table # الجدول النهائي
+
+# --- جداول الميزات الإضافية ---
+php artisan make:migration create_notifications_table
+php artisan make:migration create_logs_table # أو نسميه activity_log أو audits
+
+# لا نحتاج لجدول خاص بالـ Analytics الآن، سنستعلم من الجداول الموجودة
+
+
+php artisan make:seeder RoleSeeder
+php artisan make:seeder DepartmentSeeder
+php artisan make:seeder RoomTypeSeeder
+php artisan make:seeder SubjectTypeSeeder
+php artisan make:seeder SubjectCategorySeeder
+php artisan make:seeder TimeslotSeeder
+
+
+
+# --- جداول المستخدمين والصلاحيات ---
+# User model موجود افتراضياً في app/Models/User.php
+php artisan make:model Role
+
+# --- جداول البيانات الأساسية ---
+php artisan make:model Department
+php artisan make:model Instructor
+php artisan make:model SubjectType
+php artisan make:model SubjectCategory
+php artisan make:model Subject
+php artisan make:model RoomType
+php artisan make:model Room
+php artisan make:model Plan
+php artisan make:model PlanSubject # موديل لجدول الربط plan_subjects (قد نحتاجه لو فيه بيانات إضافية أو منطق خاص)
+php artisan make:model PlanExpectedCount
+
+# --- جداول الجدولة والأمور التشغيلية ---
+php artisan make:model Timeslot
+php artisan make:model Section
+php artisan make:model GeneratedSchedule
+
+# --- جداول الميزات الإضافية ---
+php artisan make:model Notification # على الرغم من أن لارافيل يتعامل معها، وجود موديل قد يكون مفيداً
+php artisan make:model Log # أو ActivityLog إذا استخدمت باكج Spatie

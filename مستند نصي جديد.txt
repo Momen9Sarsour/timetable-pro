@@ -1,0 +1,42 @@
+php artisan make:migration create_roles_table
+	id | name | display_name | description
+php artisan make:migration create_user_table
+	id | name | email | email_verified_at | password | role_id (FK) | rememberToken 
+php artisan make:migration create_departments_table
+	id | department_no | department_name
+php artisan make:migration create_subjects_types_table
+	id | subject_type_name
+php artisan make:migration create_subjects_categories_table
+	id | subject_category_name
+php artisan make:migration create_rooms_types_table
+	id | room_type_name
+php artisan make:migration create_instructors_table
+	id |  instructor_no | instructor_name | academic_degree | user_id (FK) | department_id (FK) | availability_preferences للوقت تفضيلات| max_weekly_hours | office_location مش ضروري| office_hours
+php artisan make:migration create_subjects_table
+	id |  subject_no | subject_name | subject_load | theoretical_hours | practical_hours | subject_type_id (FK) | subject_category_id (FK) | department_id (FK) | required_room_type_id (FK) | 
+php artisan make:migration create_rooms_table
+	id |  room_no | room_name | room_size | room_gender | room_branch |room_type_id (FK) | equipment تخزين معدات القاعة مثلا كمبيوترات لابتوبات فيزياء... 
+php artisan make:migration create_plans_table
+	id |  plan_no | plan_name | year | plan_hours | is_active | department_id (FK) 
+php artisan make:migration create_plan_subjects_table
+	id |  plan_id (FK) | subject_id (FK) | plan_level | plan_semester | plan_subject_level_semester_unique عشان منع تكرار المواد 
+            $table->unique(['plan_id', 'subject_id', 'plan_level', 'plan_semester'], 'plan_subject_level_semester_unique');
+
+php artisan make:migration create_plan_expected_counts_table
+	id |  plan_id (FK) | plan_level | plan_semester | male_count | female_count | branch | academic_year | plan_expected_counts_unique لمنع التكرار
+             $table->unique(['plan_id', 'plan_level', 'plan_semester', 'branch', 'academic_year'], 'plan_expected_counts_unique');
+
+php artisan make:migration create_timeslots_table
+	id |  day_of_week | start_time | end_time | 
+php artisan make:migration create_sections_table
+	id |  plan_subject_id (FK) | section_number | student_count | section_gender | branch | academic_year | semester | section_unique لمنع التكرار
+php artisan make:migration create_generated_schedules_table
+	id | section_id (FK) | instructor_id (FK) | room_id (FK) | timeslot_id (FK) | academic_year | semester | lecture_type | schedule_instructor_time_unique | schedule_room_time_unique | schedule_section_time_unique
+php artisan make:migration create_notifications_table
+	id |  type | notifiable | data | read_at
+php artisan make:migration create_logs_table
+	id |  user_id (FK) | action | loggable | details | ip_address | user_agent
+
+
+
+
