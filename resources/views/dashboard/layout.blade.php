@@ -114,6 +114,16 @@
                         </li>
                         {{-- @endcan --}}
 
+                        {{-- @can('manage-subjects') --}}
+                        <li class="nav-item {{ request()->routeIs('data-entry.room-types.*') ? 'active' : '' }}">
+
+                            <a href="{{ route('data-entry.room-types.index') }}"
+                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.room-types') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
+                                <i class="fas fa-door-closed fa-fw me-2"></i> Room Types
+                            </a>
+                        </li>
+                        {{-- @endcan --}}
+
                         {{-- @can('manage-instructors') --}}
                         <li class="nav-item {{ request()->routeIs('data-entry.instructors.*') ? 'active' : '' }}">
                             <a href="{{ route('data-entry.instructors.index') }}"
@@ -128,6 +138,26 @@
                             <a href="{{ route('data-entry.subjects.index') }}"
                                 class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.subjects') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
                                 <i class="fas fa-book fa-fw me-2 fa-2xs"></i> Subjects
+                            </a>
+                        </li>
+                        {{-- @endcan --}}
+
+                        {{-- @can('manage-subjects') --}}
+                        <li class="nav-item {{ request()->routeIs('data-entry.subject-types.*') ? 'active' : '' }}">
+
+                            <a href="{{ route('data-entry.subject-types.index') }}"
+                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.subject-types') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
+                                <i class="fas fa-tags fa-fw me-2"></i>SubjectTypes
+                            </a>
+                        </li>
+                        {{-- @endcan --}}
+
+                        {{-- @can('manage-subjects') --}}
+                        <li class="nav-item {{ request()->routeIs('data-entry.subject-categories.*') ? 'active' : '' }}">
+
+                            <a href="{{ route('data-entry.subject-categories.index') }}"
+                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.subject-types') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
+                                <i class="fas fa-project-diagram fa-fw me-2"></i> Subject Categories
                             </a>
                         </li>
                         {{-- @endcan --}}

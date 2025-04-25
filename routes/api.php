@@ -8,6 +8,9 @@ use App\Http\Controllers\DataEntry\UserController;
 use App\Http\Controllers\DataEntry\SubjectController;
 use App\Http\Controllers\DataEntry\DepartmentController;
 use App\Http\Controllers\DataEntry\InstructorController;
+use App\Http\Controllers\DataEntry\RoomTypeController;
+use App\Http\Controllers\DataEntry\SubjectCategoryController;
+use App\Http\Controllers\DataEntry\SubjectTypeController;
 use App\Models\Room;
 
 /*
@@ -47,12 +50,12 @@ Route::prefix('v1')->group(function () {
     Route::put('/departments/{department}', [DepartmentController::class, 'apiUpdate']); // <- تغيير {id} إلى {department}
     Route::delete('/departments/{department}', [DepartmentController::class, 'apiDestroy']); // <- تغيير {id} إلى {department}
 
-     // --- Roles API ---
-     Route::get('/roles', [RoleController::class, 'apiIndex']);
-     Route::post('/roles', [RoleController::class, 'apiStore']);
-     Route::get('/roles/{role}', [RoleController::class, 'apiShow']);
-     Route::put('/roles/{role}', [RoleController::class, 'apiUpdate']);
-     Route::delete('/roles/{role}', [RoleController::class, 'apiDestroy']);
+    // --- Roles API ---
+    Route::get('/roles', [RoleController::class, 'apiIndex']);
+    Route::post('/roles', [RoleController::class, 'apiStore']);
+    Route::get('/roles/{role}', [RoleController::class, 'apiShow']);
+    Route::put('/roles/{role}', [RoleController::class, 'apiUpdate']);
+    Route::delete('/roles/{role}', [RoleController::class, 'apiDestroy']);
 
     // --- Rooms API ---
     Route::get('/rooms', [RoomController::class, 'apiIndex']);
@@ -60,6 +63,13 @@ Route::prefix('v1')->group(function () {
     Route::get('/rooms/{room}', [RoomController::class, 'apiShow']);
     Route::put('/rooms/{room}', [RoomController::class, 'apiUpdate']);
     Route::delete('/rooms/{room}', [RoomController::class, 'apiDestroy']);
+
+    // --- Room Type API ---
+    Route::get('/room-types', [RoomTypeController::class, 'apiIndex']);
+    Route::post('/room-types', [RoomTypeController::class, 'apiStore']);
+    Route::get('/room-types/{roomType}', [RoomTypeController::class, 'apiShow']);
+    Route::put('/room-types/{roomType}', [RoomTypeController::class, 'apiUpdate']);
+    Route::delete('/room-types/{roomType}', [RoomTypeController::class, 'apiDestroy']);
 
     // --- Instructors API ---
     Route::get('/instructors', [InstructorController::class, 'apiIndex']);
@@ -76,12 +86,26 @@ Route::prefix('v1')->group(function () {
     Route::delete('/subjects/{subject}', [SubjectController::class, 'apiDestroy']);
     // Route::post('/subjects/bulk-upload', [SubjectController::class, 'apiBulkUpload']); // يمكن إضافة API للرفع بالجملة
 
-     // --- Users API ---
-     Route::get('/users', [UserController::class, 'apiIndex']);
-     Route::post('/users', [UserController::class, 'apiStore']);
-     Route::get('/users/{user}', [UserController::class, 'apiShow']);
-     Route::put('/users/{user}', [UserController::class, 'apiUpdate']);
-     Route::delete('/users/{user}', [UserController::class, 'apiDestroy']);
+    // --- Subject-Types API ---
+    Route::get('/subject-types', [SubjectTypeController::class, 'apiIndex']);
+    Route::post('/subject-types', [SubjectTypeController::class, 'apiStore']);
+    Route::get('/subject-types/{subjectType}', [SubjectTypeController::class, 'apiShow']); // Route Model Binding
+    Route::put('/subject-types/{subjectType}', [SubjectTypeController::class, 'apiUpdate']);
+    Route::delete('/subject-types/{subjectType}', [SubjectTypeController::class, 'apiDestroy']);
+
+    // --- Subject Category API ---
+    Route::get('/subject-categories', [SubjectCategoryController::class, 'apiIndex']);
+    Route::post('/subject-categories', [SubjectCategoryController::class, 'apiStore']);
+    Route::get('/subject-categories/{subjectCategory}', [SubjectCategoryController::class, 'apiShow']); // Route Model Binding
+    Route::put('/subject-categories/{subjectCategory}', [SubjectCategoryController::class, 'apiUpdate']);
+    Route::delete('/subject-categories/{subjectCategory}', [SubjectCategoryController::class, 'apiDestroy']);
+
+    // --- Users API ---
+    Route::get('/users', [UserController::class, 'apiIndex']);
+    Route::post('/users', [UserController::class, 'apiStore']);
+    Route::get('/users/{user}', [UserController::class, 'apiShow']);
+    Route::put('/users/{user}', [UserController::class, 'apiUpdate']);
+    Route::delete('/users/{user}', [UserController::class, 'apiDestroy']);
 
     // --- APIs for Plans, Settings, Timeslots (لا تضفها الآن) ---
     // ...
