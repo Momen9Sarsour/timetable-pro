@@ -77,6 +77,10 @@
             <li>
                 <a href="#"><i class="fas fa-graduation-cap"></i> Academic Programs</a>
             </li>
+
+            <li class="nav-item {{ request()->routeIs('data-entry.plans.*') ? 'active' : '' }}">
+                <a href="{{ route('data-entry.plans.index') }}"><i class="fas fa-clipboard-list fa-fw me-2"></i> Academic Plans</a>
+            </li>
             {{-- <li>
                 <a href="{{ route('dashboard.dataEntry') }}"><i class="fas fa-database"></i> Data Entry</a>
             </li> --}}

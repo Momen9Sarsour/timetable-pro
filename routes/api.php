@@ -8,6 +8,7 @@ use App\Http\Controllers\DataEntry\UserController;
 use App\Http\Controllers\DataEntry\SubjectController;
 use App\Http\Controllers\DataEntry\DepartmentController;
 use App\Http\Controllers\DataEntry\InstructorController;
+use App\Http\Controllers\DataEntry\PlanController;
 use App\Http\Controllers\DataEntry\RoomTypeController;
 use App\Http\Controllers\DataEntry\SubjectCategoryController;
 use App\Http\Controllers\DataEntry\SubjectTypeController;
@@ -107,7 +108,19 @@ Route::prefix('v1')->group(function () {
     Route::put('/users/{user}', [UserController::class, 'apiUpdate']);
     Route::delete('/users/{user}', [UserController::class, 'apiDestroy']);
 
-    // --- APIs for Plans, Settings, Timeslots (لا تضفها الآن) ---
+    // --- Plans API ---
+    Route::get('/plans', [PlanController::class, 'apiIndex']);
+    Route::post('/plans', [PlanController::class, 'apiStore']);
+    Route::get('/plans/{plan}', [PlanController::class, 'apiShow']); // Route model binding
+    Route::put('/plans/{plan}', [PlanController::class, 'apiUpdate']);
+    Route::delete('/plans/{plan}', [PlanController::class, 'apiDestroy']);
+
+    // --- Plan Subjects API ---
+    Route::post('/plans/{plan}/subjects', [PlanController::class, 'apiAddSubject']); // لإضافة مادة
+    Route::delete('/plans/{plan}/subjects/{planSubject}', [PlanController::class, 'apiRemoveSubject']); // لحذف مادة (لاحظ استخدام planSubject ID هنا)
+
+
+    // --- APIs for Settings, Timeslots (لا تضفها الآن) ---
     // ...
 
     // --- Timetable Generation API ---

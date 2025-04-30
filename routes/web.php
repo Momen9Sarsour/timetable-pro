@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataEntry\DepartmentController;
 use App\Http\Controllers\DataEntry\InstructorController;
+use App\Http\Controllers\DataEntry\PlanController;
 use App\Http\Controllers\DataEntry\RoleController;
 use App\Http\Controllers\DataEntry\RoomController;
 use App\Http\Controllers\DataEntry\RoomTypeController;
@@ -107,7 +108,28 @@ Route::prefix('dashboard')->group(function () {
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
         // Plans Management Page
-        Route::get('/plans', [DataEntryController::class, 'plans'])->name('plans');
+        Route::get('/plans', [PlanController::class, 'index'])->name('plans.index');
+        Route::post('/plans', [PlanController::class, 'store'])->name('plans.store');
+        Route::put('/plans/{plan}', [PlanController::class, 'update'])->name('plans.update');
+        Route::delete('/plans/{plan}', [PlanController::class, 'destroy'])->name('plans.destroy');
+        // سنضيف رابط لعرض تفاصيل الخطة وإدارة موادها لاحقاً، ربما show أو edit
+        // Route::get('/plans/{plan}/manage-subjects', [PlanController::class, 'manageSubjects'])->name('plans.manageSubjects'); // رابط مقترح لصفحة إدارة المواد
+        // Route::get('/plans/{plan}/manage-subjects', [PlanController::class, 'manageSubjects'])->name('plans.manageSubjects');
+        // // رابط لمعالجة إضافة المادة (POST)
+        // Route::post('/plans/{plan}/add-subject', [PlanController::class, 'addSubject'])->name('plans.addSubject');
+        // // رابط لمعالجة حذف المادة (DELETE) - استخدام Route Model Binding لـ PlanSubject
+        // Route::delete('/plans/{plan}/remove-subject/{planSubject}', [PlanController::class, 'removeSubject'])->name('plans.removeSubject');
+
+        Route::get('/plans/{plan}/manage-subjects', [PlanController::class, 'manageSubjects'])->name('plans.manageSubjects');
+        // رابط معالجة إضافة المادة (يستقبل level و semester في الـ URL)
+        Route::post('/plans/{plan}/level/{level}/semester/{semester}/add-subject', [PlanController::class, 'addSubject'])->name('plans.addSubject');
+        // رابط معالجة حذف المادة (يستخدم Route Model Binding لـ PlanSubject)
+        // Route::delete('/plans/{plan}/remove-subject/{planSubject}', [PlanController::class, 'removeSubject'])->name('plans.removeSubject');
+        Route::delete('/plans/{plan}/remove-subject/{planSubject}', [PlanController::class, 'removeSubject'])->name('plans.removeSubject'); 
+
+        // Route::resource('plans', PlanController::class)->except(['create', 'show', 'edit']);
+
+        // Route::get('/plans', [DataEntryController::class, 'plans'])->name('plans');
         // Add POST/PUT/DELETE routes for plans and plan_subjects later
 
         // Basic Settings Page (Types, Categories)
