@@ -20,12 +20,13 @@
                             <tr>
                                 <th scope="col">#</th>
                                 <th scope="col">Plan Code</th>
-                                <th scope="col">Plan Name</th>
-                                <th scope="col">Year</th>
-                                <th scope="col">Department</th>
-                                <th scope="col">Total Hours</th>
-                                <th scope="col">Status</th>
-                                <th scope="col">Actions</th>
+                                <th scope="col" class="w-15 col-3">Plan Name</th>
+                                <th scope="col" class="w-20 col-1">Year</th>
+                                <th scope="col" class="w-5 col-3">Department</th>
+                                <th scope="col" class="w-5 col-1">Total Hours</th>
+                                <th scope="col" class="w-5 col-1">Total Subject</th>
+                                <th scope="col" class="w-5 col-1">Status</th>
+                                <th scope="col" class="w-5 col-4">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -37,6 +38,7 @@
                                 <td>{{ $plan->year }}</td>
                                 <td>{{ $plan->department->department_name ?? 'N/A' }}</td>
                                 <td>{{ $plan->plan_hours }}</td>
+                                <td>{{ $plan->planSubjectEntries()->count() }}</td>
                                 <td>
                                     @if($plan->is_active)
                                         <span class="badge bg-success">Active</span>
@@ -54,7 +56,7 @@
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     {{-- // زر الحذف --}}
-                                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deletePlanModal-{{ $plan->id }}" title="Delete Plan" {{ $plan->planSubjectEntries()->count() > 0 ? 'disabled' : '' }}>
+                                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deletePlanModal-{{ $plan->id }}" title="Delete Plan" {{ $plan->planSubjectEntries()->count() > 0 ? '' : '' }}>
                                         <i class="fas fa-trash"></i>
                                     </button>
 

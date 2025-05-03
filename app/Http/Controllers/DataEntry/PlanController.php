@@ -61,10 +61,14 @@ class PlanController extends Controller
     }
     public function destroy(Plan $plan)
     { /* ... كود destroy للويب ... */
-        if ($plan->planSubjectEntries()->exists()) {
-            return redirect()->route('data-entry.plans.index')->with('error', 'Cannot delete plan. It has subjects assigned.');
-        }
+        // if ($plan->planSubjectEntries()->exists()) {
+        //     return redirect()->route('data-entry.plans.index')->with('error', 'Cannot delete plan. It has subjects assigned.');
+        // }
         try {
+            Log::warning("Force deleting plan ID: {$plan->id} and its subjects.");
+            // استخدام delete() على العلاقة لحذف كل سجلات plan_subjects المرتبطة
+            $plan->planSubjectEntries()->delete();
+            Log::info("Associated subjects for plan ID: {$plan->id} deleted.");
             $plan->delete();
             return redirect()->route('data-entry.plans.index')->with('success', 'Academic Plan deleted successfully.');
         } catch (Exception $e) {
@@ -342,4 +346,4 @@ class PlanController extends Controller
             return response()->json(['success' => false, 'message' => 'Failed to remove subject.'], 500);
         }
     }
-} // نهاية الكلاس
+}

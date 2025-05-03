@@ -1,178 +1,156 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl"> <!-- Added RTL direction -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إظهار/إخفاء قائمة منسدلة</title>
+    <title>قائمة منسدلة قابلة للفلترة</title>
     <!-- Bootstrap CSS (RTL version) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
     <style>
+        /* Optional: Style the button to look more like a select */
         .filterable-select .dropdown-toggle::after {
-            margin-left: 0;
-            margin-right: auto;
+            margin-left: 0; /* Reset margin for RTL */
+            margin-right: auto; /* Push caret to the left in RTL */
         }
         .filterable-select .dropdown-menu {
-            min-width: 100%;
+            min-width: 100%; /* Ensure menu width matches button */
         }
         .filterable-select .dropdown-item.d-none {
-             display: none;
+             display: none; /* Ensure hiding works */
         }
         .dropdown-search-input {
             padding: 0.5rem 1rem;
         }
-        #optionsListContainer {
+        #optionsListContainer { /* Make options scrollable if too many */
             max-height: 200px;
             overflow-y: auto;
-        }
-        /* Style for the container holding select and close button */
-        .select-wrapper {
-            display: flex;
-            align-items: flex-start; /* Align items at the top */
-            gap: 0.5rem; /* Space between select and close button */
-        }
-        .select-wrapper .filterable-select {
-            flex-grow: 1; /* Allow select to take available space */
         }
     </style>
 </head>
 <body>
 
 <div class="container mt-5">
-    <h4>إظهار وإخفاء القائمة المنسدلة</h4>
+    <h4>مثال قائمة منسدلة مع فلتر</h4>
+    <p>اضغط على القائمة وابدأ بالكتابة للبحث.</p>
 
-    <!-- Button to show the select dropdown -->
-    <button class="btn btn-primary mb-3" id="showSelectButton">إظهار القائمة المنسدلة</button>
-
-    <!-- Wrapper for Select and Close Button (Initially Hidden) -->
-    <div class="select-wrapper d-none" id="selectAreaWrapper">
-
-        <!-- The Filterable Select Component -->
-        <div class="dropdown filterable-select" id="filterableSelectContainer">
-            <!-- Button trigger -->
-            <button class="btn btn-outline-secondary dropdown-toggle w-100 d-flex justify-content-between align-items-center"
-                    type="button"
-                    id="filterableSelectButton"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false">
-                <span id="selectedOptionText">اختر عنصر...</span>
-            </button>
-
-            <!-- Dropdown menu -->
-            <ul class="dropdown-menu w-100" aria-labelledby="filterableSelectButton">
-                <!-- Search Input -->
-                <li class="dropdown-search-input">
-                    <input type="search"
-                           class="form-control form-control-sm"
-                           id="selectSearchInput"
-                           placeholder="بحث..."
-                           aria-label="بحث في الخيارات"
-                           autocomplete="off">
-                </li>
-                <li><hr class="dropdown-divider"></li>
-                <!-- Options List Container -->
-                <div id="optionsListContainer">
-                    <li><a class="dropdown-item filterable-option" href="#" data-value="1">واحد</a></li>
-                    <li><a class="dropdown-item filterable-option" href="#" data-value="2">اثنان</a></li>
-                    <li><a class="dropdown-item filterable-option" href="#" data-value="3">ثلاثة</a></li>
-                    <li><a class="dropdown-item filterable-option" href="#" data-value="4">أربعة</a></li>
-                    <li><a class="dropdown-item filterable-option" href="#" data-value="5">خمسة</a></li>
-                </div>
-                <!-- No results message (hidden initially) -->
-                <li><span class="dropdown-item text-muted d-none" id="noResultsMessage">لا توجد نتائج</span></li>
-            </ul>
-        </div>
-
-        <!-- Close Button (Initially part of the hidden wrapper) -->
-        <button class="btn btn-danger btn-sm" id="closeSelectButton" aria-label="إغلاق القائمة">
-            × <!-- Simple 'X' icon -->
+    <!-- The Filterable Select Component -->
+    <div class="dropdown filterable-select">
+        <!-- Button trigger -->
+        <button class="btn btn-outline-secondary dropdown-toggle w-100 d-flex justify-content-between align-items-center"
+                type="button"
+                id="filterableSelectButton"
+                data-bs-toggle="dropdown"
+                aria-expanded="false">
+            <span id="selectedOptionText">اختر عنصر...</span>
         </button>
 
-    </div> <!-- End of selectAreaWrapper -->
+        <!-- Dropdown menu -->
+        <ul class="dropdown-menu w-100" aria-labelledby="filterableSelectButton">
+            <!-- Search Input -->
+            <li class="dropdown-search-input">
+                <input type="search"
+                       class="form-control form-control-sm"
+                       id="selectSearchInput"
+                       placeholder="بحث..."
+                       aria-label="بحث في الخيارات"
+                       autocomplete="off">
+            </li>
+            <li><hr class="dropdown-divider"></li>
+
+            <!-- Options List Container -->
+            <div id="optionsListContainer">
+                <li><span class="dropdown-item filterable-option" data-value="1">واحد</span></li>
+                <li><span class="dropdown-item filterable-option" data-value="2">اثنان</span></li>
+                <li><span class="dropdown-item filterable-option" data-value="3">ثلاثة</span></li>
+                <li><span class="dropdown-item filterable-option" data-value="4">أربعة</span></li>
+                <li><span class="dropdown-item filterable-option" data-value="5">خمسة</span></li>
+                <li><span class="dropdown-item filterable-option" data-value="6">ستة عشر</span></li>
+                <li><span class="dropdown-item filterable-option" data-value="7">سبعون</span></li>
+                 <!-- Add more options as needed -->
+            </div>
+
+            <!-- No results message (hidden initially) -->
+            <li><span class="dropdown-item text-muted d-none" id="noResultsMessage">لا توجد نتائج</span></li>
+        </ul>
+    </div>
 
     <!-- Optional: Hidden input for form submission -->
     <input type="hidden" name="selectedValue" id="selectedValueInput">
 
 </div>
 
-<!-- Bootstrap Bundle JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Bootstrap Bundle JS (includes Popper) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
 
 <!-- Custom JavaScript -->
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // References
-        const showButton = document.getElementById('showSelectButton');
-        const closeButton = document.getElementById('closeSelectButton');
-        const selectAreaWrapper = document.getElementById('selectAreaWrapper'); // The new wrapper
         const searchInput = document.getElementById('selectSearchInput');
-        const optionsContainer = document.getElementById('optionsListContainer');
+        const optionsContainer = document.getElementById('optionsListContainer'); // Target the container div
         const selectedOptionText = document.getElementById('selectedOptionText');
         const noResultsMessage = document.getElementById('noResultsMessage');
         const hiddenValueInput = document.getElementById('selectedValueInput');
-        const dropdownButton = document.getElementById('filterableSelectButton');
-        const defaultSelectText = "اختر عنصر..."; // Store default text
+        const dropdownButton = document.getElementById('filterableSelectButton'); // Get the button
 
-        // --- Show Select Logic ---
-        showButton.addEventListener('click', function() {
-            showButton.classList.add('d-none');         // Hide Show button
-            selectAreaWrapper.classList.remove('d-none'); // Show the wrapper (contains select and close button)
-        });
-
-        // --- Close Select Logic ---
-        closeButton.addEventListener('click', function() {
-            selectAreaWrapper.classList.add('d-none');  // Hide the wrapper
-            showButton.classList.remove('d-none');      // Show the Show button again
-
-            // Reset the select state
-            selectedOptionText.textContent = defaultSelectText;
-            hiddenValueInput.value = '';
-            searchInput.value = '';
-             // Make all options visible again if they were filtered
-            optionsContainer.querySelectorAll('li').forEach(li => li.classList.remove('d-none'));
-            noResultsMessage.classList.add('d-none'); // Hide no results message
-
-            // Close the dropdown if it's open
-            const dropdownInstance = bootstrap.Dropdown.getInstance(dropdownButton);
-            if (dropdownInstance) {
-                dropdownInstance.hide();
-            }
-        });
-
-        // --- Auto-Focus on Search Input ---
+        // --- Auto-Focus on Search Input when Dropdown is Shown ---
         dropdownButton.addEventListener('shown.bs.dropdown', function () {
-            setTimeout(() => { searchInput.focus(); }, 10);
+            // Use a small timeout to ensure the element is fully visible and focusable in all browsers
+            setTimeout(() => {
+                searchInput.focus();
+            }, 10); // 10ms delay is usually sufficient
         });
 
         // --- Filtering Logic ---
         searchInput.addEventListener('keyup', function () {
             const filter = searchInput.value.toLowerCase();
             let resultsFound = false;
+            // Get current options within the container
             const currentOptions = optionsContainer.querySelectorAll('.filterable-option');
-            currentOptions.forEach(option => {
+
+            currentOptions.forEach(function (option) {
                 const text = option.textContent.toLowerCase();
-                const listItem = option.parentElement;
-                const match = text.includes(filter);
-                listItem.classList.toggle('d-none', !match);
-                if (match) resultsFound = true;
+                const listItem = option.parentElement; // Get the parent <li>
+
+                if (text.includes(filter)) {
+                    listItem.classList.remove('d-none');
+                    resultsFound = true;
+                } else {
+                    listItem.classList.add('d-none');
+                }
             });
+
+            // Show/hide 'No results' message
             noResultsMessage.classList.toggle('d-none', resultsFound);
         });
 
-        // --- Option Selection Logic ---
+        // --- Option Selection Logic (delegated to container) ---
         optionsContainer.addEventListener('click', function(event) {
+            // Check if the clicked element is an option link
             if (event.target.classList.contains('filterable-option')) {
-                event.preventDefault();
+                event.preventDefault(); // Prevent default link behavior
+
+                // Update button text
                 selectedOptionText.textContent = event.target.textContent;
+
+                // Update hidden input value
                 hiddenValueInput.value = event.target.getAttribute('data-value');
-                const dropdownInstance = bootstrap.Dropdown.getInstance(dropdownButton);
-                if (dropdownInstance) dropdownInstance.hide();
-                searchInput.value = '';
-                searchInput.dispatchEvent(new Event('keyup'));
+
+                // Close dropdown manually (Bootstrap usually handles this, but can be explicit)
+                 const dropdownInstance = bootstrap.Dropdown.getInstance(dropdownButton);
+                 if (dropdownInstance) {
+                     dropdownInstance.hide();
+                 }
+
+                 // Reset search input and filter display
+                 searchInput.value = '';
+                 searchInput.dispatchEvent(new Event('keyup')); // Trigger filter reset
             }
         });
 
-        // --- Prevent dropdown close on search click ---
-        searchInput.addEventListener('click', event => event.stopPropagation());
+        // --- Prevent dropdown close when clicking inside search ---
+        searchInput.addEventListener('click', function (event) {
+            event.stopPropagation();
+        });
     });
 </script>
 

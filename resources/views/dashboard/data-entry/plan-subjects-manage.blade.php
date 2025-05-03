@@ -2,37 +2,6 @@
 
 {{-- Styles for Select2 --}}
 @push('styles')
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
-    <style>
-        .select2-container--bootstrap-5 .select2-selection--single {
-            height: calc(1.5em + .75rem + 2px);
-            padding: .375rem .75rem;
-        }
-
-        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
-            line-height: 1.5;
-        }
-
-        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow {
-            height: calc(1.5em + .75rem);
-        }
-
-        .list-group-item.empty-list {
-            background-color: #f8f9fa;
-        }
-
-        .add-subject-form {
-            display: none;
-            margin-top: 1rem;
-        }
-
-        .list-group-flush .list-group-item:last-child {
-            margin-bottom: 0;
-            border-bottom: 0;
-        }
-    </style>
 @endpush
 
 @section('content')
@@ -139,16 +108,15 @@
                                                         action="{{ route('data-entry.plans.addSubject', ['plan' => $plan->id, 'level' => $level, 'semester' => $semester]) }}"
                                                         method="POST" class="add-subject-form border p-3 rounded bg-light">
                                                         @csrf
-                                                        <div class="mb-2">
+                                                        {{-- <div class="mb-2">
                                                             <label
                                                                 for="subject_id_{{ $level }}_{{ $semester }}"
                                                                 class="form-label visually-hidden">Select Subject</label>
-                                                            <select data-mdb-filter="true"
-                                                                class="form-select form-select-sm select2-subjects @error('subject_id') is-invalid @enderror"
+                                                            <select
+                                                                class="form-select form-select-sm @error('subject_id') is-invalid @enderror"
                                                                 id="subject_id_{{ $level }}_{{ $semester }}"
-                                                                name="subject_id" required style="width: 100%;"
-                                                                data-placeholder="Search & Select subject...">
-                                                                <option value="">-- Select Subject -- </option>
+                                                                name="subject_id" required>
+                                                                <option value="" selected hidden>-- Select Subject --</option>
                                                                 @foreach ($allSubjects as $subject)
                                                                     @if (!in_array($subject->id, $addedSubjectIds ?? []))
                                                                         <option value="{{ $subject->id }}">
@@ -158,6 +126,72 @@
                                                                     @endif
                                                                 @endforeach
                                                             </select>
+
+                                                            @error('subject_id')
+                                                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                                            @enderror
+                                                            @if ($errors->any() && !$errors->has('subject_id'))
+                                                                <div class="text-danger small mt-1">Could not add subject.
+                                                                    Please try again.</div>
+                                                            @endif
+                                                        </div> --}}
+
+                                                        <div class="mb-2">
+                                                            <label
+                                                                for="subject_id_{{ $level }}_{{ $semester }}"
+                                                                class="form-label visually-hidden">Select Subject</label>
+
+                                                            <!-- Dropdown Component -->
+                                                            <div class="dropdown filterable-select">
+                                                                <button
+                                                                    class="form-select form-select-sm @error('subject_id') is-invalid @enderror w-100 text-start"
+                                                                    type="button"
+                                                                    id="subject_id_{{ $level }}_{{ $semester }}"
+                                                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                                                    <span
+                                                                        id="selectedOptionText_{{ $level }}_{{ $semester }}">--
+                                                                        Select Subject --</span>
+                                                                </button>
+
+                                                                <ul class="dropdown-menu w-100"
+                                                                    aria-labelledby="subject_id_{{ $level }}_{{ $semester }}">
+                                                                    <li class="px-2 pt-2">
+                                                                        <input type="search"
+                                                                            class="form-control form-control-sm"
+                                                                            id="selectSearchInput_{{ $level }}_{{ $semester }}"
+                                                                            placeholder="Search ..." autocomplete="off">
+                                                                    </li>
+                                                                    <li>
+                                                                        <hr class="dropdown-divider">
+                                                                    </li>
+
+                                                                    <div id="optionsListContainer_{{ $level }}_{{ $semester }}"
+                                                                        style="max-height: 200px; overflow-y: auto;">
+                                                                        @foreach ($allSubjects as $subject)
+                                                                            @if (!in_array($subject->id, $addedSubjectIds ?? []))
+                                                                                <li><a href="#" class="text-decoration-none">
+                                                                                        <span
+                                                                                            class="dropdown-item filterable-option"
+                                                                                            data-value="{{ $subject->id }}">
+                                                                                            {{ $subject->subject_no }} -
+                                                                                            {{ $subject->subject_name }}
+                                                                                        </span>
+                                                                                    </a>
+                                                                                </li>
+                                                                            @endif
+                                                                        @endforeach
+                                                                    </div>
+
+                                                                    <li><span class="dropdown-item text-muted d-none"
+                                                                            id="noResultsMessage_{{ $level }}_{{ $semester }}">No
+                                                                            subject </span></li>
+                                                                </ul>
+
+                                                                <!-- Hidden input to send value -->
+                                                                <input type="hidden" name="subject_id"
+                                                                    id="selectedValueInput_{{ $level }}_{{ $semester }}">
+                                                            </div>
+
                                                             @error('subject_id')
                                                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                                                             @enderror
@@ -166,6 +200,131 @@
                                                                     Please try again.</div>
                                                             @endif
                                                         </div>
+                                                        <script>
+                                                            document.addEventListener('DOMContentLoaded', () => {
+                                                                const level = "{{ $level }}", semester = "{{ $semester }}";
+                                                                const elements = {
+                                                                    searchInput: document.getElementById(`selectSearchInput_${level}_${semester}`),
+                                                                    optionsContainer: document.getElementById(`optionsListContainer_${level}_${semester}`),
+                                                                    selectedText: document.getElementById(`selectedOptionText_${level}_${semester}`),
+                                                                    selectedValue: document.getElementById(`selectedValueInput_${level}_${semester}`),
+                                                                    dropdownButton: document.getElementById(`subject_id_${level}_${semester}`)
+                                                                };
+
+                                                                let currentFocus = -1, visibleOptions = [];
+
+                                                                // الأحداث الرئيسية
+                                                                elements.dropdownButton.addEventListener('shown.bs.dropdown', () => {
+                                                                    elements.searchInput.focus();
+                                                                    currentFocus = -1;
+                                                                    updateOptions();
+                                                                });
+
+                                                                elements.searchInput.addEventListener('input', e => {
+                                                                    updateOptions(e.target.value.toLowerCase());
+                                                                    currentFocus = visibleOptions.length ? 0 : -1;
+                                                                    highlightOption();
+                                                                });
+
+                                                                elements.searchInput.addEventListener('keydown', e => {
+                                                                    const actions = {
+                                                                        'ArrowDown': () => move(1),
+                                                                        'ArrowUp': () => move(-1),
+                                                                        'Enter': () => selectItem(),
+                                                                        'Escape': () => bootstrap.Dropdown.getInstance(elements.dropdownButton).hide()
+                                                                    };
+                                                                    if (actions[e.key]) { e.preventDefault(); actions[e.key]() }
+                                                                });
+
+                                                                elements.optionsContainer.addEventListener('click', e => {
+                                                                    if (e.target.classList.contains('filterable-option')) selectItem(e.target);
+                                                                });
+
+                                                                // الدوال المساعدة
+                                                                function updateOptions(filter = '') {
+                                                                    visibleOptions = [];
+                                                                    elements.optionsContainer.querySelectorAll('.filterable-option').forEach(option => {
+                                                                        const show = option.textContent.toLowerCase().includes(filter);
+                                                                        option.closest('li').classList.toggle('d-none', !show);
+                                                                        if (show) visibleOptions.push(option);
+                                                                    });
+                                                                }
+
+                                                                function move(direction) {
+                                                                    if (!visibleOptions.length) return;
+                                                                    currentFocus = Math.max(0, Math.min(visibleOptions.length - 1, currentFocus + direction));
+                                                                    highlightOption();
+                                                                }
+
+                                                                function highlightOption() {
+                                                                    visibleOptions.forEach(o => o.classList.remove('active'));
+                                                                    if (currentFocus > -1) {
+                                                                        visibleOptions[currentFocus].classList.add('active');
+                                                                        visibleOptions[currentFocus].scrollIntoView({block: 'nearest'});
+                                                                    }
+                                                                }
+
+                                                                function selectItem(element = visibleOptions[currentFocus]) {
+                                                                    if (!element) return;
+                                                                    elements.selectedText.textContent = element.textContent;
+                                                                    elements.selectedValue.value = element.dataset.value;
+                                                                    elements.searchInput.value = '';
+                                                                    bootstrap.Dropdown.getInstance(elements.dropdownButton).hide();
+                                                                }
+                                                            });
+                                                            </script>
+                                                        {{-- <script>
+                                                            document.addEventListener('DOMContentLoaded', function() {
+                                                                const level = "{{ $level }}";
+                                                                const semester = "{{ $semester }}";
+                                                                const searchInput = document.getElementById(`selectSearchInput_${level}_${semester}`);
+                                                                const optionsContainer = document.getElementById(`optionsListContainer_${level}_${semester}`);
+                                                                const selectedText = document.getElementById(`selectedOptionText_${level}_${semester}`);
+                                                                const selectedValue = document.getElementById(`selectedValueInput_${level}_${semester}`);
+                                                                const noResultsMessage = document.getElementById(`noResultsMessage_${level}_${semester}`);
+                                                                const dropdownButton = document.getElementById(`subject_id_${level}_${semester}`);
+
+                                                                dropdownButton.addEventListener('shown.bs.dropdown', function() {
+                                                                    setTimeout(() => {
+                                                                        searchInput.focus();
+                                                                    }, 10);
+                                                                });
+
+                                                                searchInput.addEventListener('keyup', function() {
+                                                                    const filter = searchInput.value.toLowerCase();
+                                                                    let found = false;
+                                                                    const options = optionsContainer.querySelectorAll('.filterable-option');
+
+                                                                    options.forEach(option => {
+                                                                        const text = option.textContent.toLowerCase();
+                                                                        const li = option.closest('li');
+                                                                        if (text.includes(filter)) {
+                                                                            li.classList.remove('d-none');
+                                                                            found = true;
+                                                                        } else {
+                                                                            li.classList.add('d-none');
+                                                                        }
+                                                                    });
+
+                                                                    noResultsMessage.classList.toggle('d-none', found);
+                                                                });
+
+                                                                optionsContainer.addEventListener('click', function(event) {
+                                                                    if (event.target.classList.contains('filterable-option')) {
+                                                                        event.preventDefault();
+                                                                        selectedText.textContent = event.target.textContent;
+                                                                        selectedValue.value = event.target.getAttribute('data-value');
+                                                                        const dropdownInstance = bootstrap.Dropdown.getInstance(dropdownButton);
+                                                                        if (dropdownInstance) dropdownInstance.hide();
+                                                                        searchInput.value = '';
+                                                                        searchInput.dispatchEvent(new Event('keyup'));
+                                                                    }
+                                                                });
+
+                                                                searchInput.addEventListener('click', e => e.stopPropagation());
+                                                            });
+                                                        </script> --}}
+
 
                                                         <div class="d-flex justify-content-end">
                                                             <button type="button"
@@ -183,52 +342,10 @@
                         </div>
                     </div>
                 @endfor
-            </div> {{-- نهاية الأكورديون --}}
-
-        </div> {{-- نهاية data-entry-container --}}
-    </div> {{-- نهاية main-content --}}
+            </div>
+        </div>
+    </div>
 @endsection
 
-{{-- JavaScript (تم إزالة الجزء الخاص بمودال الحذف) --}}
 @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    {{-- <script>
-        $(document).ready(function() {
-            function initializeSelect2(selector) {
-                try {
-                    $(selector).select2({
-                        theme: 'bootstrap-5',
-                        width: '100%'
-                    });
-                } catch (e) {
-                    console.error('Error initializing Select2:', e);
-                }
-            }
-            $('.add-subject-form').each(function() {
-                if ($(this).find('.is-invalid').length > 0 || $(this).find('.text-danger').length > 0) {
-                    $(this).show();
-                    $(this).prev('.toggle-add-form-btn').hide();
-                    initializeSelect2($(this).find('.select2-subjects'));
-                }
-            });
-            $('#planLevelsAccordion').on('click', '.toggle-add-form-btn', function() {
-                const form = $(this).next('.add-subject-form');
-                $('.add-subject-form').not(form).slideUp(150);
-                $('.toggle-add-form-btn').not(this).show();
-                form.slideToggle(150);
-                $(this).toggle(!form.is(':visible'));
-                if (form.is(':visible')) {
-                    initializeSelect2(form.find('.select2-subjects'));
-                    form.find('.select2-subjects').val(null).trigger('change');
-                }
-            });
-            $('#planLevelsAccordion').on('click', '.cancel-add-btn', function() {
-                const form = $(this).closest('.add-subject-form');
-                const addButton = form.prev('.toggle-add-form-btn');
-                form.slideUp(150);
-                addButton.show();
-            });
-        });
-    </script> --}}
 @endpush

@@ -125,7 +125,7 @@ Route::prefix('dashboard')->group(function () {
         Route::post('/plans/{plan}/level/{level}/semester/{semester}/add-subject', [PlanController::class, 'addSubject'])->name('plans.addSubject');
         // رابط معالجة حذف المادة (يستخدم Route Model Binding لـ PlanSubject)
         // Route::delete('/plans/{plan}/remove-subject/{planSubject}', [PlanController::class, 'removeSubject'])->name('plans.removeSubject');
-        Route::delete('/plans/{plan}/remove-subject/{planSubject}', [PlanController::class, 'removeSubject'])->name('plans.removeSubject'); 
+        Route::delete('/plans/{plan}/remove-subject/{planSubject}', [PlanController::class, 'removeSubject'])->name('plans.removeSubject');
 
         // Route::resource('plans', PlanController::class)->except(['create', 'show', 'edit']);
 
