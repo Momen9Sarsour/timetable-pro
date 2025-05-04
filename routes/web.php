@@ -10,6 +10,7 @@ use App\Http\Controllers\DataEntry\RoomTypeController;
 use App\Http\Controllers\DataEntry\SubjectCategoryController;
 use App\Http\Controllers\DataEntry\SubjectController;
 use App\Http\Controllers\DataEntry\SubjectTypeController;
+use App\Http\Controllers\DataEntry\TimeslotController;
 use App\Http\Controllers\DataEntry\UserController;
 use App\Http\Controllers\DataEntryController;
 use App\Models\Department;
@@ -129,16 +130,20 @@ Route::prefix('dashboard')->group(function () {
 
         // Route::resource('plans', PlanController::class)->except(['create', 'show', 'edit']);
 
-        // Route::get('/plans', [DataEntryController::class, 'plans'])->name('plans');
-        // Add POST/PUT/DELETE routes for plans and plan_subjects later
+        // Timeslots Management Page
+        // Route::get('/timeslots', [DataEntryController::class, 'timeslots'])->name('timeslots');
+        Route::get('/timeslots', [TimeslotController::class, 'index'])->name('timeslots.index');
+        Route::post('/timeslots', [TimeslotController::class, 'store'])->name('timeslots.store');
+        Route::put('/timeslots/{timeslot}', [TimeslotController::class, 'update'])->name('timeslots.update'); // لاحظ {timeslot}
+        Route::delete('/timeslots/{timeslot}', [TimeslotController::class, 'destroy'])->name('timeslots.destroy'); // لاحظ {timeslot}
+
+        // Route::resource('timeslots', TimeslotController::class)->except(['create', 'show', 'edit']);
+
 
         // Basic Settings Page (Types, Categories)
         Route::get('/settings', [DataEntryController::class, 'settings'])->name('settings');
         // Add POST/PUT/DELETE routes for settings later
 
-        // Timeslots Management Page
-        Route::get('/timeslots', [DataEntryController::class, 'timeslots'])->name('timeslots');
-        // Add POST/PUT/DELETE routes for timeslots later
 
     });
     // --- End Data Management Routes ---

@@ -12,6 +12,7 @@ use App\Http\Controllers\DataEntry\PlanController;
 use App\Http\Controllers\DataEntry\RoomTypeController;
 use App\Http\Controllers\DataEntry\SubjectCategoryController;
 use App\Http\Controllers\DataEntry\SubjectTypeController;
+use App\Http\Controllers\DataEntry\TimeslotController;
 use App\Models\Room;
 
 /*
@@ -120,9 +121,14 @@ Route::prefix('v1')->group(function () {
     Route::delete('/plans/{plan}/subjects/{planSubject}', [PlanController::class, 'apiRemoveSubject']); // لحذف مادة (لاحظ استخدام planSubject ID هنا)
 
 
-    // --- APIs for Settings, Timeslots (لا تضفها الآن) ---
-    // ...
+    // --- Timeslots API ---
+    Route::get('/timeslots', [TimeslotController::class, 'apiIndex']);
+    Route::post('/timeslots', [TimeslotController::class, 'apiStore']);
+    Route::get('/timeslots/{timeslot}', [TimeslotController::class, 'apiShow']); // Route Model Binding
+    Route::put('/timeslots/{timeslot}', [TimeslotController::class, 'apiUpdate']);
+    Route::delete('/timeslots/{timeslot}', [TimeslotController::class, 'apiDestroy']);
 
+    // --- APIs for Settings, Timeslots (لا تضفها الآن) ---
     // --- Timetable Generation API ---
     // Route::post('/generate-timetable', [TimetableController::class, 'generate']); // مثال لروت تشغيل الخوارزمية
 

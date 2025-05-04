@@ -4,12 +4,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TimeTable Pro</title>
+    <title>@yield('title', 'TimeTable Pro')</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <link rel="stylesheet" href="{{ asset('dashboard_assets/style.css') }}">
     {{-- Push Styles Stack --}}
+    <style>
+        /* السايدبار مع التمرير */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 250px;
+            background: #fff;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            z-index: 999;
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+    </style>
     @stack('styles')
 
 </head>
@@ -81,7 +102,8 @@
             </li>
 
             <li class="nav-item {{ request()->routeIs('data-entry.plans.*') ? 'active' : '' }}">
-                <a href="{{ route('data-entry.plans.index') }}"><i class="fas fa-clipboard-list fa-fw me-2"></i> Academic Plans</a>
+                <a href="{{ route('data-entry.plans.index') }}"><i class="fas fa-clipboard-list fa-fw me-2"></i>
+                    Academic Plans</a>
             </li>
             {{-- <li>
                 <a href="{{ route('dashboard.dataEntry') }}"><i class="fas fa-database"></i> Data Entry</a>
@@ -159,7 +181,8 @@
                         {{-- @endcan --}}
 
                         {{-- @can('manage-subjects') --}}
-                        <li class="nav-item {{ request()->routeIs('data-entry.subject-categories.*') ? 'active' : '' }}">
+                        <li
+                            class="nav-item {{ request()->routeIs('data-entry.subject-categories.*') ? 'active' : '' }}">
 
                             <a href="{{ route('data-entry.subject-categories.index') }}"
                                 class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.subject-types') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
@@ -186,32 +209,32 @@
                         </li>
                         {{-- @endcan --}}
 
-                        @can('manage-plans')
-                            <li class="nav-item">
-                                <a href="{{ route('data-entry.plans') }}"
-                                    class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.plans') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                    <i class="fas fa-clipboard-list fa-fw me-2 fa-2xs"></i> Academic Plans
-                                </a>
-                            </li>
-                        @endcan
+                        {{-- @can('manage-plans') --}}
+                        <li class="nav-item">
+                            <a href="{{ route('data-entry.plans.index') }}"
+                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.plans') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
+                                <i class="fas fa-clipboard-list fa-fw me-2 fa-2xs"></i> Academic Plans
+                            </a>
+                        </li>
+                        {{-- @endcan --}}
 
-                        @can('manage-settings')
-                            <li class="nav-item">
-                                <a href="{{ route('data-entry.settings') }}"
-                                    class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.settings') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                    <i class="fas fa-cogs fa-fw me-2 fa-2xs"></i> Basic Settings
-                                </a>
-                            </li>
-                        @endcan
+                        {{-- @can('manage-timeslots') --}}
+                        <li class="nav-item">
+                            <a href="{{ route('data-entry.timeslots.index') }}"
+                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.timeslots') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
+                                <i class="fas fa-clock fa-fw me-2 fa-2xs"></i> Timeslots
+                            </a>
+                        </li>
+                        {{-- @endcan --}}
 
-                        @can('manage-timeslots')
-                            <li class="nav-item">
-                                <a href="{{ route('data-entry.timeslots') }}"
-                                    class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.timeslots') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                    <i class="fas fa-clock fa-fw me-2 fa-2xs"></i> Timeslots
-                                </a>
-                            </li>
-                        @endcan
+                        {{-- @can('manage-settings') --}}
+                        <li class="nav-item">
+                            <a href="{{ route('data-entry.settings') }}"
+                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.settings') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
+                                <i class="fas fa-cogs fa-fw me-2 fa-2xs"></i> Basic Settings
+                            </a>
+                        </li>
+                        {{-- @endcan --}}
 
                     </ul>
                 </div>
@@ -244,7 +267,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('dashboard_assets/script.js') }}"></script>
-    {{-- Push Scripts Stack --}}
+    <!-- Page-specific Scripts -->
     @stack('scripts')
 </body>
 

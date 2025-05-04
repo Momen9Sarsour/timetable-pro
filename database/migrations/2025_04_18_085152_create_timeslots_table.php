@@ -16,7 +16,15 @@ return new class extends Migration
 
             // تمثيل اليوم (0 = الأحد, 1 = الإثنين, ..., 6 = السبت) أو استخدام enum
             // $table->tinyInteger('day_of_week')->unsigned();
-            $table->enum('day', ['Sunday', 'Monday']);
+            $table->enum('day', [
+                'Sunday',
+                'Monday',
+                'Tuesday',
+                'Wednesday',
+                'Thursday',
+                'Friday',
+                'Saturday'
+            ]);
             $table->time('start_time'); // وقت بداية الفترة
             $table->time('end_time'); // وقت نهاية الفترة
 
