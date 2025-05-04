@@ -22,10 +22,12 @@
             overflow-y: auto;
             z-index: 999;
         }
+
         ::-webkit-scrollbar {
             width: 4px;
             height: 4px;
         }
+
         ::-webkit-scrollbar-thumb {
             background: #c1c1c1;
             border-radius: 4px;
@@ -101,10 +103,11 @@
                 <a href="#"><i class="fas fa-graduation-cap"></i> Academic Programs</a>
             </li>
 
-            <li class="nav-item {{ request()->routeIs('data-entry.plans.*') ? 'active' : '' }}">
-                <a href="{{ route('data-entry.plans.index') }}"><i class="fas fa-clipboard-list fa-fw me-2"></i>
+            {{-- <li class="nav-item {{ request()->routeIs('data-entry.plans.*') ? 'active' : '' }}">
+                <a href="{{ route('data-entry.plans.index') }}">
+                    <i class="fas fa-clipboard-list fa-fw me-2"></i>
                     Academic Plans</a>
-            </li>
+            </li> --}}
             {{-- <li>
                 <a href="{{ route('dashboard.dataEntry') }}"><i class="fas fa-database"></i> Data Entry</a>
             </li> --}}
@@ -118,18 +121,18 @@
                 <a class="nav-link d-flex align-items-center py-1 small {{ $isActiveMenu ? '' : 'collapsed' }}"
                     data-bs-toggle="collapse" href="#dataManagementMenu" role="button"
                     aria-expanded="{{ $isActiveMenu ? 'true' : 'false' }}" aria-controls="dataManagementMenu">
-                    <i class="fas fa-database me-2 fa-xs"></i>
+                    <i class="fas fa-database me-2 fa-4xs"></i>
                     <span class="small">Data Management</span>
-                    <i class="fas fa-chevron-down ms-auto fa-2xs"></i>
+                    <i class="fas fa-chevron-down ms-auto fa-3xs"></i>
                 </a>
 
                 <div class="collapse {{ $isActiveMenu ? 'show' : '' }}" id="dataManagementMenu">
-                    <ul class="nav flex-column ms-3">
+                    <ul class="nav flex-column">
 
                         <li class="nav-item {{ request()->routeIs('data-entry.departments.*') ? 'active' : '' }}">
                             <a href="{{ route('data-entry.departments.index') }}"
                                 class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.departments') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-building fa-fw me-2 fa-2xs"></i> Departments
+                                <i class="fas fa-building fa-fw me-2 fa-4xs"></i> Departments
                             </a>
                         </li>
 
@@ -137,7 +140,7 @@
                         <li class="nav-item {{ request()->routeIs('data-entry.rooms.*') ? 'active' : '' }}">
                             <a href="{{ route('data-entry.rooms.index') }}"
                                 class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.rooms') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-door-open fa-fw me-2 fa-2xs"></i> Classrooms
+                                <i class="fas fa-door-open fa-fw me-2 fa-4xs"></i> Classrooms
                             </a>
                         </li>
                         {{-- @endcan --}}
@@ -147,7 +150,7 @@
 
                             <a href="{{ route('data-entry.room-types.index') }}"
                                 class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.room-types') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-door-closed fa-fw me-2"></i> Room Types
+                                <i class="fas fa-door-closed fa-fw me-2 fa-4xs"></i> Room Types
                             </a>
                         </li>
                         {{-- @endcan --}}
@@ -156,16 +159,7 @@
                         <li class="nav-item {{ request()->routeIs('data-entry.instructors.*') ? 'active' : '' }}">
                             <a href="{{ route('data-entry.instructors.index') }}"
                                 class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.instructors') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-chalkboard-teacher fa-fw me-2 fa-2xs"></i> Instructors
-                            </a>
-                        </li>
-                        {{-- @endcan --}}
-
-                        {{-- @can('manage-subjects') --}}
-                        <li class="nav-item {{ request()->routeIs('data-entry.subjects.*') ? 'active' : '' }}">
-                            <a href="{{ route('data-entry.subjects.index') }}"
-                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.subjects') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-book fa-fw me-2 fa-2xs"></i> Subjects
+                                <i class="fas fa-chalkboard-teacher fa-fw me-2 fa-4xs"></i> Instructors
                             </a>
                         </li>
                         {{-- @endcan --}}
@@ -191,11 +185,20 @@
                         </li>
                         {{-- @endcan --}}
 
+                        {{-- @can('manage-subjects') --}}
+                        <li class="nav-item {{ request()->routeIs('data-entry.subjects.*') ? 'active' : '' }}">
+                            <a href="{{ route('data-entry.subjects.index') }}"
+                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.subjects') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
+                                <i class="fas fa-book fa-fw me-2 fa-4xs"></i> Subjects
+                            </a>
+                        </li>
+                        {{-- @endcan --}}
+
                         {{-- @can('manage-users') --}}
                         <li class="nav-item {{ request()->routeIs('data-entry.roles.*') ? 'active' : '' }}">
                             <a href="{{ route('data-entry.roles.index') }}"
                                 class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.roles') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-user-shield fa-fw me-2 fa-2xs"></i> Roles
+                                <i class="fas fa-user-shield fa-fw me-2 fa-4xs"></i> Roles
                             </a>
                         </li>
                         {{-- @endcan --}}
@@ -204,7 +207,7 @@
                         <li class="nav-item {{ request()->routeIs('data-entry.users.*') ? 'active' : '' }}">
                             <a href="{{ route('data-entry.users.index') }}"
                                 class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.users') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-users-cog fa-fw me-2 fa-2xs"></i> Users
+                                <i class="fas fa-users-cog fa-fw me-2 fa-4xs"></i> Users
                             </a>
                         </li>
                         {{-- @endcan --}}
@@ -213,7 +216,7 @@
                         <li class="nav-item">
                             <a href="{{ route('data-entry.plans.index') }}"
                                 class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.plans') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-clipboard-list fa-fw me-2 fa-2xs"></i> Academic Plans
+                                <i class="fas fa-clipboard-list fa-fw me-2 fa-4xs"></i> Academic Plans
                             </a>
                         </li>
                         {{-- @endcan --}}
@@ -222,7 +225,16 @@
                         <li class="nav-item">
                             <a href="{{ route('data-entry.timeslots.index') }}"
                                 class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.timeslots') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-clock fa-fw me-2 fa-2xs"></i> Timeslots
+                                <i class="fas fa-clock fa-fw me-2 fa-4xs"></i> Timeslots
+                            </a>
+                        </li>
+                        {{-- @endcan --}}
+
+                        {{-- @can('manage-timeslots') --}}
+                        <li class="nav-item {{ request()->routeIs('data-entry.plan-expected-counts.*') ? 'active' : '' }}">
+                            <a href="{{ route('data-entry.plan-expected-counts.index') }}"
+                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.plan-expected-counts') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
+                                <i class="fas fa-users fa-fw me-2"></i> Expected Counts
                             </a>
                         </li>
                         {{-- @endcan --}}
@@ -231,7 +243,7 @@
                         <li class="nav-item">
                             <a href="{{ route('data-entry.settings') }}"
                                 class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.settings') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-cogs fa-fw me-2 fa-2xs"></i> Basic Settings
+                                <i class="fas fa-cogs fa-fw me-2 fa-4xs"></i> Basic Settings
                             </a>
                         </li>
                         {{-- @endcan --}}

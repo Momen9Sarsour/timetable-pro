@@ -86,49 +86,6 @@ class TimeslotController extends Controller
     /**
      * Update the specified timeslot in storage.
      */
-    // public function update(Request $request, Timeslot $timeslot)
-    // {
-    //     // 1. Validation
-    //     $validator = Validator::make($request->all(), [
-    //         'day' => ['required', Rule::in(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'])],
-    //         'start_time' => 'required|date_format:H:i',
-    //         'end_time' => 'required|date_format:H:i|after:start_time',
-    //     ]);
-
-    //     // 2. التحقق من التفرد يدوياً (مع تجاهل الصف الحالي)
-    //     $validator->after(function ($validator) use ($request, $timeslot) {
-    //         $exists = Timeslot::where('day', $request->input('day'))
-    //             ->where('start_time', $request->input('start_time'))
-    //             ->where('end_time', $request->input('end_time'))
-    //             ->where('id', '!=', $timeslot->id) // استثناء الـ ID الحالي
-    //             ->exists();
-    //         if ($exists) {
-    //             $validator->errors()->add('time_unique', 'This exact timeslot (day, start, end) already exists.');
-    //         }
-    //     });
-
-    //     if ($validator->fails()) {
-    //         // استخدام error bag مميز للتحديث
-    //         return redirect()->back()
-    //             ->withErrors($validator, 'update_' . $timeslot->id)
-    //             ->withInput();
-    //     }
-
-    //     // 3. Prepare Data
-    //     $data = $validator->validated();
-
-    //     // 4. Update Database
-    //     try {
-    //         $timeslot->update($data);
-    //         return redirect()->route('data-entry.timeslots.index')
-    //             ->with('success', 'Timeslot updated successfully.');
-    //     } catch (Exception $e) {
-    //         Log::error('Timeslot Update Failed: ' . $e->getMessage());
-    //         return redirect()->back()
-    //             ->with('error', 'Failed to update timeslot.')
-    //             ->withInput();
-    //     }
-    // }
 
     public function update(Request $request, Timeslot $timeslot)
 {

@@ -9,6 +9,7 @@ use App\Http\Controllers\DataEntry\SubjectController;
 use App\Http\Controllers\DataEntry\DepartmentController;
 use App\Http\Controllers\DataEntry\InstructorController;
 use App\Http\Controllers\DataEntry\PlanController;
+use App\Http\Controllers\DataEntry\PlanExpectedCountController;
 use App\Http\Controllers\DataEntry\RoomTypeController;
 use App\Http\Controllers\DataEntry\SubjectCategoryController;
 use App\Http\Controllers\DataEntry\SubjectTypeController;
@@ -127,6 +128,13 @@ Route::prefix('v1')->group(function () {
     Route::get('/timeslots/{timeslot}', [TimeslotController::class, 'apiShow']); // Route Model Binding
     Route::put('/timeslots/{timeslot}', [TimeslotController::class, 'apiUpdate']);
     Route::delete('/timeslots/{timeslot}', [TimeslotController::class, 'apiDestroy']);
+
+    // --- Plan Expected Counts API ---
+    Route::get('/plan-expected-counts', [PlanExpectedCountController::class, 'apiIndex']);
+    Route::post('/plan-expected-counts', [PlanExpectedCountController::class, 'apiStore']);
+    Route::get('/plan-expected-counts/{planExpectedCount}', [PlanExpectedCountController::class, 'apiShow']); // RMB
+    Route::put('/plan-expected-counts/{planExpectedCount}', [PlanExpectedCountController::class, 'apiUpdate']); // RMB
+    Route::delete('/plan-expected-counts/{planExpectedCount}', [PlanExpectedCountController::class, 'apiDestroy']); // RMB
 
     // --- APIs for Settings, Timeslots (لا تضفها الآن) ---
     // --- Timetable Generation API ---

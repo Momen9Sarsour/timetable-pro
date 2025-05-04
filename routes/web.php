@@ -4,6 +4,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataEntry\DepartmentController;
 use App\Http\Controllers\DataEntry\InstructorController;
 use App\Http\Controllers\DataEntry\PlanController;
+use App\Http\Controllers\DataEntry\PlanExpectedCountController;
 use App\Http\Controllers\DataEntry\RoleController;
 use App\Http\Controllers\DataEntry\RoomController;
 use App\Http\Controllers\DataEntry\RoomTypeController;
@@ -122,10 +123,7 @@ Route::prefix('dashboard')->group(function () {
         // Route::delete('/plans/{plan}/remove-subject/{planSubject}', [PlanController::class, 'removeSubject'])->name('plans.removeSubject');
 
         Route::get('/plans/{plan}/manage-subjects', [PlanController::class, 'manageSubjects'])->name('plans.manageSubjects');
-        // رابط معالجة إضافة المادة (يستقبل level و semester في الـ URL)
         Route::post('/plans/{plan}/level/{level}/semester/{semester}/add-subject', [PlanController::class, 'addSubject'])->name('plans.addSubject');
-        // رابط معالجة حذف المادة (يستخدم Route Model Binding لـ PlanSubject)
-        // Route::delete('/plans/{plan}/remove-subject/{planSubject}', [PlanController::class, 'removeSubject'])->name('plans.removeSubject');
         Route::delete('/plans/{plan}/remove-subject/{planSubject}', [PlanController::class, 'removeSubject'])->name('plans.removeSubject');
 
         // Route::resource('plans', PlanController::class)->except(['create', 'show', 'edit']);
@@ -139,6 +137,14 @@ Route::prefix('dashboard')->group(function () {
 
         // Route::resource('timeslots', TimeslotController::class)->except(['create', 'show', 'edit']);
 
+
+        // --- Plan Expected Counts Management ---
+        Route::get('/plan-expected-counts', [PlanExpectedCountController::class, 'index'])->name('plan-expected-counts.index');
+        Route::post('/plan-expected-counts', [PlanExpectedCountController::class, 'store'])->name('plan-expected-counts.store');
+        Route::put('/plan-expected-counts/{planExpectedCount}', [PlanExpectedCountController::class, 'update'])->name('plan-expected-counts.update'); // لاحظ {planExpectedCount}
+        Route::delete('/plan-expected-counts/{planExpectedCount}', [PlanExpectedCountController::class, 'destroy'])->name('plan-expected-counts.destroy'); // لاحظ {planExpectedCount}
+
+        // Route::resource('plan-expected-counts', PlanExpectedCountController::class)->except(['create', 'show', 'edit']);
 
         // Basic Settings Page (Types, Categories)
         Route::get('/settings', [DataEntryController::class, 'settings'])->name('settings');
