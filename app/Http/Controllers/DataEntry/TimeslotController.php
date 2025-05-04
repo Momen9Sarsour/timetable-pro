@@ -86,49 +86,89 @@ class TimeslotController extends Controller
     /**
      * Update the specified timeslot in storage.
      */
+    // public function update(Request $request, Timeslot $timeslot)
+    // {
+    //     // 1. Validation
+    //     $validator = Validator::make($request->all(), [
+    //         'day' => ['required', Rule::in(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'])],
+    //         'start_time' => 'required|date_format:H:i',
+    //         'end_time' => 'required|date_format:H:i|after:start_time',
+    //     ]);
+
+    //     // 2. التحقق من التفرد يدوياً (مع تجاهل الصف الحالي)
+    //     $validator->after(function ($validator) use ($request, $timeslot) {
+    //         $exists = Timeslot::where('day', $request->input('day'))
+    //             ->where('start_time', $request->input('start_time'))
+    //             ->where('end_time', $request->input('end_time'))
+    //             ->where('id', '!=', $timeslot->id) // استثناء الـ ID الحالي
+    //             ->exists();
+    //         if ($exists) {
+    //             $validator->errors()->add('time_unique', 'This exact timeslot (day, start, end) already exists.');
+    //         }
+    //     });
+
+    //     if ($validator->fails()) {
+    //         // استخدام error bag مميز للتحديث
+    //         return redirect()->back()
+    //             ->withErrors($validator, 'update_' . $timeslot->id)
+    //             ->withInput();
+    //     }
+
+    //     // 3. Prepare Data
+    //     $data = $validator->validated();
+
+    //     // 4. Update Database
+    //     try {
+    //         $timeslot->update($data);
+    //         return redirect()->route('data-entry.timeslots.index')
+    //             ->with('success', 'Timeslot updated successfully.');
+    //     } catch (Exception $e) {
+    //         Log::error('Timeslot Update Failed: ' . $e->getMessage());
+    //         return redirect()->back()
+    //             ->with('error', 'Failed to update timeslot.')
+    //             ->withInput();
+    //     }
+    // }
+
     public function update(Request $request, Timeslot $timeslot)
-    {
-        // 1. Validation
-        $validator = Validator::make($request->all(), [
-            'day' => ['required', Rule::in(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'])],
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
-        ]);
+{
+    // 1. Validation (مبسط ومباشر)
+    // استخدام error bag للتحديث
+    $validatedData = $request->validateWithBag('update_'.$timeslot->id, [
+        'day' => ['required', Rule::in(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'])],
+        // تأكد أن الحقل input type="time" يرسل التنسيق H:i
+        'start_time' => 'required|date_format:H:i',
+        'end_time' => 'required|date_format:H:i|after:start_time',
+         // قاعدة تحقق مخصصة للتفرد (يمكن إضافتها هنا أو في Form Request)
+         'start_time' => [ // يمكن وضعها هنا أو بشكل منفصل
+             Rule::unique('timeslots')->where(function ($query) use ($request, $timeslot) {
+                 return $query->where('day', $request->input('day'))
+                              ->where('end_time', $request->input('end_time'))
+                              ->where('id', '!=', $timeslot->id); // تجاهل الصف الحالي
+             })->ignore($timeslot->id) // طريقة أخرى لتجاهل الصف الحالي (قد لا تكون ضرورية مع where id !=)
+         ],
+    ], [
+         // رسائل مخصصة
+         'end_time.after' => 'End time must be after start time.',
+         'start_time.unique' => 'This exact timeslot (day, start, end) already exists.', // رسالة للتفرد
+    ]);
 
-        // 2. التحقق من التفرد يدوياً (مع تجاهل الصف الحالي)
-        $validator->after(function ($validator) use ($request, $timeslot) {
-            $exists = Timeslot::where('day', $request->input('day'))
-                ->where('start_time', $request->input('start_time'))
-                ->where('end_time', $request->input('end_time'))
-                ->where('id', '!=', $timeslot->id) // استثناء الـ ID الحالي
-                ->exists();
-            if ($exists) {
-                $validator->errors()->add('time_unique', 'This exact timeslot (day, start, end) already exists.');
-            }
-        });
+    // 2. Prepare Data (validatedData جاهزة)
+    $data = $validatedData;
 
-        if ($validator->fails()) {
-            // استخدام error bag مميز للتحديث
-            return redirect()->back()
-                ->withErrors($validator, 'update_' . $timeslot->id)
-                ->withInput();
-        }
-
-        // 3. Prepare Data
-        $data = $validator->validated();
-
-        // 4. Update Database
-        try {
-            $timeslot->update($data);
-            return redirect()->route('data-entry.timeslots.index')
-                ->with('success', 'Timeslot updated successfully.');
-        } catch (Exception $e) {
-            Log::error('Timeslot Update Failed: ' . $e->getMessage());
-            return redirect()->back()
-                ->with('error', 'Failed to update timeslot.')
-                ->withInput();
-        }
+    // 3. Update Database
+    try {
+        $timeslot->update($data);
+        return redirect()->route('data-entry.timeslots.index')
+            ->with('success', 'Timeslot updated successfully.');
+    } catch (Exception $e) {
+        Log::error('Timeslot Update Failed: ' . $e->getMessage());
+        return redirect()->back()
+            // إرجاع الأخطاء للـ error bag الصحيح
+            ->withErrors(['update_error' => 'Failed to update timeslot.'], 'update_'.$timeslot->id)
+            ->withInput();
     }
+}
 
     /**
      * Remove the specified timeslot from storage.

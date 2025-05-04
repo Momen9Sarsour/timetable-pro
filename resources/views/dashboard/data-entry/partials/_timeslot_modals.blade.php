@@ -59,6 +59,11 @@
 @if ($timeslot)
 
 {{-- Modal لتعديل فترة زمنية --}}
+@php
+    // تعريف الأيام هنا أيضاً لتكون متاحة في هذا النطاق
+    $daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+@endphp
+{{-- Modal لتعديل فترة زمنية --}}
 <div class="modal fade" id="editTimeslotModal-{{ $timeslot->id }}" tabindex="-1" aria-labelledby="editTimeslotModalLabel-{{ $timeslot->id }}" aria-hidden="true">
      <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -83,18 +88,26 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="edit_start_time_{{ $timeslot->id }}" class="form-label">Start Time <span class="text-danger">*</span></label>
-                            <input type="time" class="form-control @error('start_time', 'update_'.$timeslot->id) is-invalid @enderror" id="edit_start_time_{{ $timeslot->id }}" name="start_time" value="{{ old('start_time', $timeslot->start_time) }}" required>
+                            {{-- *** استخدام Carbon لتنسيق القيمة القديمة *** --}}
+                            <input type="time" class="form-control @error('start_time', 'update_'.$timeslot->id) is-invalid @enderror" id="edit_start_time_{{ $timeslot->id }}" name="start_time" value="{{ old('start_time', \Carbon\Carbon::parse($timeslot->start_time)->format('H:i')) }}" required>
                             @error('start_time', 'update_'.$timeslot->id) <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="edit_end_time_{{ $timeslot->id }}" class="form-label">End Time <span class="text-danger">*</span></label>
-                            <input type="time" class="form-control @error('end_time', 'update_'.$timeslot->id) is-invalid @enderror" id="edit_end_time_{{ $timeslot->id }}" name="end_time" value="{{ old('end_time', $timeslot->end_time) }}" required>
-                             @error('end_time', 'update_'.$timeslot->id) <div class="invalid-feedback">{{ $message }}</div> @enderror
-                             {{-- عرض أخطاء مخصصة للتحديث --}}
-                             @error('time_order', 'update_'.$timeslot->id) <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
-                             @error('time_unique', 'update_'.$timeslot->id) <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                             {{-- *** استخدام Carbon لتنسيق القيمة القديمة *** --}}
+                            <input type="time" class="form-control @error('end_time', 'update_'.$timeslot->id) is-invalid @enderror" id="edit_end_time_{{ $timeslot->id }}" name="end_time" value="{{ old('end_time', \Carbon\Carbon::parse($timeslot->end_time)->format('H:i')) }}" required>
+                            @error('end_time', 'update_'.$timeslot->id) <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            {{-- عرض خطأ التفرد إذا حدث --}}
+                             @error('start_time', 'update_'.$timeslot->id)
+                                @if(Str::contains($message, 'already exists'))
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @endif
+                             @enderror
+
                         </div>
                     </div>
+                     {{-- عرض خطأ الكنترولر العام إذا وجد --}}
+                     @error('update_error', 'update_'.$timeslot->id) <div class="alert alert-danger small p-2">{{ $message }}</div> @enderror
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -104,6 +117,7 @@
         </div>
     </div>
 </div>
+
 
 {{-- Modal لتأكيد الحذف --}}
 @if ($timeslot->schedule_entries_count == 0) {{-- لا تسمح بحذف فترة مستخدمة --}}
