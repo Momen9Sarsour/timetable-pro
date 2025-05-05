@@ -57,6 +57,13 @@ class Instructor extends Model
         return $this->hasMany(GeneratedSchedule::class, 'instructor_id', 'id');
     }
 
+    public function subjects()
+    {
+        // اسم الموديل المرتبط، اسم الجدول الوسيط، المفتاح الأجنبي لهذا الموديل، المفتاح الأجنبي للموديل المرتبط
+        return $this->belongsToMany(Subject::class, 'instructor_subject', 'instructor_id', 'subject_id')
+            ->withTimestamps(); // إذا أضفت timestamps للجدول الوسيط
+    }
+
     /**
      * Get the subjects that the instructor can teach.
      * علاقة: المدرس يمكنه تدريس عدة مواد (Many To Many) - تحتاج لجدول ربط instructor_subject

@@ -54,11 +54,11 @@ class Subject extends Model
     public function plans()
     {
         return $this->belongsToMany(Plan::class, 'plan_subjects', 'subject_id', 'plan_id')
-                    ->withPivot('plan_level', 'plan_semester') // جلب الأعمدة الإضافية من جدول الربط
-                    ->withTimestamps(); // جلب created_at/updated_at من جدول الربط (إذا احتجت)
+            ->withPivot('plan_level', 'plan_semester') // جلب الأعمدة الإضافية من جدول الربط
+            ->withTimestamps(); // جلب created_at/updated_at من جدول الربط (إذا احتجت)
     }
 
-     /**
+    /**
      * Get the plan_subjects entries for this subject.
      * علاقة: المادة لها عدة إدخالات في جدول plan_subjects (One To Many)
      * (مفيدة للوصول المباشر لمعلومات الربط والمستوى والفصل)
@@ -68,17 +68,24 @@ class Subject extends Model
         return $this->hasMany(PlanSubject::class, 'subject_id', 'id');
     }
 
+    public function instructors()
+    {
+        // اسم الموديل المرتبط، اسم الجدول الوسيط، المفتاح الأجنبي لهذا الموديل، المفتاح الأجنبي للموديل المرتبط
+        return $this->belongsToMany(Instructor::class, 'instructor_subject', 'subject_id', 'instructor_id')
+            ->withTimestamps(); // إذا أضفت timestamps للجدول الوسيط
+    }
+
 
     /**
      * Get the sections for this subject (indirectly through plan_subjects).
      * علاقة: المادة لها شعب كثيرة (One Has Many Through - معقدة قليلاً)
      * أو يمكن الوصول لها عبر planSubjectEntries->sections
      */
-     // ...
+    // ...
 
-     /**
-      * Get the generated schedule entries for this subject (indirectly).
-      * يمكن الوصول لها عبر الشعب Sections
-      */
-      // ...
+    /**
+     * Get the generated schedule entries for this subject (indirectly).
+     * يمكن الوصول لها عبر الشعب Sections
+     */
+    // ...
 }

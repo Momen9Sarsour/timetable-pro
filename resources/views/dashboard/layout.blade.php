@@ -213,7 +213,7 @@
                         {{-- @endcan --}}
 
                         {{-- @can('manage-plans') --}}
-                        <li class="nav-item">
+                        <li class="nav-item {{ request()->routeIs('data-entry.plans.*') ? 'active' : '' }}">
                             <a href="{{ route('data-entry.plans.index') }}"
                                 class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.plans') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
                                 <i class="fas fa-clipboard-list fa-fw me-2 fa-4xs"></i> Academic Plans
@@ -222,7 +222,7 @@
                         {{-- @endcan --}}
 
                         {{-- @can('manage-timeslots') --}}
-                        <li class="nav-item">
+                        <li class="nav-item {{ request()->routeIs('data-entry.timeslots.*') ? 'active' : '' }}">
                             <a href="{{ route('data-entry.timeslots.index') }}"
                                 class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.timeslots') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
                                 <i class="fas fa-clock fa-fw me-2 fa-4xs"></i> Timeslots
@@ -230,11 +230,29 @@
                         </li>
                         {{-- @endcan --}}
 
-                        {{-- @can('manage-timeslots') --}}
+                        {{-- @can('plan-expected-counts') --}}
                         <li class="nav-item {{ request()->routeIs('data-entry.plan-expected-counts.*') ? 'active' : '' }}">
                             <a href="{{ route('data-entry.plan-expected-counts.index') }}"
                                 class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.plan-expected-counts') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-users fa-fw me-2"></i> Expected Counts
+                                <i class="fas fa-users fa-fw me-2 fa-4xs"></i> Expected Counts
+                            </a>
+                        </li>
+                        {{-- @endcan --}}
+
+                        {{-- @can('sections') --}}
+                        <li class="nav-item {{ request()->routeIs('data-entry.sections.*') ? 'active' : '' }}">
+                            <a href="{{ route('data-entry.sections.index') }}"
+                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.plan-expected-counts') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
+                                <i class="fas fa-users-class fa-fw me-2"></i> Sections
+                            </a>
+                        </li>
+                        {{-- @endcan --}}
+
+                        {{-- @can('sections') --}}
+                        <li class="nav-item {{ request()->routeIs('data-entry.instructor-subject.*') ? 'active' : '' }}">
+                            <a href="{{ route('data-entry.instructor-subject.index') }}"
+                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.instructor-subject') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
+                                <i class="fas fa-link fa-fw me-2"></i> Instructor Subjects
                             </a>
                         </li>
                         {{-- @endcan --}}

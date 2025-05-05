@@ -8,6 +8,7 @@ use App\Http\Controllers\DataEntry\UserController;
 use App\Http\Controllers\DataEntry\SubjectController;
 use App\Http\Controllers\DataEntry\DepartmentController;
 use App\Http\Controllers\DataEntry\InstructorController;
+use App\Http\Controllers\DataEntry\InstructorSubjectController;
 use App\Http\Controllers\DataEntry\PlanController;
 use App\Http\Controllers\DataEntry\PlanExpectedCountController;
 use App\Http\Controllers\DataEntry\RoomTypeController;
@@ -121,7 +122,6 @@ Route::prefix('v1')->group(function () {
     Route::post('/plans/{plan}/subjects', [PlanController::class, 'apiAddSubject']); // لإضافة مادة
     Route::delete('/plans/{plan}/subjects/{planSubject}', [PlanController::class, 'apiRemoveSubject']); // لحذف مادة (لاحظ استخدام planSubject ID هنا)
 
-
     // --- Timeslots API ---
     Route::get('/timeslots', [TimeslotController::class, 'apiIndex']);
     Route::post('/timeslots', [TimeslotController::class, 'apiStore']);
@@ -136,7 +136,17 @@ Route::prefix('v1')->group(function () {
     Route::put('/plan-expected-counts/{planExpectedCount}', [PlanExpectedCountController::class, 'apiUpdate']); // RMB
     Route::delete('/plan-expected-counts/{planExpectedCount}', [PlanExpectedCountController::class, 'apiDestroy']); // RMB
 
-    // --- APIs for Settings, Timeslots (لا تضفها الآن) ---
+    // --- Instructor Subject Assignments API ---
+    Route::get('/instructors/{instructor}/subjects', [InstructorSubjectController::class, 'apiGetAssignedSubjects']); // جلب المواد المعينة
+    Route::get('/instructors/{instructor}/available-subjects', [InstructorSubjectController::class, 'apiGetAvailableSubjects']); // جلب المواد المتاحة
+    Route::post('/instructors/{instructor}/subjects/sync', [InstructorSubjectController::class, 'apiSyncAssignments']); // تحديث (مزامنة) المواد المعينة (استخدمنا POST للتبسيط، يمكن استخدام PUT)
+    // جلب قائمة المدرسين مع عدد المواد
+    Route::get('/instructor-assignments', [InstructorSubjectController::class, 'apiIndex'])->name('api.instructor-assignments.index');
+    // جلب كل المواد لمدرس معين (مع تحديد المعين منها)
+    Route::get('/instructor-assignments/{instructor}', [InstructorSubjectController::class, 'apiShowAssignments'])->name('api.instructor-assignments.show'); // استخدام {instructor} لـ RMB
+
+    
+    // --- APIs for Settings (لا تضفها الآن) ---
     // --- Timetable Generation API ---
     // Route::post('/generate-timetable', [TimetableController::class, 'generate']); // مثال لروت تشغيل الخوارزمية
 

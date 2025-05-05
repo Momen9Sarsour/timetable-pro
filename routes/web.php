@@ -3,11 +3,13 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataEntry\DepartmentController;
 use App\Http\Controllers\DataEntry\InstructorController;
+use App\Http\Controllers\DataEntry\InstructorSubjectController;
 use App\Http\Controllers\DataEntry\PlanController;
 use App\Http\Controllers\DataEntry\PlanExpectedCountController;
 use App\Http\Controllers\DataEntry\RoleController;
 use App\Http\Controllers\DataEntry\RoomController;
 use App\Http\Controllers\DataEntry\RoomTypeController;
+use App\Http\Controllers\DataEntry\SectionController;
 use App\Http\Controllers\DataEntry\SubjectCategoryController;
 use App\Http\Controllers\DataEntry\SubjectController;
 use App\Http\Controllers\DataEntry\SubjectTypeController;
@@ -55,12 +57,14 @@ Route::prefix('dashboard')->group(function () {
         Route::post('/departments', [DepartmentController::class, 'store'])->name('departments.store');
         Route::put('/departments/{department}', [DepartmentController::class, 'update'])->name('departments.update');
         Route::delete('/departments/{department}', [DepartmentController::class, 'destroy'])->name('departments.destroy');
+        // Route::resource('departments', DepartmentController::class)->except(['create', 'show', 'edit']);
 
         // Rooms CRUD Routes
-        Route::get('/rooms', [RoomController::class, 'index'])->name('rooms.index'); // تغيير الاسم
+        Route::get('/rooms', [RoomController::class, 'index'])->name('rooms.index');
         Route::post('/rooms', [RoomController::class, 'store'])->name('rooms.store');
         Route::put('/rooms/{room}', [RoomController::class, 'update'])->name('rooms.update');
         Route::delete('/rooms/{room}', [RoomController::class, 'destroy'])->name('rooms.destroy');
+        // Route::resource('rooms', RoomController::class)->except(['create', 'show', 'edit']);
 
         // Room Type CRUD Routes
         Route::get('/room-types', [RoomTypeController::class, 'index'])->name('room-types.index');
@@ -74,20 +78,22 @@ Route::prefix('dashboard')->group(function () {
         Route::post('/instructors', [InstructorController::class, 'store'])->name('instructors.store');
         Route::put('/instructors/{instructor}', [InstructorController::class, 'update'])->name('instructors.update');
         Route::delete('/instructors/{instructor}', [InstructorController::class, 'destroy'])->name('instructors.destroy');
+        // Route::resource('instructors', InstructorController::class)->except(['create', 'show', 'edit']);
 
         // Subject CRUD & Bulk Upload Routes
         Route::get('/subjects', [SubjectController::class, 'index'])->name('subjects.index');
         Route::post('/subjects', [SubjectController::class, 'store'])->name('subjects.store');
         Route::put('/subjects/{subject}', [SubjectController::class, 'update'])->name('subjects.update');
         Route::delete('/subjects/{subject}', [SubjectController::class, 'destroy'])->name('subjects.destroy');
-        Route::post('/subjects/bulk-upload', [SubjectController::class, 'bulkUpload'])->name('subjects.bulkUpload'); // روت الرفع بالجملة
+        Route::post('/subjects/bulk-upload', [SubjectController::class, 'bulkUpload'])->name('subjects.bulkUpload');
+        // Route::resource('subjects', SubjectController::class)->except(['create', 'show', 'edit']);
 
         // Subject-Types CRUD Routes
-        // Route::resource('subject-types', SubjectTypeController::class)->except(['create', 'show', 'edit']);
         Route::get('/subject-types', [SubjectTypeController::class, 'index'])->name('subject-types.index');
         Route::post('/subject-types', [SubjectTypeController::class, 'store'])->name('subject-types.store');
         Route::put('/subject-types/{subjectType}', [SubjectTypeController::class, 'update'])->name('subject-types.update');
         Route::delete('/subject-types/{subjectType}', [SubjectTypeController::class, 'destroy'])->name('subject-types.destroy');
+        // Route::resource('subject-types', SubjectTypeController::class)->except(['create', 'show', 'edit']);
 
         // Subject-Types CRUD Routes
         Route::get('/subject-categories', [SubjectCategoryController::class, 'index'])->name('subject-categories.index');
@@ -96,18 +102,19 @@ Route::prefix('dashboard')->group(function () {
         Route::delete('/subject-categories/{subjectCategory}', [SubjectCategoryController::class, 'destroy'])->name('subject-categories.destroy');
         // Route::resource('subject-categories', SubjectCategoryController::class)->except(['create', 'show', 'edit']);
 
-
         // Roles CRUD Routes
         Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
         Route::post('/roles', [RoleController::class, 'store'])->name('roles.store');
         Route::put('/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
         Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
+        // Route::resource('roles', RoleController::class)->except(['create', 'show', 'edit']);
 
         // User CRUD Routes
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+        // Route::resource('roles', UserController::class)->except(['create', 'show', 'edit']);
 
         // Plans Management Page
         Route::get('/plans', [PlanController::class, 'index'])->name('plans.index');
@@ -125,7 +132,6 @@ Route::prefix('dashboard')->group(function () {
         Route::get('/plans/{plan}/manage-subjects', [PlanController::class, 'manageSubjects'])->name('plans.manageSubjects');
         Route::post('/plans/{plan}/level/{level}/semester/{semester}/add-subject', [PlanController::class, 'addSubject'])->name('plans.addSubject');
         Route::delete('/plans/{plan}/remove-subject/{planSubject}', [PlanController::class, 'removeSubject'])->name('plans.removeSubject');
-
         // Route::resource('plans', PlanController::class)->except(['create', 'show', 'edit']);
 
         // Timeslots Management Page
@@ -134,17 +140,31 @@ Route::prefix('dashboard')->group(function () {
         Route::post('/timeslots', [TimeslotController::class, 'store'])->name('timeslots.store');
         Route::put('/timeslots/{timeslot}', [TimeslotController::class, 'update'])->name('timeslots.update'); // لاحظ {timeslot}
         Route::delete('/timeslots/{timeslot}', [TimeslotController::class, 'destroy'])->name('timeslots.destroy'); // لاحظ {timeslot}
-
         // Route::resource('timeslots', TimeslotController::class)->except(['create', 'show', 'edit']);
-
 
         // --- Plan Expected Counts Management ---
         Route::get('/plan-expected-counts', [PlanExpectedCountController::class, 'index'])->name('plan-expected-counts.index');
         Route::post('/plan-expected-counts', [PlanExpectedCountController::class, 'store'])->name('plan-expected-counts.store');
         Route::put('/plan-expected-counts/{planExpectedCount}', [PlanExpectedCountController::class, 'update'])->name('plan-expected-counts.update'); // لاحظ {planExpectedCount}
         Route::delete('/plan-expected-counts/{planExpectedCount}', [PlanExpectedCountController::class, 'destroy'])->name('plan-expected-counts.destroy'); // لاحظ {planExpectedCount}
-
         // Route::resource('plan-expected-counts', PlanExpectedCountController::class)->except(['create', 'show', 'edit']);
+
+        // --- Sections Management ---
+        // // هذه الروابط قد تحتاج لتعديل لتناسب عرض الشعب حسب الخطة أو القسم
+        Route::get('/sections', [SectionController::class, 'index'])->name('sections.index');
+        Route::post('/sections', [SectionController::class, 'store'])->name('sections.store');
+        Route::put('/sections/{section}', [SectionController::class, 'update'])->name('sections.update');
+        Route::delete('/sections/{section}', [SectionController::class, 'destroy'])->name('sections.destroy');
+        // Route::resource('sections', SectionController::class)->except(['create', 'show', 'edit']);
+
+        // --- Instructor Subject Assignments ---
+        // Route::get('/instructor-subject', [InstructorSubjectController::class, 'index'])->name('instructor-subject.index'); // لعرض الواجهة
+        // Route::post('/instructor-subject', [InstructorSubjectController::class, 'syncSubjects'])->name('instructor-subject.sync'); // لمعالجة حفظ الارتباطات
+        Route::get('/instructor-subject', [InstructorSubjectController::class, 'index'])->name('instructor-subject.index'); // صفحة العرض الرئيسية
+        // روت لعرض واجهة التعديل لمدرس معين (GET)
+        Route::get('/instructor-subject/{instructor}/edit', [InstructorSubjectController::class, 'editAssignments'])->name('instructor-subject.edit');
+        // روت لحفظ التغييرات (POST أو PUT)
+        Route::post('/instructor-subject/{instructor}/sync', [InstructorSubjectController::class, 'syncAssignments'])->name('instructor-subject.sync');
 
         // Basic Settings Page (Types, Categories)
         Route::get('/settings', [DataEntryController::class, 'settings'])->name('settings');
