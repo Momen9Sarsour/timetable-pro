@@ -52,7 +52,7 @@ class InstructorController extends Controller
     {
         // 1. Validation
         $validatedData = $request->validate([
-            'user_id' => 'required|integer|exists:users,id|unique:instructors,user_id',
+            //'user_id' => 'required|integer|exists:users,id|unique:instructors,user_id',
             'instructor_no' => 'required|string|max:20|unique:instructors,instructor_no',
             'instructor_name' => 'required|string|max:255',
             'academic_degree' => 'nullable|string|max:100',
@@ -64,12 +64,12 @@ class InstructorController extends Controller
         ]);
 
         // التحقق الإضافي من دور المستخدم
-        $user = User::find($request->user_id);
-        if (!$user || !$user->hasRole(['instructor', 'hod', 'admin'])) {
-            return redirect()->back()
-                ->with('error', 'The selected user does not have a valid role to be an instructor.')
-                ->withInput();
-        }
+        // $user = User::find($request->user_id);
+        // if (!$user || !$user->hasRole(['instructor', 'hod', 'admin'])) {
+        //     return redirect()->back()
+        //         ->with('error', 'The selected user does not have a valid role to be an instructor.')
+        //         ->withInput();
+        // }
 
         // 2. Prepare Data (validatedData جاهزة)
         $data = $validatedData;
@@ -197,7 +197,7 @@ class InstructorController extends Controller
     {
         // 1. Validation
         $validatedData = $request->validate([
-            'user_id' => 'required|integer|exists:users,id|unique:instructors,user_id',
+            // 'user_id' => 'required|integer|exists:users,id|unique:instructors,user_id',
             'instructor_no' => 'required|string|max:20|unique:instructors,instructor_no',
             'instructor_name' => 'required|string|max:255',
             'academic_degree' => 'nullable|string|max:100',
@@ -208,11 +208,11 @@ class InstructorController extends Controller
             'availability_preferences' => 'nullable|string',
         ]);
 
-        // التحقق من دور المستخدم
-        $user = User::find($request->user_id);
-        if (!$user || !$user->hasRole(['instructor', 'hod', 'admin'])) {
-            return response()->json(['success' => false, 'message' => 'The selected user does not have a valid role.'], 422);
-        }
+        // // التحقق من دور المستخدم
+        // $user = User::find($request->user_id);
+        // if (!$user || !$user->hasRole(['instructor', 'hod', 'admin'])) {
+        //     return response()->json(['success' => false, 'message' => 'The selected user does not have a valid role.'], 422);
+        // }
 
         // 2. Add to Database
         try {

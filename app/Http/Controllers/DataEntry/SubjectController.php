@@ -5,6 +5,7 @@ namespace App\Http\Controllers\DataEntry;
 use App\Http\Controllers\Controller;
 use App\Imports\SubjectsImport; // *** تفعيل هذا ***
 use Maatwebsite\Excel\Facades\Excel; // *** تفعيل هذا ***
+
 use Maatwebsite\Excel\Validators\ValidationException; // *** لاستقبال أخطاء التحقق من Excel ***
 use App\Models\Department;
 use App\Models\Subject;
@@ -144,46 +145,6 @@ class SubjectController extends Controller
      * Handle bulk upload (Web).
      * معالجة الرفع بالجملة (معطل مؤقتاً)
      */
-    // public function bulkUpload(Request $request)
-    // {
-    //     //  Log::info('Bulk upload endpoint hit (Web) - Feature disabled.'); // تسجيل معلومة
-    //     //  return redirect()->route('data-entry.subjects.index')
-    //     //                   ->with('info', 'Bulk upload feature is currently disabled.');
-
-    //      // 1. التحقق من وجود الملف وصيغته
-    //      $request->validate([
-    //         'subject_file' => 'required|file|mimes:xlsx,xls,csv|max:5120', // زيادة الحد الأقصى للحجم إلى 5MB مثلاً
-    //     ]);
-
-    //     // 2. محاولة استيراد الملف باستخدام كلاس Import
-    //     try {
-    //         Excel::import(new SubjectsImport, $request->file('subject_file'));
-
-    //         // 3. إعادة التوجيه مع رسالة نجاح
-    //         return redirect()->route('data-entry.subjects.index')
-    //                          ->with('success', 'Subjects imported successfully!');
-
-    //     } catch (ValidationException $e) {
-    //         // 3. التعامل مع أخطاء التحقق داخل الملف (التي تم تعريفها في SubjectsImport)
-    //          $failures = $e->failures(); // الحصول على مصفوفة الأخطاء
-    //          $errorMessages = [];
-    //          foreach ($failures as $failure) {
-    //              // بناء رسالة خطأ لكل صف خاطئ
-    //              $errorMessages[] = "Row " . $failure->row() . ": " . implode(', ', $failure->errors()) . " (Value: '" . $failure->values()[$failure->attribute()] . "')";
-    //          }
-    //          Log::warning('Subject Bulk Upload Validation Failures: ', $failures);
-    //          // إعادة التوجيه مع رسالة خطأ عامة وعرض الأخطاء التفصيلية
-    //          return redirect()->back()
-    //                           ->with('error', 'Import failed due to validation errors in the file. Please check the details below.')
-    //                           ->with('import_errors', $errorMessages); // إرسال مصفوفة الأخطاء للـ view
-
-    //     } catch (Exception $e) {
-    //         // 3. التعامل مع أخطاء أخرى (مثل مشكلة في قراءة الملف)
-    //         Log::error('Subject Bulk Upload Failed (General): ' . $e->getMessage());
-    //         return redirect()->back()
-    //                          ->with('error', 'An error occurred during the upload process. Please ensure the file format is correct and try again.');
-    //     }
-    // }
     public function bulkUpload(Request $request)
     {
         $request->validate([
@@ -222,16 +183,15 @@ class SubjectController extends Controller
         }
     }
 
-
     // =============================================
     //             API Controller Methods
     // =============================================
 
-     /**
+    /**
      * Display a listing of the subjects (API).
      * عرض قائمة المواد للـ API (بدون Pagination أو فلترة حالياً)
      */
-    public function apiIndex(Request $request) // أبقينا على Request إذا احتجناها لاحقاً
+    public function apiIndex(Request $request)
     {
         try {
             $query = Subject::with([
@@ -240,14 +200,11 @@ class SubjectController extends Controller
                 'department:id,department_name'
             ]);
 
-            // --- إزالة كود الفلترة ---
-
             // --- الخيار 1: جلب كل المواد (الحالة الحالية) ---
             $subjects = $query->latest('id') // الترتيب بالأحدث
                              ->get();
 
-            // --- الخيار 2: كود الـ Pagination للـ API (معطل حالياً) ---
-            /*
+            // --- الخيار 2: كود الـ Pagination للـ API ---
             $perPage = $request->query('per_page', 15);
             $subjectsPaginated = $query->latest('id')
                                        ->paginate($perPage);
@@ -262,11 +219,6 @@ class SubjectController extends Controller
                     'last_page' => $subjectsPaginated->lastPage(),
                 ]
             ], 200);
-            */
-            // --- نهاية كود الـ Pagination المعطل ---
-
-
-            return response()->json(['success' => true, 'data' => $subjects], 200);
 
         } catch (Exception $e) {
             Log::error('API Error fetching subjects: ' . $e->getMessage());
@@ -381,55 +333,8 @@ class SubjectController extends Controller
             ], 200);
 
         } catch (Exception $e) {
-            Log::error('API Subject Deletion Failed: ' . $e->getMessage());
+             Log::error('API Subject Deletion Failed: ' . $e->getMessage());
              return response()->json(['success' => false, 'message' => 'Failed to delete subject.'], 500);
         }
     }
-
-     /**
-     * Handle bulk upload (API).
-     */
-    public function apiBulkUpload(Request $request)
-    {
-        Log::info('Bulk upload endpoint hit (API) - Feature disabled.');
-         return response()->json([
-             'success' => false,
-             'message' => 'Bulk upload feature is not yet available for the API.'
-         ], 501); // 501 Not Implemented
-
-        /* // كود تفعيلها لاحقاً
-        $validator = Validator::make($request->all(), [
-            'subject_file' => 'required|file|mimes:xlsx,xls,csv|max:5120',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
-        }
-
-        try {
-            Excel::import(new SubjectsImport, $request->file('subject_file'));
-            return response()->json(['success' => true, 'message' => 'Subjects imported successfully!'], 200);
-        } catch (ValidationException $e) {
-            $failures = $e->failures();
-            $errorDetails = [];
-             foreach ($failures as $failure) {
-                 $errorDetails[] = [
-                     'row' => $failure->row(),
-                     'attribute' => $failure->attribute(),
-                     'errors' => $failure->errors(),
-                     'value' => $failure->values()[$failure->attribute()] ?? null
-                 ];
-             }
-             Log::warning('API Subject Bulk Upload Validation Failures: ', $failures);
-             return response()->json([
-                'success' => false,
-                'message' => 'Import failed due to validation errors.',
-                'errors' => $errorDetails
-            ], 422);
-        } catch (Exception $e) {
-             Log::error('API Subject Bulk Upload Failed (General): ' . $e->getMessage());
-             return response()->json(['success' => false, 'message' => 'An error occurred during the upload process.'], 500);
-        }*/
-    }
-
 }

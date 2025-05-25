@@ -19,7 +19,7 @@ class RoomController extends Controller
     /**
      * Display a listing of the rooms (Web View) with Pagination.
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
             // جلب القاعات مرتبة بالأحدث مع نوعها وتقسيم الصفحات
@@ -48,17 +48,9 @@ class RoomController extends Controller
             'room_size' => 'required|integer|min:1',
             'room_gender' => ['required', Rule::in(['Male', 'Female', 'Mixed'])],
             'room_branch' => 'nullable|string|max:100',
-            // 'equipment' => 'nullable|array', // يجب أن يكون مصفوفة إذا تم إرساله
-            // 'equipment.*' => 'nullable|string|max:50', // التحقق من كل عنصر
         ]);
 
-        // 2. Prepare Data (تحويل equipment إلى JSON)
-        // نستخدم validated() لجلب البيانات التي تم التحقق منها فقط
-        // $data = $request->validated();
-        // $data['equipment'] = isset($data['equipment']) ? json_encode($data['equipment']) : null;
-
-
-        // 3. Add to Database
+        // 2. Add to Database
         try {
             Room::create($data);
             // 4. Redirect
@@ -85,20 +77,9 @@ class RoomController extends Controller
             'room_size' => 'required|integer|min:1',
             'room_gender' => ['required', Rule::in(['Male', 'Female', 'Mixed'])],
             'room_branch' => 'nullable|string|max:100',
-            // 'equipment' => 'nullable|array', // السماح بإرسال مصفوفة فارغة أو null
-            // 'equipment.*' => 'nullable|string|max:50',
         ]);
 
-        // 2. Prepare Data for Update (تحويل equipment)
-        // $data = $request->validated();
-        // التحويل إلى JSON فقط إذا كان equipment موجوداً في الطلب
-        // إذا لم يتم إرسال equipment، لن يتم تحديثه في $data
-        // if ($request->has('equipment')) {
-        //      $data['equipment'] = isset($data['equipment']) ? json_encode($data['equipment']) : null; // null إذا كانت المصفوفة فارغة أو لم يتم إرسالها
-        // }
-
-
-        // 3. Update Database
+        // 2. Update Database
         try {
             $room->update($data);
             // 4. Redirect
@@ -117,9 +98,6 @@ class RoomController extends Controller
      */
     public function destroy(Room $room)
     {
-        // (اختياري) التحقق من السجلات المرتبطة
-        // if ($room->scheduleEntries()->exists()) { ... }
-
         // 1. Delete from Database
         try {
             $room->delete();
@@ -133,23 +111,19 @@ class RoomController extends Controller
         }
     }
 
-
     // =============================================
     //             API Controller Methods
     // =============================================
 
     /**
-     * Display a listing of the rooms (API).
+     * Display a listing of the rooms (API) with Pagination.
      */
     public function apiIndex(Request $request)
     {
         try {
             $query = Room::with('roomType:id,room_type_name');
 
-            $rooms = $query->latest()->get(); // الترتيب بالأحدث
-
-            // Pagination للـ API (معطل حالياً)
-            /*
+            // Pagination for API
             $perPage = $request->query('per_page', 15);
             $roomsPaginated = $query->latest('id')->paginate($perPage);
 
@@ -163,11 +137,6 @@ class RoomController extends Controller
                     'last_page' => $roomsPaginated->lastPage(),
                 ]
             ], 200);
-            */
-            // --- نهاية كود الـ Pagination المعطل ---
-
-
-            return response()->json(['success' => true, 'data' => $rooms], 200);
         } catch (Exception $e) {
             Log::error('API Error fetching rooms: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Server Error'], 500);
@@ -187,22 +156,16 @@ class RoomController extends Controller
             'room_size' => 'required|integer|min:1',
             'room_gender' => ['required', Rule::in(['Male', 'Female', 'Mixed'])],
             'room_branch' => 'nullable|string|max:100',
-            // 'equipment' => 'nullable|array',
-            // 'equipment.*' => 'nullable|string|max:50',
         ]);
 
-        // 2. Prepare Data (تحويل equipment)
-        $data = $validatedData;
-        // $data['equipment'] = isset($data['equipment']) ? json_encode($data['equipment']) : null;
-
-        // 3. Add to Database
+        // 2. Add to Database
         try {
-            $room = Room::create($data);
-            $room->load('roomType:id,room_type_name'); // تحميل العلاقة للـ response
+            $room = Room::create($validatedData);
+            $room->load('roomType:id,room_type_name'); // Load relationship for response
             return response()->json([
                 'success' => true,
-                'data' => $room,
-                'message' => 'Classroom created successfully.'
+                'message' => 'Classroom created successfully.',
+                'data' => $room
             ], 201);
         } catch (Exception $e) {
             Log::error('API Room Creation Failed: ' . $e->getMessage());
@@ -216,7 +179,6 @@ class RoomController extends Controller
     public function apiShow(Room $room)
     {
         $room->load('roomType');
-        // $room->load('roomType:id,room_type_name');
         return response()->json(['success' => true, 'data' => $room], 200);
     }
 
@@ -239,21 +201,12 @@ class RoomController extends Controller
             'room_size' => 'sometimes|required|integer|min:1',
             'room_gender' => ['sometimes', 'required', Rule::in(['Male', 'Female', 'Mixed'])],
             'room_branch' => 'sometimes|nullable|string|max:100',
-            // 'equipment' => 'sometimes|nullable|array', // السماح بإرسال null أو مصفوفة فارغة
-            // 'equipment.*' => 'nullable|string|max:50',
         ]);
 
-        // 2. Prepare Data for Update
-        // $data = $validatedData;
-        // التحديث الشرطي للـ equipment
-        // if ($request->has('equipment')) {
-        //      $data['equipment'] = isset($validatedData['equipment']) ? json_encode($validatedData['equipment']) : null;
-        // }
-
-        // 3. Update Database
+        // 2. Update Database
         try {
             $room->update($data);
-            $room->load('roomType:id,room_type_name'); // تحميل العلاقة بعد التحديث
+            $room->load('roomType:id,room_type_name'); // Load relationship after update
 
             return response()->json([
                 'success' => true,
@@ -271,13 +224,9 @@ class RoomController extends Controller
      */
     public function apiDestroy(Room $room)
     {
-        // (اختياري) التحقق من السجلات المرتبطة
-        // if ($room->scheduleEntries()->exists()) { ... }
-
         // 1. Delete from Database
         try {
             $room->delete();
-            // 2. Return Success JSON Response
             return response()->json([
                 'success' => true,
                 'message' => 'Classroom deleted successfully.'
