@@ -40,6 +40,20 @@
                             @error('practical_hours') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="add_load_theoretical_section" class="form-label">Theoretical Section Capacity</label>
+                            <input type="number" class="form-control @error('load_theoretical_section', 'store') is-invalid @enderror" id="add_load_theoretical_section" name="load_theoretical_section" value="{{ old('load_theoretical_section', 50) }}" min="1" placeholder="Default: 50">
+                            <small class="text-muted">Max students per theory section. Leave blank for default (50).</small>
+                            @error('load_theoretical_section', 'store') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="add_load_practical_section" class="form-label">Practical Section Capacity</label>
+                            <input type="number" class="form-control @error('load_practical_section', 'store') is-invalid @enderror" id="add_load_practical_section" name="load_practical_section" value="{{ old('load_practical_section', 25) }}" min="1" placeholder="Default: 25">
+                            <small class="text-muted">Max students per lab section. Leave blank for default (25).</small>
+                            @error('load_practical_section', 'store') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                    </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -128,6 +142,19 @@
                             <label for="edit_practical_hours_{{ $subject->id }}" class="form-label">Weekly Practical Hours <span class="text-danger">*</span></label>
                             <input type="number" class="form-control @error('practical_hours', 'update_'.$subject->id) is-invalid @enderror" id="edit_practical_hours_{{ $subject->id }}" name="practical_hours" value="{{ old('practical_hours', $subject->practical_hours) }}" required min="0">
                             @error('practical_hours', 'update_'.$subject->id) <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_load_theoretical_section_{{ $subject->id }}" class="form-label">Theoretical Section Capacity</label>
+                            <input type="number" class="form-control @error('load_theoretical_section', 'update_'.$subject->id) is-invalid @enderror" id="edit_load_theoretical_section_{{ $subject->id }}" name="load_theoretical_section" value="{{ old('load_theoretical_section', $subject->load_theoretical_section) }}" min="1" placeholder="Default: 50">
+                            @error('load_theoretical_section', 'update_'.$subject->id) <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_load_practical_section_{{ $subject->id }}" class="form-label">Practical Section Capacity</label>
+                            <input type="number" class="form-control @error('load_practical_section', 'update_'.$subject->id) is-invalid @enderror" id="edit_load_practical_section_{{ $subject->id }}" name="load_practical_section" value="{{ old('load_practical_section', $subject->load_practical_section) }}" min="1" placeholder="Default: 25">
+                            @error('load_practical_section', 'update_'.$subject->id) <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                     </div>
 

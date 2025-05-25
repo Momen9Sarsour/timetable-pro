@@ -12,6 +12,8 @@ use App\Http\Controllers\DataEntry\InstructorSubjectController;
 use App\Http\Controllers\DataEntry\PlanController;
 use App\Http\Controllers\DataEntry\PlanExpectedCountController;
 use App\Http\Controllers\DataEntry\RoomTypeController;
+use App\Http\Controllers\DataEntry\SectionController;
+use App\Http\Controllers\DataEntry\SectionController22;
 use App\Http\Controllers\DataEntry\SubjectCategoryController;
 use App\Http\Controllers\DataEntry\SubjectTypeController;
 use App\Http\Controllers\DataEntry\TimeslotController;
@@ -136,6 +138,62 @@ Route::prefix('v1')->group(function () {
     Route::put('/plan-expected-counts/{planExpectedCount}', [PlanExpectedCountController::class, 'apiUpdate']); // RMB
     Route::delete('/plan-expected-counts/{planExpectedCount}', [PlanExpectedCountController::class, 'apiDestroy']); // RMB
 
+    // Endpoints للتحكم بالشعب من سياق PlanExpectedCount
+    // Route::get('/expected-counts/{expectedCount}/manage-sections', [SectionController22::class, 'apiManageSectionsForContext'])->name('api.sections.manageContext');
+    // Route::post('/expected-counts/{expectedCount}/generate-sections', [SectionController22::class, 'apiGenerateSectionsForContextButton'])->name('api.sections.generateForContext');
+    // Route::post('/expected-counts/{expectedCount}/sections', [SectionController22::class, 'apiStoreSectionInContext'])->name('api.sections.storeInContext');
+
+    // // Endpoints لعمليات CRUD على شعبة معينة (باستخدام ID الشعبة)
+    // Route::get('/expected-counts/sections/{section}', [SectionController22::class, 'apiShowSectionDetails'])->name('api.sections.show');
+    // Route::put('/expected-counts/sections/{section}', [SectionController22::class, 'apiUpdateSectionDetails'])->name('api.sections.update');
+    // Route::delete('/expected-counts/sections/{section}', [SectionController22::class, 'apiDestroySectionDetails'])->name('api.sections.destroy');
+
+    // عرض جميع الشعب لسياق محدد
+    Route::get('expected-counts/{expectedCount}/sections', [SectionController22::class, 'APIGetSectionsForContext']);
+
+    // عرض شعب لمادة محددة في سياق معين
+    Route::get('expected-counts/{expectedCount}/subjects/{planSubject}/sections', [SectionController22::class, 'APIGetSectionsForSubject']);
+
+    // إنشاء شعبة جديدة
+    Route::post('expected-counts/{expectedCount}/sections', [SectionController22::class, 'APIStoreSectionInContext']);
+
+    // تحديث شعبة موجودة
+    Route::put('expected-counts/sections/{section}', [SectionController22::class, 'APIUpdateSectionInContext']);
+
+    // حذف شعبة
+    Route::delete('expected-counts/sections/{section}', [SectionController22::class, 'APIDestroySectionInContext']);
+
+    // إنشاء شعب تلقائيًا
+    Route::post('expected-counts/{expectedCount}/generate-sections', [SectionController22::class, 'APIGenerateSectionsForContext']);
+
+
+
+    //  Route::get('/expected-counts/{expectedCount}/manage-sections', [SectionController22::class, 'apiManageSectionsForContext'])->name('api.expected-counts.sections.manage');
+
+    // // توليد الشعب آلياً لسياق ExpectedCount معين
+    // Route::post('/expected-counts/{expectedCount}/generate-sections', [SectionController22::class, 'apiGenerateSectionsForContextButton'])->name('api.expected-counts.sections.generate');
+
+    // // إضافة شعبة يدوياً لسياق ExpectedCount معين
+    // // (plan_subject_id, activity_type, section_number, student_count, section_gender في الـ body)
+    // Route::post('/expected-counts/{expectedCount}/sections', [SectionController22::class, 'apiStoreSectionInContext'])->name('api.expected-counts.sections.store');
+
+    // // --- Sections API (General CRUD on existing sections - if needed separately) ---
+    // // الروابط التالية تتعامل مع الشعبة مباشرة عبر الـ ID الخاص بها
+    // // Route::get('/sections', [SectionController22::class, 'apiIndexAllSections']); // لعرض كل الشعب مع فلاتر
+    // Route::get('/expected-counts/sections/{section}', [SectionController22::class, 'apiShowSectionDetails'])->name('api.expected-counts.sections.show');
+    // Route::put('/expected-counts/sections/{section}', [SectionController22::class, 'apiUpdateSectionDetails'])->name('api.expected-counts.sections.update');
+    // Route::delete('/expected-counts/sections/{section}', [SectionController22::class, 'apiDestroySectionDetails'])->name('api.expected-counts.sections.destroy');
+
+
+    // --- Sections API ---
+    Route::get('/sections', [SectionController::class, 'apiIndex']);
+    Route::get('/sections/context', [SectionController::class, 'apiGetSectionsForSubjectContext']); // جلب شعب لسياق محدد
+    Route::post('/sections', [SectionController::class, 'apiStore']);
+    Route::get('/sections/{section}', [SectionController::class, 'apiShow']);
+    Route::put('/sections/{section}', [SectionController::class, 'apiUpdate']);
+    Route::delete('/sections/{section}', [SectionController::class, 'apiDestroy']);
+    Route::post('/sections/generate-for-subject', [SectionController::class, 'apiGenerateForSubject']); // لتوليد الشعب
+
     // --- Instructor Subject Assignments API ---
     Route::get('/instructors/{instructor}/subjects', [InstructorSubjectController::class, 'apiGetAssignedSubjects']); // جلب المواد المعينة
     Route::get('/instructors/{instructor}/available-subjects', [InstructorSubjectController::class, 'apiGetAvailableSubjects']); // جلب المواد المتاحة
@@ -145,7 +203,7 @@ Route::prefix('v1')->group(function () {
     // جلب كل المواد لمدرس معين (مع تحديد المعين منها)
     Route::get('/instructor-assignments/{instructor}', [InstructorSubjectController::class, 'apiShowAssignments'])->name('api.instructor-assignments.show'); // استخدام {instructor} لـ RMB
 
-    
+
     // --- APIs for Settings (لا تضفها الآن) ---
     // --- Timetable Generation API ---
     // Route::post('/generate-timetable', [TimetableController::class, 'generate']); // مثال لروت تشغيل الخوارزمية

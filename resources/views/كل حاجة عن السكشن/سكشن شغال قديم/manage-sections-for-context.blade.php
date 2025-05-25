@@ -40,8 +40,7 @@
                     <div>
                         <h4 class="data-entry-header mb-1">Manage Sections for Context</h4>
                         <p class="mb-1 text-muted small">Modifying sections for Plan:
-                            <strong>{{ optional($expectedCount->plan)->plan_no }}</strong>
-                        </p>
+                            <strong>{{ optional($expectedCount->plan)->plan_no }}</strong></p>
                     </div>
                     <a href="{{ route('data-entry.plan-expected-counts.index') }}"
                         class="btn btn-sm btn-outline-secondary align-self-start">
@@ -65,8 +64,7 @@
                 <div class="mt-2">
                     <p class="mb-0"><strong>Total Expected:</strong> <span
                             class="fw-bold fs-5">{{ $expectedCount->male_count + $expectedCount->female_count }}</span>
-                        <small>({{ $expectedCount->male_count }} M, {{ $expectedCount->female_count }} F)</small>
-                    </p>
+                        <small>({{ $expectedCount->male_count }} M, {{ $expectedCount->female_count }} F)</small></p>
                 </div>
             </div>
 
@@ -116,21 +114,10 @@
                             <div class="card-header d-flex justify-content-between align-items-center"
                                 style="background-color: #e9ecef;">
                                 <h6 class="mb-0 text-dark"><i class="fas fa-chalkboard me-2"></i>Theory Sections</h6>
-                                {{-- <button class="btn btn-outline-success btn-sm open-add-section-modal" data-bs-toggle="modal"
-                                    data-bs-target="#addSectionModal" data-plan-subject-id="{{ $ps->id }}"
-                                    data-activity-type="Theory"
-                                    data-subject-name-modal="{{ $subject->subject_name }} (Theory)">
-                                    <i class="fas fa-plus me-1"></i> Add Theory Section
-                                </button> --}}
                                 <button class="btn btn-outline-success btn-sm open-add-section-modal" data-bs-toggle="modal"
                                     data-bs-target="#addSectionModal" data-plan-subject-id="{{ $ps->id }}"
                                     data-activity-type="Theory"
-                                    data-subject-name-modal="{{ $subject->subject_name }} (Theory)"
-                                    data-expected-count-id="{{ $expectedCount->id }}"
-                                    data-academic-year="{{ $expectedCount->academic_year }}"
-                                    data-semester="{{ $expectedCount->plan_semester }}"
-                                    data-branch="{{ $expectedCount->branch ?? '' }}"
-                                    data-form-action="{{ route('data-entry.sections.storeInContext', $expectedCount->id) }}">
+                                    data-subject-name-modal="{{ $subject->subject_name }} (Theory)">
                                     <i class="fas fa-plus me-1"></i> Add Theory Section
                                 </button>
                             </div>
@@ -194,23 +181,11 @@
                             <div class="card-header d-flex justify-content-between align-items-center"
                                 style="background-color: #f8f9fa;">
                                 <h6 class="mb-0 text-dark"><i class="fas fa-flask me-2"></i>Practical Sections</h6>
-                                {{-- <button class="btn btn-outline-success btn-sm open-add-section-modal" data-bs-toggle="modal"
+                                <button class="btn btn-outline-success btn-sm open-add-section-modal" data-bs-toggle="modal"
                                     data-bs-target="#addSectionModal" data-plan-subject-id="{{ $ps->id }}"
                                     data-activity-type="Practical"
                                     data-subject-name-modal="{{ $subject->subject_name }} (Practical)"
                                     data-expected-count-id="{{ $expectedCount->id }}">
-                                    <i class="fas fa-plus me-1"></i> Add Practical Section
-                                </button> --}}
-                                <button class="btn btn-outline-success btn-sm open-add-section-modal" data-bs-toggle="modal"
-                                    data-bs-target="#addSectionModal"
-                                    data-plan-subject-id="{{ $ps->id }}"
-                                    data-activity-type="Practical"
-                                    data-expected-count-id="{{ $expectedCount->id }}"
-                                    data-academic-year="{{ $expectedCount->academic_year }}"
-                                    data-semester="{{ $expectedCount->plan_semester }}"
-                                    data-branch="{{ $expectedCount->branch ?? '' }}"
-                                    data-subject-name-modal="{{ $subject->subject_name }} (Practical)"
-                                    data-form-action="{{ route('data-entry.sections.storeInContext', $expectedCount->id) }}">
                                     <i class="fas fa-plus me-1"></i> Add Practical Section
                                 </button>
                             </div>
@@ -250,8 +225,7 @@
                                                                 data-context-info="Sec #{{ $section->section_number }} for {{ $subject->subject_no }} (Practical)">Edit</button>
                                                             <button
                                                                 class="btn btn-sm btn-outline-danger py-0 px-1 open-delete-section-modal"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#deleteSectionModal"
+                                                                data-bs-toggle="modal" data-bs-target="#deleteSectionModal"
                                                                 data-form-action="{{ route('data-entry.sections.destroyInContext', $section->id) }}"
                                                                 data-section-info="Section #{{ $section->section_number }} (Practical) for {{ $subject->subject_no }}">Delete</button>
                                                         </td>
@@ -286,93 +260,38 @@
             console.log('Manage Sections for Context: Scripts Ready.');
 
             // --- مودال الإضافة ---
-            // const addModalEl = $('#addSectionModal'); // ID المودال العام للإضافة
-            // const addFormEl = $('#addSectionForm'); // ID الفورم داخل مودال الإضافة
-            // const addModalTitleEl = $('#addSectionModalLabel');
-
-            // $(document).on('click', '.open-add-section-modal', function() {
-            //     const button = $(this);
-            //     const planSubjectId = button.data('plan-subject-id');
-            //     const activityType = button.data('activity-type');
-            //     const subjectName = button.data('subject-name-modal');
-            //     const expectedCountId = button.data('expected-count-id');
-            //     const branchFromContext = button.data('branch') !== undefined ? button.data('branch') :
-            //         ''; // جلب الفرع من الزر
-
-            //     addModalTitleEl.text('Add ' + activityType + ' Section for: ' + subjectName);
-            //     const formAction = "{{ url('dashboard/data-entry/sections/store-in-context') }}/" +
-            //         expectedCountId;
-            //     addFormEl.attr('action', formAction);
-
-            //     addFormEl.find('input[name="plan_subject_id_from_modal"]').val(planSubjectId);
-            //     addFormEl.find('input[name="activity_type_from_modal"]').val(activityType);
-            //     addFormEl.find('#add_branch_display_modal').val(branchFromContext); // عرض الفرع للقراءة
-
-            //     // إعادة تعيين باقي الحقول
-            //     addFormEl.find('input[name="section_number"]').val('1');
-            //     addFormEl.find('input[name="student_count"]').val('0');
-            //     addFormEl.find('select[name="section_gender"]').val('Mixed');
-            //     addFormEl.find('.is-invalid').removeClass('is-invalid');
-            //     addFormEl.find('.invalid-feedback, .text-danger.small, .alert-danger').remove();
-            //     console.log("Add Modal opened. Action:", formAction, "PS_ID:", planSubjectId, "Activity:",
-            //         activityType);
-            // });
-
-            // --- مودال الإضافة ---
-            const addModalEl = $('#addSectionModal');
-            const addFormEl = $('#addSectionForm');
+            const addModalEl = $('#addSectionModal'); // ID المودال العام للإضافة
+            const addFormEl = $('#addSectionForm'); // ID الفورم داخل مودال الإضافة
             const addModalTitleEl = $('#addSectionModalLabel');
 
             $(document).on('click', '.open-add-section-modal', function() {
                 const button = $(this);
-
-                // الحصول على البيانات من الزر
-                const formAction = button.data('form-action');
                 const planSubjectId = button.data('plan-subject-id');
                 const activityType = button.data('activity-type');
                 const subjectName = button.data('subject-name-modal');
-                const branchFromContext = button.data('branch') || '';
-
                 const expectedCountId = button.data('expected-count-id');
-                const academicYear = button.data('academic-year') || '{{ $expectedCount->academic_year }}';
-                const semester = button.data('semester') || '{{ $expectedCount->plan_semester }}';
+                const branchFromContext = button.data('branch') !== undefined ? button.data('branch') :
+                ''; // جلب الفرع من الزر
 
-
-                // التحقق من وجود البيانات الأساسية
-                if (!formAction || !planSubjectId) {
-                    console.error("Missing required data attributes!");
-                    return;
-                }
-
-                // تعيين القيم للنموذج
                 addModalTitleEl.text('Add ' + activityType + ' Section for: ' + subjectName);
+                const formAction = "{{ url('dashboard/data-entry/sections/store-in-context') }}/" +
+                    expectedCountId;
                 addFormEl.attr('action', formAction);
-                addFormEl.attr('method', 'POST');
 
-                // تعبئة الحقول المخفية
-                addFormEl.find('input[name="academic_year"]').val(academicYear);
-                addFormEl.find('input[name="semester"]').val(semester);
                 addFormEl.find('input[name="plan_subject_id_from_modal"]').val(planSubjectId);
                 addFormEl.find('input[name="activity_type_from_modal"]').val(activityType);
-                addFormEl.find('input[name="branch"]').val(branchFromContext);
-                addFormEl.find('#add_branch_display_modal').val(branchFromContext || 'Default');
+                addFormEl.find('#add_branch_display_modal').val(branchFromContext); // عرض الفرع للقراءة
 
                 // إعادة تعيين باقي الحقول
                 addFormEl.find('input[name="section_number"]').val('1');
                 addFormEl.find('input[name="student_count"]').val('0');
                 addFormEl.find('select[name="section_gender"]').val('Mixed');
-
-                // مسح الأخطاء السابقة
                 addFormEl.find('.is-invalid').removeClass('is-invalid');
                 addFormEl.find('.invalid-feedback, .text-danger.small, .alert-danger').remove();
-
-                console.log("Add Modal configured. Action:", formAction, "PS_ID:", planSubjectId,
-                    "Activity:", activityType);
+                console.log("Add Modal opened. Action:", formAction, "PS_ID:", planSubjectId, "Activity:",
+                    activityType);
             });
 
-
-
-            // ***********************************************************************************************************************
             // --- مودال التعديل ---
             const editModalEl = $('#editSectionModal');
             const editFormEl = $('#editSectionForm');

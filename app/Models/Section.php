@@ -17,6 +17,7 @@ class Section extends Model
         'branch',
         'academic_year',
         'semester',
+        'activity_type',
     ];
 
     /**

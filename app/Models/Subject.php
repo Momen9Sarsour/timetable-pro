@@ -18,6 +18,8 @@ class Subject extends Model
         'subject_type_id',
         'subject_category_id',
         'department_id',
+        'load_theoretical_section',
+        'load_practical_section',  
     ];
 
     /**

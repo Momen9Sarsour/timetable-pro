@@ -27,6 +27,8 @@ return new class extends Migration
             // $table->unsignedTinyInteger('plan_level');
             // $table->unsignedTinyInteger('plan_semester');
 
+            $table->enum('activity_type', ['Theory', 'Practical'])->default('Theory'); // افتراضي Theory
+
             $table->unsignedTinyInteger('section_number'); // رقم الشعبة (1, 2, 3...) لنفس المادة في نفس المستوى/الفصل
             $table->unsignedSmallInteger('student_count'); // العدد الفعلي أو المخصص للطلاب في هذه الشعبة
             $table->enum('section_gender', ['Male', 'Female', 'Mixed'])->default('Mixed'); // جنس الطلاب في الشعبة
@@ -44,6 +46,15 @@ return new class extends Migration
             $table->unique(['plan_subject_id', 'section_number', 'academic_year', 'semester'], 'section_unique');
              // أو إذا استخدمت الطريقة 2:
             // $table->unique(['plan_id', 'subject_id', 'plan_level', 'plan_semester', 'section_number', 'branch', 'academic_year', 'semester'], 'section_details_unique');
+
+            $table->unique([
+                'plan_subject_id',
+                'academic_year',
+                'semester',
+                'activity_type', // مضاف للقيد
+                'section_number',
+                'branch' // أضفت الفرع أيضاً للقيد ليكون أكثر دقة
+            ], 'sections_unique_constraint'); // اسم جديد للقيد
 
             $table->timestamps();
         });

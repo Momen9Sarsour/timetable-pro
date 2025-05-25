@@ -50,6 +50,8 @@
                                     <th scope="col">Load</th>
                                     <th scope="col">Theo (h)</th> {{-- // ساعات نظري --}}
                                     <th scope="col">Prac (h)</th> {{-- // ساعات عملي --}}
+                                    <th>Theory Sec. Capacity</th>
+                                    <th>Practical Sec. Capacity</th>
                                     <th scope="col">Type</th>
                                     <th scope="col">Category</th>
                                     <th scope="col">Department</th>
@@ -65,6 +67,8 @@
                                         <td>{{ $subject->subject_load }}</td>
                                         <td>{{ $subject->theoretical_hours }}</td>
                                         <td>{{ $subject->practical_hours }}</td>
+                                        <td>{{ $subject->load_theoretical_section ?? '-' }}</td>
+                                        <td>{{ $subject->load_practical_section ?? '-' }}</td>
                                         {{-- // عرض البيانات من العلاقات --}}
                                         <td>{{ $subject->subjectType->subject_type_name ?? 'N/A' }}</td>
                                         <td>{{ $subject->subjectCategory->subject_category_name ?? 'N/A' }}</td>
