@@ -31,8 +31,8 @@ class SubjectController extends Controller
         try {
             // جلب المواد مرتبة بالأحدث مع العلاقات وتقسيم الصفحات
             $subjects = Subject::with(['subjectType', 'subjectCategory', 'department'])
-                               ->latest('id') // Order by newest first based on ID
-                               ->paginate(15); // Paginate results
+                ->latest('id') // Order by newest first based on ID
+                ->paginate(15); // Paginate results
 
             // جلب البيانات للقوائم المنسدلة
             $subjectTypes = SubjectType::orderBy('subject_type_name')->get();
@@ -59,6 +59,8 @@ class SubjectController extends Controller
             'subject_load' => 'required|integer|min:0',
             'theoretical_hours' => 'required|integer|min:0',
             'practical_hours' => 'required|integer|min:0',
+            'load_theoretical_section' => 'nullable|integer|min:1', // nullable للسماح بالقيمة الافتراضية
+            'load_practical_section' => 'nullable|integer|min:1',
             'subject_type_id' => 'required|integer|exists:subjects_types,id',
             'subject_category_id' => 'required|integer|exists:subjects_categories,id',
             'department_id' => 'required|integer|exists:departments,id',
@@ -66,18 +68,25 @@ class SubjectController extends Controller
 
         // 2. Prepare Data (validatedData جاهزة)
         $data = $validatedData;
-
+        if (!isset($validatedData['load_theoretical_section']) || is_null($validatedData['load_theoretical_section'])) {
+            // القيمة الافتراضية من قاعدة البيانات ستُستخدم إذا كان الحقل nullable
+            // أو يمكنك تعيينها هنا صراحة إذا أردت:
+            $dataToCreate['load_theoretical_section'] = 50;
+        }
+        if (!isset($validatedData['load_practical_section']) || is_null($validatedData['load_practical_section'])) {
+            $dataToCreate['load_practical_section'] = 25;
+        }
         // 3. Add to Database
         try {
             Subject::create($data);
             // 4. Redirect
             return redirect()->route('data-entry.subjects.index') // تأكد من اسم الروت
-                             ->with('success', 'Subject created successfully.');
+                ->with('success', 'Subject created successfully.');
         } catch (Exception $e) {
             Log::error('Subject Creation Failed (Web): ' . $e->getMessage());
             return redirect()->back()
-                             ->with('error', 'Failed to create subject.')
-                             ->withInput();
+                ->with('error', 'Failed to create subject.')
+                ->withInput();
         }
     }
 
@@ -87,13 +96,15 @@ class SubjectController extends Controller
      */
     public function update(Request $request, Subject $subject)
     {
-         // 1. Validation
-         $validatedData = $request->validate([
+        // 1. Validation
+        $validatedData = $request->validate([
             'subject_no' => 'required|string|max:20|unique:subjects,subject_no,' . $subject->id,
             'subject_name' => 'required|string|max:255',
             'subject_load' => 'required|integer|min:0',
             'theoretical_hours' => 'required|integer|min:0',
             'practical_hours' => 'required|integer|min:0',
+            'load_theoretical_section' => 'nullable|integer|min:1',
+            'load_practical_section' => 'nullable|integer|min:1',
             'subject_type_id' => 'required|integer|exists:subjects_types,id',
             'subject_category_id' => 'required|integer|exists:subjects_categories,id',
             'department_id' => 'required|integer|exists:departments,id',
@@ -101,18 +112,21 @@ class SubjectController extends Controller
 
         // 2. Prepare Data (validatedData جاهزة)
         $data = $validatedData;
-
+         // إذا أرسل المستخدم قيمة فارغة، يجب أن نخزن NULL وليس string فارغ (إذا كان الحقل يقبل NULL)
+         $dataToUpdate['load_theoretical_section'] = $request->filled('load_theoretical_section') ? $request->input('load_theoretical_section') : null;
+         $dataToUpdate['load_practical_section'] = $request->filled('load_practical_section') ? $request->input('load_practical_section') : null;
+         
         // 3. Update Database
         try {
             $subject->update($data);
-             // 4. Redirect
+            // 4. Redirect
             return redirect()->route('data-entry.subjects.index') // تأكد من اسم الروت
-                             ->with('success', 'Subject updated successfully.');
+                ->with('success', 'Subject updated successfully.');
         } catch (Exception $e) {
             Log::error('Subject Update Failed (Web): ' . $e->getMessage());
-             return redirect()->back()
-                              ->with('error', 'Failed to update subject.')
-                              ->withInput();
+            return redirect()->back()
+                ->with('error', 'Failed to update subject.')
+                ->withInput();
         }
     }
 
@@ -123,25 +137,25 @@ class SubjectController extends Controller
     public function destroy(Subject $subject)
     {
         // (اختياري) التحقق من الارتباطات
-         if ($subject->planSubjectEntries()->exists()) {
-             return redirect()->route('data-entry.subjects.index') // تأكد من اسم الروت
-                              ->with('error', 'Cannot delete subject. It is included in academic plans.');
-         }
+        if ($subject->planSubjectEntries()->exists()) {
+            return redirect()->route('data-entry.subjects.index') // تأكد من اسم الروت
+                ->with('error', 'Cannot delete subject. It is included in academic plans.');
+        }
 
         // 1. Delete from Database
         try {
             $subject->delete();
             // 2. Redirect
             return redirect()->route('data-entry.subjects.index') // تأكد من اسم الروت
-                             ->with('success', 'Subject deleted successfully.');
+                ->with('success', 'Subject deleted successfully.');
         } catch (Exception $e) {
             Log::error('Subject Deletion Failed (Web): ' . $e->getMessage());
-             return redirect()->route('data-entry.subjects.index') // تأكد من اسم الروت
-                              ->with('error', 'Failed to delete subject.');
+            return redirect()->route('data-entry.subjects.index') // تأكد من اسم الروت
+                ->with('error', 'Failed to delete subject.');
         }
     }
 
-     /**
+    /**
      * Handle bulk upload (Web).
      * معالجة الرفع بالجملة (معطل مؤقتاً)
      */
@@ -162,24 +176,23 @@ class SubjectController extends Controller
 
             if (!empty($errors)) {
                 // إذا كان هناك أخطاء validation
-                 $errorMessages = [];
-                 foreach ($errors as $rowIndex => $rowErrors) {
-                     $errorMessages[] = "Row " . $rowIndex . ": " . implode(', ', $rowErrors);
-                 }
-                 return redirect()->back()
-                                  ->with('error', "Import completed with errors. {$importedCount} rows imported successfully. Please check the details below.")
-                                  ->with('import_errors', $errorMessages);
+                $errorMessages = [];
+                foreach ($errors as $rowIndex => $rowErrors) {
+                    $errorMessages[] = "Row " . $rowIndex . ": " . implode(', ', $rowErrors);
+                }
+                return redirect()->back()
+                    ->with('error', "Import completed with errors. {$importedCount} rows imported successfully. Please check the details below.")
+                    ->with('import_errors', $errorMessages);
             }
 
             // إذا لم يكن هناك أخطاء
             return redirect()->route('data-entry.subjects.index')
-                             ->with('success', "Subjects imported successfully! ({$importedCount} rows added).");
-
+                ->with('success', "Subjects imported successfully! ({$importedCount} rows added).");
         } catch (Exception $e) {
-             // التعامل مع أخطاء قراءة الملف أو أخطاء فادحة أخرى
-             Log::error('Subject Bulk Upload Failed (General): ' . $e->getMessage());
-             return redirect()->back()
-                              ->with('error', 'An critical error occurred during the upload process. Please check the file or contact support. Error: '.$e->getMessage());
+            // التعامل مع أخطاء قراءة الملف أو أخطاء فادحة أخرى
+            Log::error('Subject Bulk Upload Failed (General): ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'An critical error occurred during the upload process. Please check the file or contact support. Error: ' . $e->getMessage());
         }
     }
 
@@ -202,7 +215,7 @@ class SubjectController extends Controller
 
             // --- الخيار 1: جلب كل المواد (الحالة الحالية) ---
             $subjects = $query->latest('id') // الترتيب بالأحدث
-                             ->get();
+                ->get();
 
             // --- الخيار 2: كود الـ Pagination للـ API ---
             $perPage = $request->query('per_page', 15);
@@ -219,10 +232,14 @@ class SubjectController extends Controller
                     'last_page' => $subjectsPaginated->lastPage(),
                 ]
             ], 200);
+            */
+            // --- نهاية كود الـ Pagination المعطل ---
 
+
+            return response()->json(['success' => true, 'data' => $subjects], 200);
         } catch (Exception $e) {
             Log::error('API Error fetching subjects: ' . $e->getMessage());
-             return response()->json(['success' => false, 'message' => 'Server Error'], 500);
+            return response()->json(['success' => false, 'message' => 'Server Error'], 500);
         }
     }
 
@@ -249,12 +266,11 @@ class SubjectController extends Controller
             $subject = Subject::create($validatedData);
             $subject->load(['subjectType:id,subject_type_name', 'subjectCategory:id,subject_category_name', 'department:id,department_name']);
             // 3. Return Success JSON Response
-             return response()->json([
+            return response()->json([
                 'success' => true,
                 'data' => $subject,
                 'message' => 'Subject created successfully.'
             ], 201);
-
         } catch (Exception $e) {
             Log::error('API Subject Creation Failed: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to create subject.'], 500);
@@ -267,8 +283,8 @@ class SubjectController extends Controller
      */
     public function apiShow(Subject $subject)
     {
-         $subject->load(['subjectType:id,subject_type_name', 'subjectCategory:id,subject_category_name', 'department:id,department_name']);
-         return response()->json(['success' => true, 'data' => $subject], 200);
+        $subject->load(['subjectType:id,subject_type_name', 'subjectCategory:id,subject_category_name', 'department:id,department_name']);
+        return response()->json(['success' => true, 'data' => $subject], 200);
     }
 
     /**
@@ -277,10 +293,13 @@ class SubjectController extends Controller
      */
     public function apiUpdate(Request $request, Subject $subject)
     {
-         // 1. Validation
-         $validatedData = $request->validate([
+        // 1. Validation
+        $validatedData = $request->validate([
             'subject_no' => [
-                'sometimes', 'required', 'string', 'max:20',
+                'sometimes',
+                'required',
+                'string',
+                'max:20',
                 'unique:subjects,subject_no,' . $subject->id,
             ],
             'subject_name' => 'sometimes|required|string|max:255',
@@ -296,16 +315,15 @@ class SubjectController extends Controller
         try {
             $subject->update($validatedData);
             $subject->load(['subjectType:id,subject_type_name', 'subjectCategory:id,subject_category_name', 'department:id,department_name']);
-             // 3. Return Success JSON Response
-             return response()->json([
+            // 3. Return Success JSON Response
+            return response()->json([
                 'success' => true,
                 'data' => $subject,
                 'message' => 'Subject updated successfully.'
             ], 200);
-
         } catch (Exception $e) {
-             Log::error('API Subject Update Failed: ' . $e->getMessage());
-             return response()->json(['success' => false, 'message' => 'Failed to update subject.'], 500);
+            Log::error('API Subject Update Failed: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to update subject.'], 500);
         }
     }
 
@@ -316,12 +334,12 @@ class SubjectController extends Controller
     public function apiDestroy(Subject $subject)
     {
         // (اختياري) التحقق من الارتباطات
-         if ($subject->planSubjectEntries()->exists()) {
-             return response()->json([
+        if ($subject->planSubjectEntries()->exists()) {
+            return response()->json([
                 'success' => false,
                 'message' => 'Cannot delete subject. It is included in academic plans.'
             ], 409);
-         }
+        }
 
         // 1. Delete from Database
         try {
@@ -331,10 +349,55 @@ class SubjectController extends Controller
                 'success' => true,
                 'message' => 'Subject deleted successfully.'
             ], 200);
-
         } catch (Exception $e) {
-             Log::error('API Subject Deletion Failed: ' . $e->getMessage());
-             return response()->json(['success' => false, 'message' => 'Failed to delete subject.'], 500);
+            Log::error('API Subject Deletion Failed: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to delete subject.'], 500);
         }
+    }
+
+    /**
+     * Handle bulk upload (API).
+     */
+    public function apiBulkUpload(Request $request)
+    {
+        Log::info('Bulk upload endpoint hit (API) - Feature disabled.');
+        return response()->json([
+            'success' => false,
+            'message' => 'Bulk upload feature is not yet available for the API.'
+        ], 501); // 501 Not Implemented
+
+        /* // كود تفعيلها لاحقاً
+        $validator = Validator::make($request->all(), [
+            'subject_file' => 'required|file|mimes:xlsx,xls,csv|max:5120',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        }
+
+        try {
+            Excel::import(new SubjectsImport, $request->file('subject_file'));
+            return response()->json(['success' => true, 'message' => 'Subjects imported successfully!'], 200);
+        } catch (ValidationException $e) {
+            $failures = $e->failures();
+            $errorDetails = [];
+             foreach ($failures as $failure) {
+                 $errorDetails[] = [
+                     'row' => $failure->row(),
+                     'attribute' => $failure->attribute(),
+                     'errors' => $failure->errors(),
+                     'value' => $failure->values()[$failure->attribute()] ?? null
+                 ];
+             }
+             Log::warning('API Subject Bulk Upload Validation Failures: ', $failures);
+             return response()->json([
+                'success' => false,
+                'message' => 'Import failed due to validation errors.',
+                'errors' => $errorDetails
+            ], 422);
+        } catch (Exception $e) {
+             Log::error('API Subject Bulk Upload Failed (General): ' . $e->getMessage());
+             return response()->json(['success' => false, 'message' => 'An error occurred during the upload process.'], 500);
+        }*/
     }
 }

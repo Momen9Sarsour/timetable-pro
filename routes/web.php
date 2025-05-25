@@ -10,6 +10,7 @@ use App\Http\Controllers\DataEntry\RoleController;
 use App\Http\Controllers\DataEntry\RoomController;
 use App\Http\Controllers\DataEntry\RoomTypeController;
 use App\Http\Controllers\DataEntry\SectionController;
+use App\Http\Controllers\DataEntry\SectionController22;
 use App\Http\Controllers\DataEntry\SubjectCategoryController;
 use App\Http\Controllers\DataEntry\SubjectController;
 use App\Http\Controllers\DataEntry\SubjectTypeController;
@@ -150,42 +151,31 @@ Route::prefix('dashboard')->group(function () {
         // Route::resource('plan-expected-counts', PlanExpectedCountController::class)->except(['create', 'show', 'edit']);
 
         // --- Sections Management ---
-        // // هذه الروابط قد تحتاج لتعديل لتناسب عرض الشعب حسب الخطة أو القسم
-        // Route::get('/sections', [SectionController::class, 'index'])->name('sections.index');
-        // Route::post('/sections', [SectionController::class, 'store'])->name('sections.store');
-        // Route::put('/sections/{section}', [SectionController::class, 'update'])->name('sections.update');
-        // Route::delete('/sections/{section}', [SectionController::class, 'destroy'])->name('sections.destroy');
-        // Route::resource('sections', SectionController::class)->except(['create', 'show', 'edit']);
-        // Route::get('/sections', [SectionController::class, 'index'])->name('sections.index'); // صفحة العرض والفلاتر
-        // Route::get('/sections/manage', [SectionController::class, 'manage'])->name('sections.manage');
-        // // رابط تخزين شعبة جديدة (من المودال في صفحة manage)
-        // Route::post('/sections', [SectionController::class, 'store'])->name('sections.store');
-        // // رابط تحديث شعبة موجودة (من المودال في صفحة manage)
-        // Route::put('/sections/{section}', [SectionController::class, 'update'])->name('sections.update');
-        // // رابط حذف شعبة موجودة (من المودال في صفحة manage)
-        // Route::delete('/sections/{section}', [SectionController::class, 'destroy'])->name('sections.destroy');
-        // Route::get('/sections/manage/', [SectionController::class, 'manage'])->name('sections.manage');
-
         Route::get('/sections', [SectionController::class, 'index'])->name('sections.index');
-        // روت لصفحة التحكم + تشغيل التقسيم إذا لزم الأمر
-        Route::get('/sections/manage', [SectionController::class, 'manage'])->name('sections.manage');
-        // روت لتشغيل التقسيم يدوياً عبر الزر
-        Route::post('/sections/generate', [SectionController::class, 'generateSectionsFromButton'])->name('sections.generateFromButton');
-        // CRUD للشعب
-        Route::post('/sections', [SectionController::class, 'store'])->name('sections.store');
-        Route::put('/sections/{section}', [SectionController::class, 'update'])->name('sections.update');
-        Route::delete('/sections/{section}', [SectionController::class, 'destroy'])->name('sections.destroy');
+        Route::get('/sections/manage', [SectionController::class, 'manageSubjectContext'])->name('sections.manageSubjectContext');
+        Route::post('/sections/generate-for-subject', [SectionController::class, 'generateForSubject'])->name('sections.generateForSubject');
+        Route::post('/sections/store', [SectionController::class, 'store'])->name('sections.store');
+        Route::put('/sections/{section}/update', [SectionController::class, 'update'])->name('sections.update');
+        Route::delete('/sections/{section}/destroy', [SectionController::class, 'destroy'])->name('sections.destroy');
+        // Route::get('/sections', [SectionController::class, 'index'])->name('sections.index');
+        // Route::get('/sections/manage', [SectionController::class, 'manageSubjectContext'])->name('sections.manageSubjectContext');
+        // Route::post('/sections/generate', [SectionController::class, 'generateForSubject'])->name('sections.generateForSubject');
+        // Route::get('/sections/manage-subject-context', [SectionController::class, 'manageSubjectContext'])->name('sections.manageSubjectContext');
+        // Route::post('/sections/store', [SectionController::class, 'store'])->name('sections.store');
+        // Route::put('/sections/{section}/update', [SectionController::class, 'update'])->name('sections.update');
+        // Route::delete('/sections/{section}/destroy', [SectionController::class, 'destroy'])->name('sections.destroy');
 
 
-        // --- الروابط الجديدة للتحكم بالشعب من سياق ExpectedCount ---
-        // روت لعرض صفحة التحكم التفصيلي (يستقبل ID سجل الأعداد المتوقعة)
-        Route::get('/sections/manage-context/{expectedCount}', [SectionController::class, 'manageSectionsForContext'])->name('sections.manageContext');
+        // ************************************
+        Route::get('/sections/manage-context/{expectedCount}', [SectionController22::class, 'manageSectionsForContext'])->name('sections.manageContext');
         // روت لتشغيل التقسيم الآلي من الزر
-        Route::post('/sections/generate-for-context/{expectedCount}', [SectionController::class, 'generateSectionsForContextButton'])->name('sections.generateForContext');
+        Route::post('/sections/generate-for-context/{expectedCount}', [SectionController22::class, 'generateSectionsForContextButton'])->name('sections.generateForContext');
         // روابط CRUD للشعب داخل هذا السياق (ستُستخدم من المودالات في صفحة manageContext)
-        Route::post('/sections/store-in-context/{expectedCount}', [SectionController::class, 'storeSectionInContext'])->name('sections.storeInContext');
-        Route::put('/sections/update-in-context/{section}', [SectionController::class, 'updateSectionInContext'])->name('sections.updateInContext'); // {section} هنا هو section_id
-        Route::delete('/sections/destroy-in-context/{section}', [SectionController::class, 'destroySectionInContext'])->name('sections.destroyInContext');
+        Route::post('/sections/store-in-context22/{expectedCount}', [SectionController22::class, 'storeSectionInContext'])->name('sections.storeInContext');
+        Route::put('/sections/update-in-context/{section}', [SectionController22::class, 'updateSectionInContext'])->name('sections.updateInContext'); // {section} هنا هو section_id
+        Route::delete('/sections/destroy-in-context/{section}', [SectionController22::class, 'destroySectionInContext'])->name('sections.destroyInContext');
+
+
 
         // --- Instructor Subject Assignments ---
         // Route::get('/instructor-subject', [InstructorSubjectController::class, 'index'])->name('instructor-subject.index'); // لعرض الواجهة

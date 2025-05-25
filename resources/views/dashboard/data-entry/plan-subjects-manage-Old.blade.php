@@ -36,6 +36,9 @@
             $semestersInPlan = $planSubjectsGrouped->map(fn($level) => is_iterable($level) ? $level->keys()->max() : 0)->max() ?: 1;
             $maxLevelToDisplay = max(4, $levelsInPlan);
             $maxSemesterToDisplay = max(2, $semestersInPlan);
+            // ddd
+        #fff
+        /*sscs*/
         @endphp
 
         <div class="accordion" id="planLevelsAccordion">
