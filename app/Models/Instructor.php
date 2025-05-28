@@ -64,6 +64,11 @@ class Instructor extends Model
             ->withTimestamps(); // إذا أضفت timestamps للجدول الوسيط
     }
 
+    public function sections()
+    {
+        return $this->belongsToMany(Section::class, 'instructor_section');
+    }
+
     /**
      * Get the subjects that the instructor can teach.
      * علاقة: المدرس يمكنه تدريس عدة مواد (Many To Many) - تحتاج لجدول ربط instructor_subject

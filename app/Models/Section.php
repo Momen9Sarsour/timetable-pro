@@ -29,7 +29,7 @@ class Section extends Model
         return $this->belongsTo(PlanSubject::class, 'plan_subject_id', 'id');
     }
 
-     /**
+    /**
      * Get the schedule entries (lectures) for this section.
      * علاقة: الشعبة لديها عدة محاضرات في الجدول النهائي (One To Many)
      */
@@ -38,16 +38,21 @@ class Section extends Model
         return $this->hasMany(GeneratedSchedule::class, 'section_id', 'id');
     }
 
-     // يمكنك إضافة علاقات للوصول السريع للمادة والخطة من هنا
-     public function subject()
-     {
-         // للوصول للمادة من خلال علاقة planSubject
-         return $this->planSubject->subject(); // قد تحتاج لتحسين الأداء Eager Loading
-     }
+    // يمكنك إضافة علاقات للوصول السريع للمادة والخطة من هنا
+    public function subject()
+    {
+        // للوصول للمادة من خلال علاقة planSubject
+        return $this->planSubject->subject(); // قد تحتاج لتحسين الأداء Eager Loading
+    }
 
-     public function plan()
-     {
-          // للوصول للخطة من خلال علاقة planSubject
-         return $this->planSubject->plan();
-     }
+    public function instructors()
+    {
+        return $this->belongsToMany(Instructor::class, 'instructor_section');
+    }
+
+    public function plan()
+    {
+        // للوصول للخطة من خلال علاقة planSubject
+        return $this->planSubject->plan();
+    }
 }
