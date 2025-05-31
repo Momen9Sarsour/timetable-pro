@@ -36,7 +36,7 @@
                                 <td>{{ optional($instructor->department)->department_name ?? 'N/A' }}</td>
                                 <td>
                                     {{-- عرض عدد المواد المعينة --}}
-                                    <span class="badge bg-info">{{ $instructor->subjects_count }}</span>
+                                    <span class="badge bg-info">{{ $instructor->sections_count }}</span>
                                     {{-- يمكنك إضافة tooltip لعرض أسماء المواد إذا كان العدد قليلاً --}}
                                 </td>
                                 <td>

@@ -24,7 +24,7 @@ class InstructorSubjectController extends Controller
         try {
             // جلب المدرسين مع القسم وعدد المواد المعينة (لتجنب تحميل كل المواد)
             $instructors = Instructor::with(['user:id,name', 'department:id,department_name'])
-                ->withCount('subjects') // إضافة عمود subjects_count
+                ->withCount('sections') // إضافة عمود subjects_count
                 ->latest()
                 ->paginate(10); // Pagination للصفحة الرئيسية
 

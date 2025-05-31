@@ -4,14 +4,19 @@ namespace App\Http\Controllers\DataEntry;
 
 use App\Http\Controllers\Controller;
 use App\Models\Timeslot;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Validator; // لاستخدام Validator يدوياً
 use Exception;
+use Illuminate\Support\Facades\DB;
 
 class TimeslotController extends Controller
 {
+    // أيام الأسبوع المستخدمة في النظام
+    const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
     // =============================================
     //            Web Controller Methods
     // =============================================
@@ -22,11 +27,10 @@ class TimeslotController extends Controller
     public function index()
     {
         try {
-            // جلب الفترات مرتبة باليوم ثم الوقت + حساب عدد المحاضرات المرتبطة بكفاءة
-            $timeslots = Timeslot::withCount('scheduleEntries') // يحسب العلاقة ويضيف عمود schedule_entries_count
-                ->orderBy('day') // يمكنك تخصيص الترتيب هنا إذا أردت ترتيباً محدداً للأيام
+            $timeslots = Timeslot::withCount('scheduleEntries')
+                ->orderByRaw("FIELD(day, '" . implode("','", self::DAYS_OF_WEEK) . "')")
                 ->orderBy('start_time')
-                ->paginate(20); // زيادة العدد في الصفحة للفترات الزمنية
+                ->paginate(30); // عرض عدد أكبر للفترات
 
             return view('dashboard.data-entry.timeslots', compact('timeslots'));
         } catch (Exception $e) {
@@ -36,43 +40,106 @@ class TimeslotController extends Controller
     }
 
     /**
+     * Generate standard weekly timeslots based on user input.
+     */
+    public function generateStandard(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'working_days' => 'required|array|min:1',
+            'working_days.*' => ['required', Rule::in(self::DAYS_OF_WEEK)],
+            'overall_start_time' => 'required|date_format:H:i',
+            'overall_end_time' => 'required|date_format:H:i|after:overall_start_time',
+            'lecture_duration' => 'required|integer|min:15', // أقل مدة محاضرة 15 دقيقة
+            'break_duration' => 'required|integer|min:0',   // الاستراحة يمكن أن تكون 0
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->route('data-entry.timeslots.index')
+                ->withErrors($validator, 'generateStandardModal') // error bag مخصص
+                ->withInput()
+                ->with('open_generate_modal', true); // لإعادة فتح المودال
+        }
+
+        try {
+            DB::transaction(function () use ($request) { // استخدام transaction لضمان سلامة البيانات
+                // 1. حذف كل الفترات القديمة
+                // Timeslot::truncate(); // يحذف كل السجلات ويُعيد الـ auto-increment (كن حذراً)
+                Timeslot::query()->delete(); // إذا كنت لا تريد إعادة الـ auto-increment
+                Log::info('Old timeslots deleted for standard generation.');
+
+                // 2. إنشاء الفترات الجديدة
+                $newTimeslots = [];
+                $workingDays = $request->input('working_days');
+                $startTime = Carbon::createFromTimeString($request->input('overall_start_time'));
+                $endTime = Carbon::createFromTimeString($request->input('overall_end_time'));
+                $lectureDurationMinutes = (int)$request->input('lecture_duration');
+                $breakDurationMinutes = (int)$request->input('break_duration');
+
+                foreach ($workingDays as $day) {
+                    $currentTime = $startTime->copy();
+                    while ($currentTime->copy()->addMinutes($lectureDurationMinutes)->lte($endTime)) {
+                        $slotEndTime = $currentTime->copy()->addMinutes($lectureDurationMinutes);
+                        $newTimeslots[] = [
+                            'day' => $day,
+                            'start_time' => $currentTime->format('H:i:s'),
+                            'end_time' => $slotEndTime->format('H:i:s'),
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                        $currentTime = $slotEndTime->copy()->addMinutes($breakDurationMinutes);
+                    }
+                }
+
+                if (!empty($newTimeslots)) {
+                    Timeslot::insert($newTimeslots); // إدخال جماعي
+                    Log::info(count($newTimeslots) . ' new standard timeslots generated.');
+                }
+            });
+
+            return redirect()->route('data-entry.timeslots.index')
+                ->with('success', 'Standard weekly timeslots generated successfully.');
+        } catch (Exception $e) {
+            Log::error('Failed to generate standard timeslots: ' . $e->getMessage());
+            return redirect()->route('data-entry.timeslots.index')
+                ->with('error', 'Failed to generate timeslots: ' . $e->getMessage());
+        }
+    }
+
+
+    /**
      * Store a newly created timeslot in storage.
      */
     public function store(Request $request)
     {
-        // 1. Validation (مع التحقق من الترتيب والتفرد)
+        $errorBagName = 'addTimeslotModal';
         $validator = Validator::make($request->all(), [
-            'day' => ['required', Rule::in(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'])],
-            'start_time' => 'required|date_format:H:i', // استخدام H:i لتنسيق 24 ساعة
-            'end_time' => 'required|date_format:H:i|after:start_time', // end_time يجب أن يكون بعد start_time
+            'day' => ['required', Rule::in(self::DAYS_OF_WEEK)],
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
         ]);
 
-        // 2. التحقق من التفرد يدوياً (لأن unique rule في validate لا تكفي لـ 3 أعمدة معاً بسهولة)
+        // التحقق من التفرد والتداخل
         $validator->after(function ($validator) use ($request) {
-            $exists = Timeslot::where('day', $request->input('day'))
-                ->where('start_time', $request->input('start_time'))
-                ->where('end_time', $request->input('end_time'))
-                ->exists();
-            if ($exists) {
-                // إضافة خطأ مخصص إذا كانت الفترة موجودة بالفعل
-                $validator->errors()->add('time_unique', 'This exact timeslot (day, start, end) already exists.');
+            if (!$validator->errors()->hasAny()) {
+                $this->validateTimeslotUniquenessAndOverlap(
+                    $validator,
+                    $request->input('day'),
+                    $request->input('start_time'),
+                    $request->input('end_time')
+                );
             }
-            // التحقق من عدم تداخل الأوقات (منطق معقد، يمكن إضافته لاحقاً إذا لزم الأمر)
         });
 
-        // إذا فشل التحقق، ارجع مع الأخطاء
         if ($validator->fails()) {
             return redirect()->back()
-                ->withErrors($validator, 'store') // استخدام error bag مميز
-                ->withInput();
+                ->withErrors($validator, $errorBagName)
+                ->withInput()
+                ->with('open_modal_on_error', $errorBagName)
+                ->with('error', 'This timeslot overlaps with an existing timeslot on the same day.');
         }
 
-        // 3. Prepare Data
-        $data = $validator->validated(); // الحصول على البيانات المتحقق منها
-
-        // 4. Add to Database
         try {
-            Timeslot::create($data);
+            Timeslot::create($validator->validated());
             return redirect()->route('data-entry.timeslots.index')
                 ->with('success', 'Timeslot created successfully.');
         } catch (Exception $e) {
@@ -86,46 +153,90 @@ class TimeslotController extends Controller
     /**
      * Update the specified timeslot in storage.
      */
-
     public function update(Request $request, Timeslot $timeslot)
-{
-    // 1. Validation (مبسط ومباشر)
-    // استخدام error bag للتحديث
-    $validatedData = $request->validateWithBag('update_'.$timeslot->id, [
-        'day' => ['required', Rule::in(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'])],
-        // تأكد أن الحقل input type="time" يرسل التنسيق H:i
-        'start_time' => 'required|date_format:H:i',
-        'end_time' => 'required|date_format:H:i|after:start_time',
-         // قاعدة تحقق مخصصة للتفرد (يمكن إضافتها هنا أو في Form Request)
-         'start_time' => [ // يمكن وضعها هنا أو بشكل منفصل
-             Rule::unique('timeslots')->where(function ($query) use ($request, $timeslot) {
-                 return $query->where('day', $request->input('day'))
-                              ->where('end_time', $request->input('end_time'))
-                              ->where('id', '!=', $timeslot->id); // تجاهل الصف الحالي
-             })->ignore($timeslot->id) // طريقة أخرى لتجاهل الصف الحالي (قد لا تكون ضرورية مع where id !=)
-         ],
-    ], [
-         // رسائل مخصصة
-         'end_time.after' => 'End time must be after start time.',
-         'start_time.unique' => 'This exact timeslot (day, start, end) already exists.', // رسالة للتفرد
-    ]);
+    {
+        $errorBagName = 'editTimeslotModal_' . $timeslot->id;
+        $validator = Validator::make($request->all(), [
+            'day' => ['required', Rule::in(self::DAYS_OF_WEEK)],
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
+        ]);
 
-    // 2. Prepare Data (validatedData جاهزة)
-    $data = $validatedData;
+        // التحقق من التفرد والتداخل (مع تجاهل الفترة الحالية)
+        $validator->after(function ($validator) use ($request, $timeslot) {
+            if (!$validator->errors()->hasAny()) {
+                $this->validateTimeslotUniquenessAndOverlap(
+                    $validator,
+                    $request->input('day'),
+                    $request->input('start_time'),
+                    $request->input('end_time'),
+                    $timeslot->id // ID الفترة الحالية لاستثنائها
+                );
+            }
+        });
 
-    // 3. Update Database
-    try {
-        $timeslot->update($data);
-        return redirect()->route('data-entry.timeslots.index')
-            ->with('success', 'Timeslot updated successfully.');
-    } catch (Exception $e) {
-        Log::error('Timeslot Update Failed: ' . $e->getMessage());
-        return redirect()->back()
-            // إرجاع الأخطاء للـ error bag الصحيح
-            ->withErrors(['update_error' => 'Failed to update timeslot.'], 'update_'.$timeslot->id)
-            ->withInput();
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator, $errorBagName)->withInput()
+                ->with('open_modal_on_error', $errorBagName)
+                ->with('error_modal_id', $timeslot->id)
+                ->with('error', 'This timeslot overlaps with an existing timeslot on the same day.');
+        }
+        try {
+            $timeslot->update($validator->validated());
+            return redirect()->route('data-entry.timeslots.index')->with('success', 'Timeslot updated successfully.');
+        } catch (Exception $e) {
+            Log::error('Timeslot Update Failed: ' . $e->getMessage());
+            return redirect()->back()
+                // إرجاع الأخطاء للـ error bag الصحيح
+                ->withErrors(['update_error' => 'Failed to update timeslot.'], 'update_' . $timeslot->id)
+                ->withInput();
+        }
     }
-}
+
+    /**
+     * Helper function to validate timeslot uniqueness and overlap.
+     * دالة مساعدة للتحقق من تفرد الفترة وعدم تداخلها
+     */
+    private function validateTimeslotUniquenessAndOverlap($validator, $day, $startTime, $endTime, $excludeId = null)
+    {
+        $startTimeCarbon = Carbon::parse($startTime);
+        $endTimeCarbon = Carbon::parse($endTime);
+
+        // 1. التحقق من التفرد (نفس الفترة بالضبط)
+        $query = Timeslot::where('day', $day)
+            ->where('start_time', $startTimeCarbon->format('H:i:s')) // قارن بالتنسيق الكامل
+            ->where('end_time', $endTimeCarbon->format('H:i:s'));
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+        if ($query->exists()) {
+            $validator->errors()->add('time_unique', 'This exact timeslot (day, start, end) already exists.');
+            return; // لا داعي للتحقق من التداخل إذا كانت متطابقة
+        }
+
+        // 2. التحقق من التداخل
+        // فترة جديدة: [S1, E1]
+        // فترة موجودة: [S2, E2]
+        // يحدث تداخل إذا: (S1 < E2) AND (E1 > S2)
+        $overlapping = Timeslot::where('day', $day)
+            ->where(function ($q) use ($startTimeCarbon, $endTimeCarbon) {
+                $q->where(function ($subQ) use ($startTimeCarbon, $endTimeCarbon) { // Period 1 overlaps Period 2
+                    $subQ->where('start_time', '<', $endTimeCarbon->format('H:i:s'))
+                        ->where('end_time', '>', $startTimeCarbon->format('H:i:s'));
+                });
+                // يمكنك إضافة شروط أخرى إذا أردت أن تكون الفترات متلاصقة مسموحة أو ممنوعة
+                // ->orWhere('start_time', '=', $endTimeCarbon->format('H:i:s')) // متلاصقة في النهاية
+                // ->orWhere('end_time', '=', $startTimeCarbon->format('H:i:s')); // متلاصقة في البداية
+            });
+
+        if ($excludeId) {
+            $overlapping->where('id', '!=', $excludeId);
+        }
+
+        if ($overlapping->exists()) {
+            $validator->errors()->add('time_overlap', 'This timeslot overlaps with an existing timeslot on the same day.');
+        }
+    }
 
     /**
      * Remove the specified timeslot from storage.
@@ -197,43 +308,33 @@ class TimeslotController extends Controller
     /**
      * Store a newly created timeslot from API request.
      */
+
     public function apiStore(Request $request)
     {
-        // 1. Validation (باستخدام Validator يدوي للتحقق المخصص)
         $validator = Validator::make($request->all(), [
-            'day' => ['required', Rule::in(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'])],
-            'start_time' => 'required|date_format:H:i',
+            'day' => ['required', Rule::in(self::DAYS_OF_WEEK)],
+            'start_time' => 'required|date_format:H:i', // H:i for 24-hour format
             'end_time' => 'required|date_format:H:i|after:start_time',
         ]);
 
-        // التحقق من التفرد يدوياً
         $validator->after(function ($validator) use ($request) {
-            if (!$validator->errors()->hasAny(['day', 'start_time', 'end_time'])) { // تحقق فقط إذا كانت الحقول الأساسية صحيحة
-                $exists = Timeslot::where('day', $request->input('day'))
-                    ->where('start_time', $request->input('start_time'))
-                    ->where('end_time', $request->input('end_time'))
-                    ->exists();
-                if ($exists) {
-                    $validator->errors()->add('time_unique', 'This exact timeslot already exists.');
-                }
+            if (!$validator->errors()->hasAny()) {
+                $this->validateTimeslotUniquenessAndOverlap(
+                    $validator,
+                    $request->input('day'),
+                    $request->input('start_time'),
+                    $request->input('end_time')
+                );
             }
         });
 
-        // إذا فشل التحقق، أرجع الأخطاء كـ JSON 422
         if ($validator->fails()) {
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        // 2. Add to Database
         try {
-            // استخدام البيانات التي تم التحقق منها فقط
             $timeslot = Timeslot::create($validator->validated());
-            // 3. Return Success JSON Response
-            return response()->json([
-                'success' => true,
-                'data' => $timeslot,
-                'message' => 'Timeslot created successfully.'
-            ], 201); // 201 Created
+            return response()->json(['success' => true, 'data' => $timeslot, 'message' => 'Timeslot created successfully.'], 201);
         } catch (Exception $e) {
             Log::error('API Timeslot Creation Failed: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to create timeslot.'], 500);
@@ -241,9 +342,68 @@ class TimeslotController extends Controller
     }
 
     /**
+     * Generate standard weekly timeslots from API request.
+     */
+    public function apiGenerateStandard(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'working_days' => 'required|array|min:1',
+            'working_days.*' => ['required', Rule::in(self::DAYS_OF_WEEK)],
+            'overall_start_time' => 'required|date_format:H:i',
+            'overall_end_time' => 'required|date_format:H:i|after:overall_start_time',
+            'lecture_duration' => 'required|integer|min:15',
+            'break_duration' => 'required|integer|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        }
+
+        try {
+            DB::transaction(function () use ($request) {
+                Timeslot::query()->delete();
+                // Timeslot::truncate(); // أو
+                Log::info('Old timeslots deleted for standard API generation.');
+
+                $newTimeslots = [];
+                $workingDays = $request->input('working_days');
+                $startTime = Carbon::createFromTimeString($request->input('overall_start_time'));
+                $endTime = Carbon::createFromTimeString($request->input('overall_end_time'));
+                $lectureDurationMinutes = (int)$request->input('lecture_duration');
+                $breakDurationMinutes = (int)$request->input('break_duration');
+
+                foreach ($workingDays as $day) {
+                    $currentTime = $startTime->copy();
+                    while ($currentTime->copy()->addMinutes($lectureDurationMinutes)->lte($endTime)) {
+                        $slotEndTime = $currentTime->copy()->addMinutes($lectureDurationMinutes);
+                        $newTimeslots[] = [
+                            'day' => $day,
+                            'start_time' => $currentTime->format('H:i:s'),
+                            'end_time' => $slotEndTime->format('H:i:s'),
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                        $currentTime = $slotEndTime->copy()->addMinutes($breakDurationMinutes);
+                    }
+                }
+                if (!empty($newTimeslots)) {
+                    Timeslot::insert($newTimeslots);
+                }
+            });
+
+            $generatedCount = Timeslot::count(); // عدد الفترات التي تم إنشاؤها
+            return response()->json(['success' => true, 'message' => "{$generatedCount} standard timeslots generated successfully."], 200);
+        } catch (Exception $e) {
+            Log::error('API Failed to generate standard timeslots: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to generate timeslots: ' . $e->getMessage()], 500);
+        }
+    }
+
+
+    /**
      * Display the specified timeslot (API).
      */
-    public function apiShow(Timeslot $timeslot) // استخدام Route Model Binding
+    public function apiShow(Timeslot $timeslot)
     {
         // يمكنك إضافة ->loadCount('scheduleEntries') هنا إذا أردت عرض عدد المحاضرات
         // $timeslot->loadCount('scheduleEntries');
@@ -255,46 +415,35 @@ class TimeslotController extends Controller
      */
     public function apiUpdate(Request $request, Timeslot $timeslot)
     {
-        // 1. Validation (استخدام sometimes والتحقق اليدوي)
         $validator = Validator::make($request->all(), [
-            'day' => ['sometimes', 'required', Rule::in(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'])],
+            'day' => ['sometimes', 'required', Rule::in(self::DAYS_OF_WEEK)],
             'start_time' => 'sometimes|required|date_format:H:i',
             'end_time' => 'sometimes|required|date_format:H:i|after:start_time',
         ]);
 
-        // التحقق من التفرد يدوياً (مع تجاهل الصف الحالي)
         $validator->after(function ($validator) use ($request, $timeslot) {
-            if (!$validator->errors()->hasAny(['day', 'start_time', 'end_time'])) {
+            if (!$validator->errors()->hasAny()) {
                 // جلب القيم للتأكد (إذا لم يتم إرسالها، استخدم القيمة الحالية)
                 $day = $request->input('day', $timeslot->day);
                 $startTime = $request->input('start_time', $timeslot->start_time);
                 $endTime = $request->input('end_time', $timeslot->end_time);
 
-                $exists = Timeslot::where('day', $day)
-                    ->where('start_time', $startTime)
-                    ->where('end_time', $endTime)
-                    ->where('id', '!=', $timeslot->id) // استثناء الـ ID الحالي
-                    ->exists();
-                if ($exists) {
-                    $validator->errors()->add('time_unique', 'This exact timeslot already exists.');
-                }
+                $this->validateTimeslotUniquenessAndOverlap(
+                    $validator,
+                    $day,
+                    $startTime,
+                    $endTime,
+                    $timeslot->id
+                );
             }
         });
 
         if ($validator->fails()) {
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
-
-        // 2. Update Database
         try {
-            // استخدام البيانات التي تم التحقق منها فقط للتحديث
-            $timeslot->update($validator->validated());
-            // 3. Return Success JSON Response
-            return response()->json([
-                'success' => true,
-                'data' => $timeslot, // إرجاع الفترة المحدثة
-                'message' => 'Timeslot updated successfully.'
-            ], 200);
+            $timeslot->update($validator->validated()); // استخدام البيانات التي تم التحقق منها فقط
+            return response()->json(['success' => true, 'data' => $timeslot, 'message' => 'Timeslot updated successfully.'], 200);
         } catch (Exception $e) {
             Log::error('API Timeslot Update Failed: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to update timeslot.'], 500);
@@ -302,30 +451,19 @@ class TimeslotController extends Controller
     }
 
     /**
-     * Remove the specified timeslot from API request.
-     * حذف فترة زمنية محددة قادمة من طلب API
+     * Remove the specified timeslot (API).
      */
     public function apiDestroy(Timeslot $timeslot)
     {
-        // التحقق من وجود جداول مرتبطة
+        // ... (نفس كود الحذف من الويب، ولكن يرجع JSON) ...
         if ($timeslot->scheduleEntries()->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cannot delete timeslot. It is used in schedules.'
-            ], 409); // 409 Conflict
+            return response()->json(['success' => false, 'message' => 'Cannot delete: used in schedules.'], 409);
         }
-
-        // 1. Delete from Database
         try {
             $timeslot->delete();
-            // 2. Return Success JSON Response
-            return response()->json([
-                'success' => true,
-                'message' => 'Timeslot deleted successfully.'
-            ], 200);
+            return response()->json(['success' => true, 'message' => 'Timeslot deleted.'], 200);
         } catch (Exception $e) {
-            Log::error('API Timeslot Deletion Failed: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Failed to delete timeslot.'], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to delete.'], 500);
         }
     }
 }

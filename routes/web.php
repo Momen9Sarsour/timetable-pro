@@ -135,14 +135,6 @@ Route::prefix('dashboard')->group(function () {
         Route::delete('/plans/{plan}/remove-subject/{planSubject}', [PlanController::class, 'removeSubject'])->name('plans.removeSubject');
         // Route::resource('plans', PlanController::class)->except(['create', 'show', 'edit']);
 
-        // Timeslots Management Page
-        // Route::get('/timeslots', [DataEntryController::class, 'timeslots'])->name('timeslots');
-        Route::get('/timeslots', [TimeslotController::class, 'index'])->name('timeslots.index');
-        Route::post('/timeslots', [TimeslotController::class, 'store'])->name('timeslots.store');
-        Route::put('/timeslots/{timeslot}', [TimeslotController::class, 'update'])->name('timeslots.update'); // لاحظ {timeslot}
-        Route::delete('/timeslots/{timeslot}', [TimeslotController::class, 'destroy'])->name('timeslots.destroy'); // لاحظ {timeslot}
-        // Route::resource('timeslots', TimeslotController::class)->except(['create', 'show', 'edit']);
-
         // --- Plan Expected Counts Management ---
         Route::get('/plan-expected-counts', [PlanExpectedCountController::class, 'index'])->name('plan-expected-counts.index');
         Route::post('/plan-expected-counts', [PlanExpectedCountController::class, 'store'])->name('plan-expected-counts.store');
@@ -165,7 +157,6 @@ Route::prefix('dashboard')->group(function () {
         // Route::put('/sections/{section}/update', [SectionController::class, 'update'])->name('sections.update');
         // Route::delete('/sections/{section}/destroy', [SectionController::class, 'destroy'])->name('sections.destroy');
 
-
         // ************************************
         Route::get('/sections/manage-context/{expectedCount}', [SectionController22::class, 'manageSectionsForContext'])->name('sections.manageContext');
         // روت لتشغيل التقسيم الآلي من الزر
@@ -175,8 +166,6 @@ Route::prefix('dashboard')->group(function () {
         Route::put('/sections/update-in-context/{section}', [SectionController22::class, 'updateSectionInContext'])->name('sections.updateInContext'); // {section} هنا هو section_id
         Route::delete('/sections/destroy-in-context/{section}', [SectionController22::class, 'destroySectionInContext'])->name('sections.destroyInContext');
 
-
-
         // --- Instructor Subject Assignments ---
         // Route::get('/instructor-subject', [InstructorSubjectController::class, 'index'])->name('instructor-subject.index'); // لعرض الواجهة
         // Route::post('/instructor-subject', [InstructorSubjectController::class, 'syncSubjects'])->name('instructor-subject.sync'); // لمعالجة حفظ الارتباطات
@@ -185,6 +174,15 @@ Route::prefix('dashboard')->group(function () {
         Route::get('/instructor-subject/{instructor}/edit', [InstructorSubjectController::class, 'editAssignments'])->name('instructor-subject.edit');
         // روت لحفظ التغييرات (POST أو PUT)
         Route::post('/instructor-subject/{instructor}/sync', [InstructorSubjectController::class, 'syncAssignments'])->name('instructor-subject.sync');
+
+        // Timeslots Management Page
+        // Route::get('/timeslots', [DataEntryController::class, 'timeslots'])->name('timeslots');
+        Route::get('/timeslots', [TimeslotController::class, 'index'])->name('timeslots.index');
+        Route::post('/timeslots', [TimeslotController::class, 'store'])->name('timeslots.store');
+        Route::post('/timeslots/generate-standard', [TimeslotController::class, 'generateStandard'])->name('timeslots.generateStandard');
+        Route::put('/timeslots/{timeslot}', [TimeslotController::class, 'update'])->name('timeslots.update'); // لاحظ {timeslot}
+        Route::delete('/timeslots/{timeslot}', [TimeslotController::class, 'destroy'])->name('timeslots.destroy'); // لاحظ {timeslot}
+        // Route::resource('timeslots', TimeslotController::class)->except(['create', 'show', 'edit']);
 
         // Basic Settings Page (Types, Categories)
         Route::get('/settings', [DataEntryController::class, 'settings'])->name('settings');

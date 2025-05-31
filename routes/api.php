@@ -124,13 +124,6 @@ Route::prefix('v1')->group(function () {
     Route::post('/plans/{plan}/subjects', [PlanController::class, 'apiAddSubject']); // لإضافة مادة
     Route::delete('/plans/{plan}/subjects/{planSubject}', [PlanController::class, 'apiRemoveSubject']); // لحذف مادة (لاحظ استخدام planSubject ID هنا)
 
-    // --- Timeslots API ---
-    Route::get('/timeslots', [TimeslotController::class, 'apiIndex']);
-    Route::post('/timeslots', [TimeslotController::class, 'apiStore']);
-    Route::get('/timeslots/{timeslot}', [TimeslotController::class, 'apiShow']); // Route Model Binding
-    Route::put('/timeslots/{timeslot}', [TimeslotController::class, 'apiUpdate']);
-    Route::delete('/timeslots/{timeslot}', [TimeslotController::class, 'apiDestroy']);
-
     // --- Plan Expected Counts API ---
     Route::get('/plan-expected-counts', [PlanExpectedCountController::class, 'apiIndex']);
     Route::post('/plan-expected-counts', [PlanExpectedCountController::class, 'apiStore']);
@@ -204,6 +197,14 @@ Route::prefix('v1')->group(function () {
     Route::get('/instructors/sections/available', [InstructorSubjectController::class, 'apiGetAvailableSections']); // جلب كل الشعب المتاحة (مع فلاتر اختيارية)
     // Route::get('/instructors/{instructor}/subjects', [InstructorSubjectController::class, 'apiGetAssignedSubjects']); // جلب المواد المعينة
     // Route::get('/instructors/{instructor}/available-subjects', [InstructorSubjectController::class, 'apiGetAvailableSubjects']); // جلب المواد المتاحة
+
+    // --- Timeslots API ---
+    Route::get('/timeslots', [TimeslotController::class, 'apiIndex']);
+    Route::post('/timeslots', [TimeslotController::class, 'apiStore']);
+    Route::post('/timeslots/generate-standard', [TimeslotController::class, 'apiGenerateStandard']); // *** الرابط الجديد ***
+    Route::get('/timeslots/{timeslot}', [TimeslotController::class, 'apiShow']); // Route Model Binding
+    Route::put('/timeslots/{timeslot}', [TimeslotController::class, 'apiUpdate']);
+    Route::delete('/timeslots/{timeslot}', [TimeslotController::class, 'apiDestroy']);
 
 
     // --- APIs for Settings (لا تضفها الآن) ---
