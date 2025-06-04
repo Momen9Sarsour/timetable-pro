@@ -5,9 +5,15 @@
         <div class="data-entry-container">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="data-entry-header mb-0">Manage Departments</h1>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDepartmentModal">
-                    <i class="fas fa-plus me-1"></i> Add New Department
-                </button>
+                <div class="d-flex">
+                    <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#addDepartmentModal">
+                        <i class="fas fa-plus me-1"></i> Add New Department
+                    </button>
+                    {{-- *** الزر الجديد للرفع بالجملة *** --}}
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#bulkUploadDepartmentsModal">
+                        <i class="fas fa-file-excel me-1"></i> Bulk Upload Departments
+                    </button>
+                </div>
             </div>
 
             {{-- // رسائل النجاح أو الخطأ --}}
@@ -15,14 +21,24 @@
             <div class="alert alert-success">
                 {{ session('success') }}
             </div>
-        @endif
+            @endif
         @if ($errors->any())
             <div class="alert alert-danger">
                  Please check the form below for errors.
-            </div>
-        @endif --}}
+                </div>
+                @endif --}}
             @include('dashboard.data-entry.partials._status_messages')
 
+            @if (session('skipped_details'))
+                <div class="alert alert-warning mt-3">
+                    <h5>Skipped Rows Details:</h5>
+                    <ul class="mb-0">
+                        @foreach (session('skipped_details') as $detail)
+                            <li>{{ $detail }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
             {{-- // جدول لعرض الأقسام --}}
             <div class="table-responsive">

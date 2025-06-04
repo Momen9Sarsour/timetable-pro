@@ -96,3 +96,44 @@
     </div>
 </div>
 @endif
+
+
+{{-- *** مودال الرفع بالأكسل (جديد) *** --}}
+    <div class="modal fade" id="bulkUploadDepartmentsModal" tabindex="-1" aria-labelledby="bulkUploadDepartmentsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bulkUploadDepartmentsModalLabel">Bulk Upload Departments from Excel</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ route('data-entry.departments.bulkUpload') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="department_excel_file" class="form-label">Select Excel File <span class="text-danger">*</span></label>
+                            <input class="form-control @error('department_excel_file', 'bulkUploadDepartments') is-invalid @enderror" type="file" id="department_excel_file" name="department_excel_file" accept=".xlsx, .xls, .csv" required>
+                            @error('department_excel_file', 'bulkUploadDepartments')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="alert alert-info small p-2">
+                            <p class="mb-1"><strong>File Format Instructions:</strong></p>
+                            <ul class="mb-0 ps-3">
+                                <li>The first row should be headers (e.g., ID, department_no, department_name).</li>
+                                <li>The system will use 'department_no' and 'department_name' columns.</li>
+                                <li>If a department_no or department_name from the file already exists in the system, its data will be updated. Otherwise, a new department will be created.</li>
+                                <li>Empty rows will be skipped.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-upload me-1"></i> Upload and Process
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {{-- *** نهاية مودال الرفع *** --}}

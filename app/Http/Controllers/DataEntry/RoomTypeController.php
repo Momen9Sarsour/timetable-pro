@@ -7,7 +7,9 @@ use App\Models\RoomType; // تم استيراده
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Facades\Excel;
 use Exception;
+use Illuminate\Support\Facades\Validator;
 
 class RoomTypeController extends Controller
 {
@@ -113,6 +115,86 @@ class RoomTypeController extends Controller
         }
     }
 
+    /**
+     * Handle bulk upload of room types from Excel file.
+     */
+    public function bulkUpload(Request $request)
+    {
+        $request->validate([
+            'room_type_excel_file' => 'required|file|mimes:xlsx,xls,csv|max:2048',
+        ], [], ['room_type_excel_file' => 'Excel file']);
+
+        try {
+            $rows = Excel::toCollection(collect(), $request->file('room_type_excel_file'))->first();
+
+            if ($rows->isEmpty() || $rows->count() <= 1) {
+                return redirect()->route('data-entry.room-types.index')
+                    ->with('error', 'Uploaded Excel file is empty or has no data rows.');
+            }
+
+            $createdCount = 0;
+            $skippedCount = 0;
+            $skippedDetails = [];
+            $processedNames = collect(); // لتتبع الأسماء التي تمت معالجتها من الملف
+
+            $header = $rows->first()->map(fn($item) => strtolower(str_replace(' ', '_', $item ?? '')));
+            $dataRows = $rows->slice(1);
+
+            foreach ($dataRows as $rowKey => $rowArray) {
+                $row = $header->combine($rowArray->map(fn($val) => trim($val ?? '')));
+                $currentRowNumber = $rowKey + 2;
+
+                $roomTypeName = $row->get('room_type_name', ''); // القيمة من عمود B (أو اسم العمود بعد تحويله لـ snake_case)
+
+                // 1. تجاهل الأسطر الفارغة
+                if (empty($roomTypeName)) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Row {$currentRowNumber}: Skipped because room_type_name is empty.";
+                    continue;
+                }
+
+                // 2. فحص التكرار داخل الملف نفسه
+                if ($processedNames->contains($roomTypeName)) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Row {$currentRowNumber}: Skipped duplicate room_type_name '{$roomTypeName}' from within this file.";
+                    continue;
+                }
+
+                // 3. التحقق من وجود الاسم في قاعدة البيانات (RoomType names should be unique)
+                $existingRoomType = RoomType::where('room_type_name', $roomTypeName)->first();
+
+                if ($existingRoomType) {
+                    // النوع موجود بالفعل، تجاهله (لا نقوم بالتحديث هنا عادةً، فقط إضافة جديد)
+                    $skippedCount++;
+                    $skippedDetails[] = "Row {$currentRowNumber}: Room type '{$roomTypeName}' already exists in the system.";
+                    $processedNames->push($roomTypeName); // اعتبره معالجاً لتجنب إضافته مرة أخرى من نفس الملف
+                    continue;
+                }
+
+                // 4. إنشاء نوع قاعة جديد
+                RoomType::create([
+                    'room_type_name' => $roomTypeName,
+                ]);
+                $createdCount++;
+                $processedNames->push($roomTypeName);
+            }
+
+            $message = "Room Types bulk upload processed. ";
+            if ($createdCount > 0) $message .= "{$createdCount} new room types created. ";
+            if ($skippedCount > 0) $message .= "{$skippedCount} rows skipped. ";
+
+            if (!empty($skippedDetails)) {
+                session()->flash('skipped_details', $skippedDetails);
+            }
+
+            return redirect()->route('data-entry.room-types.index')->with('success', trim($message));
+        } catch (Exception $e) {
+            Log::error('Room Type Bulk Upload Failed: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
+            return redirect()->route('data-entry.room-types.index')
+                ->with('error', 'An error occurred during bulk upload: ' . $e->getMessage());
+        }
+    }
+
     // =============================================
     //             API Controller Methods
     // =============================================
@@ -162,6 +244,94 @@ class RoomTypeController extends Controller
             return response()->json(['success' => true, 'message' => 'Room Type deleted.'], 200);
         } catch (Exception $e) { /* ... */
             return response()->json(['success' => false, 'message' => 'Failed to delete.'], 500);
+        }
+    }
+
+    /**
+     * Handle bulk upload of room types from Excel file via API.
+     */
+    public function apiBulkUpload(Request $request)
+    {
+        // 1. التحقق من الملف المرفوع
+        $validator = Validator::make($request->all(), [
+            'room_type_excel_file' => 'required|file|mimes:xlsx,xls,csv|max:2048',
+        ], [], ['room_type_excel_file' => 'Excel file']);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed.',
+                'errors' => $validator->errors()
+            ], 422); // Unprocessable Entity
+        }
+
+        try {
+            $rows = Excel::toCollection(collect(), $request->file('room_type_excel_file'))->first();
+
+            if ($rows->isEmpty() || $rows->count() <= 1) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The uploaded Excel file is empty or contains no data rows after the header.'
+                ], 400); // Bad Request
+            }
+
+            $createdCount = 0;
+            $skippedCount = 0;
+            $skippedDetails = [];
+            $processedNames = collect();
+
+            $header = $rows->first()->map(fn($item) => strtolower(str_replace(' ', '_', $item ?? '')));
+            $dataRows = $rows->slice(1);
+
+            foreach ($dataRows as $rowKey => $rowArray) {
+                $row = $header->combine($rowArray->map(fn($val) => trim($val ?? '')));
+                $currentRowNumber = $rowKey + 2;
+                $roomTypeName = $row->get('room_type_name', '');
+
+                if (empty($roomTypeName)) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Row {$currentRowNumber}: Skipped because room_type_name is empty.";
+                    continue;
+                }
+                if ($processedNames->contains($roomTypeName)) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Row {$currentRowNumber}: Skipped duplicate room_type_name '{$roomTypeName}' from within this file.";
+                    continue;
+                }
+
+                $existingRoomType = RoomType::where('room_type_name', $roomTypeName)->first();
+                if ($existingRoomType) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Row {$currentRowNumber}: Room type '{$roomTypeName}' already exists in the system.";
+                    $processedNames->push($roomTypeName);
+                    continue;
+                }
+
+                RoomType::create(['room_type_name' => $roomTypeName]);
+                $createdCount++;
+                $processedNames->push($roomTypeName);
+            }
+
+            $summaryMessage = "Room Types bulk upload processed.";
+            $responseData = [
+                'created_count' => $createdCount,
+                'skipped_count' => $skippedCount,
+                'skipped_details' => $skippedDetails,
+            ];
+
+            return response()->json([
+                'success' => true,
+                'message' => $summaryMessage,
+                'data' => $responseData
+            ], 200); // OK
+
+        } catch (Exception $e) {
+            Log::error('API Room Type Bulk Upload Failed: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred during bulk upload.',
+                'error_details' => $e->getMessage() // للمطور
+            ], 500); // Internal Server Error
         }
     }
 }

@@ -52,9 +52,10 @@ Route::prefix('v1')->group(function () {
     // --- Departments API ---
     Route::get('/departments', [DepartmentController::class, 'apiIndex']);
     Route::post('/departments', [DepartmentController::class, 'apiStore']);
-    Route::get('/departments/{department}', [DepartmentController::class, 'apiShow']); // <- تغيير {id} إلى {department}
-    Route::put('/departments/{department}', [DepartmentController::class, 'apiUpdate']); // <- تغيير {id} إلى {department}
-    Route::delete('/departments/{department}', [DepartmentController::class, 'apiDestroy']); // <- تغيير {id} إلى {department}
+    Route::get('/departments/{department}', [DepartmentController::class, 'apiShow']);
+    Route::put('/departments/{department}', [DepartmentController::class, 'apiUpdate']);
+    Route::delete('/departments/{department}', [DepartmentController::class, 'apiDestroy']);
+    Route::post('/departments/bulk-upload', [DepartmentController::class, 'apiBulkUpload']);
 
     // --- Roles API ---
     Route::get('/roles', [RoleController::class, 'apiIndex']);
@@ -63,19 +64,21 @@ Route::prefix('v1')->group(function () {
     Route::put('/roles/{role}', [RoleController::class, 'apiUpdate']);
     Route::delete('/roles/{role}', [RoleController::class, 'apiDestroy']);
 
-    // --- Rooms API ---
-    Route::get('/rooms', [RoomController::class, 'apiIndex']);
-    Route::post('/rooms', [RoomController::class, 'apiStore']);
-    Route::get('/rooms/{room}', [RoomController::class, 'apiShow']);
-    Route::put('/rooms/{room}', [RoomController::class, 'apiUpdate']);
-    Route::delete('/rooms/{room}', [RoomController::class, 'apiDestroy']);
-
     // --- Room Type API ---
     Route::get('/room-types', [RoomTypeController::class, 'apiIndex']);
     Route::post('/room-types', [RoomTypeController::class, 'apiStore']);
     Route::get('/room-types/{roomType}', [RoomTypeController::class, 'apiShow']);
     Route::put('/room-types/{roomType}', [RoomTypeController::class, 'apiUpdate']);
     Route::delete('/room-types/{roomType}', [RoomTypeController::class, 'apiDestroy']);
+    Route::post('/room-types/bulk-upload', [RoomTypeController::class, 'apiBulkUpload']);
+
+    // --- Rooms API ---
+    Route::get('/rooms', [RoomController::class, 'apiIndex']);
+    Route::post('/rooms', [RoomController::class, 'apiStore']);
+    Route::get('/rooms/{room}', [RoomController::class, 'apiShow']);
+    Route::put('/rooms/{room}', [RoomController::class, 'apiUpdate']);
+    Route::delete('/rooms/{room}', [RoomController::class, 'apiDestroy']);
+    Route::post('/rooms/bulk-upload', [RoomController::class, 'apiBulkUpload']);
 
     // --- Instructors API ---
     Route::get('/instructors', [InstructorController::class, 'apiIndex']);

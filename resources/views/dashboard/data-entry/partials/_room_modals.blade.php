@@ -199,3 +199,82 @@
     </div>
 </div>
 @endif
+
+
+{{-- *** مودال الرفع بالأكسل (جديد) ***
+    <div class="modal fade" id="bulkUploadRoomsModal" tabindex="-1" aria-labelledby="bulkUploadRoomsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bulkUploadRoomsModalLabel">Bulk Upload Rooms from Excel</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ route('data-entry.rooms.bulkUpload') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="room_excel_file" class="form-label">Select Excel File <span class="text-danger">*</span></label>
+                            <input class="form-control @error('room_excel_file', 'bulkUploadRooms') is-invalid @enderror" type="file" id="room_excel_file" name="room_excel_file" accept=".xlsx, .xls, .csv" required>
+                            @error('room_excel_file', 'bulkUploadRooms')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="alert alert-info small p-2">
+                            <p class="mb-1"><strong>File Format Instructions:</strong></p>
+                            <ul class="mb-0 ps-3">
+                                <li>The first row should be headers (e.g., room_type_id, room_type_name).</li>
+                                <li>The system will primarily use the 'room_type_name' column.</li>
+                                <li>If a room_type_name from the file already exists, the row will be skipped.</li>
+                                <li>Empty rows will be skipped.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-upload me-1"></i> Upload and Process
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div> --}}
+ {{-- *** مودال الرفع بالأكسل (جديد) *** --}}
+    <div class="modal fade" id="bulkUploadRoomsModal" tabindex="-1" aria-labelledby="bulkUploadRoomsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bulkUploadRoomsModalLabel">Bulk Upload Classrooms from Excel</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ route('data-entry.rooms.bulkUpload') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="room_excel_file" class="form-label">Select Excel File <span class="text-danger">*</span></label>
+                            <input class="form-control @error('room_excel_file', 'bulkUploadRooms') is-invalid @enderror" type="file" id="room_excel_file" name="room_excel_file" accept=".xlsx, .xls, .csv" required>
+                            @error('room_excel_file', 'bulkUploadRooms')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="alert alert-info small p-2">
+                            <p class="mb-1"><strong>File Format Instructions:</strong></p>
+                            <ul class="mb-0 ps-3">
+                                <li>First row should be headers: <code>room_no</code>, <code>room_name</code>, <code>room_size</code>, <code>room_gender</code>, <code>room_branch</code>, <code>room_type_id</code>.</li>
+                                <li>Ensure 'room_type_id' corresponds to an existing ID in Room Types.</li>
+                                <li>'room_gender' should be 'Male', 'Female', or 'Mixed'.</li>
+                                <li>If 'room_no' exists, its data will be updated; otherwise, a new room is created.</li>
+                                <li>Empty rows or rows with missing 'room_no' will be skipped.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-upload me-1"></i> Upload and Process
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>

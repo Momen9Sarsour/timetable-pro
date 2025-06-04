@@ -59,13 +59,7 @@ Route::prefix('dashboard')->group(function () {
         Route::put('/departments/{department}', [DepartmentController::class, 'update'])->name('departments.update');
         Route::delete('/departments/{department}', [DepartmentController::class, 'destroy'])->name('departments.destroy');
         // Route::resource('departments', DepartmentController::class)->except(['create', 'show', 'edit']);
-
-        // Rooms CRUD Routes
-        Route::get('/rooms', [RoomController::class, 'index'])->name('rooms.index');
-        Route::post('/rooms', [RoomController::class, 'store'])->name('rooms.store');
-        Route::put('/rooms/{room}', [RoomController::class, 'update'])->name('rooms.update');
-        Route::delete('/rooms/{room}', [RoomController::class, 'destroy'])->name('rooms.destroy');
-        // Route::resource('rooms', RoomController::class)->except(['create', 'show', 'edit']);
+        Route::post('/departments/bulk-upload', [DepartmentController::class, 'bulkUpload'])->name('departments.bulkUpload');
 
         // Room Type CRUD Routes
         Route::get('/room-types', [RoomTypeController::class, 'index'])->name('room-types.index');
@@ -73,6 +67,15 @@ Route::prefix('dashboard')->group(function () {
         Route::put('/room-types/{roomType}', [RoomTypeController::class, 'update'])->name('room-types.update');
         Route::delete('/room-types/{roomType}', [RoomTypeController::class, 'destroy'])->name('room-types.destroy');
         // Route::resource('room-types', RoomTypeController::class)->except(['create', 'show', 'edit']);
+        Route::post('/room-types/bulk-upload', [RoomTypeController::class, 'bulkUpload'])->name('room-types.bulkUpload');
+
+        // Rooms CRUD Routes
+        Route::get('/rooms', [RoomController::class, 'index'])->name('rooms.index');
+        Route::post('/rooms', [RoomController::class, 'store'])->name('rooms.store');
+        Route::put('/rooms/{room}', [RoomController::class, 'update'])->name('rooms.update');
+        Route::delete('/rooms/{room}', [RoomController::class, 'destroy'])->name('rooms.destroy');
+        // Route::resource('rooms', RoomController::class)->except(['create', 'show', 'edit']);
+        Route::post('/rooms/bulk-upload', [RoomController::class, 'bulkUpload'])->name('rooms.bulkUpload');
 
         // Instructors CRUD Routes
         Route::get('/instructors', [InstructorController::class, 'index'])->name('instructors.index');
