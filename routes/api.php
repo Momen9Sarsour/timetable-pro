@@ -11,6 +11,7 @@ use App\Http\Controllers\DataEntry\InstructorController;
 use App\Http\Controllers\DataEntry\InstructorSubjectController;
 use App\Http\Controllers\DataEntry\PlanController;
 use App\Http\Controllers\DataEntry\PlanExpectedCountController;
+use App\Http\Controllers\DataEntry\PlanSubjectImportController;
 use App\Http\Controllers\DataEntry\RoomTypeController;
 use App\Http\Controllers\DataEntry\SectionController;
 use App\Http\Controllers\DataEntry\SectionController22;
@@ -80,12 +81,21 @@ Route::prefix('v1')->group(function () {
     Route::delete('/rooms/{room}', [RoomController::class, 'apiDestroy']);
     Route::post('/rooms/bulk-upload', [RoomController::class, 'apiBulkUpload']);
 
-    // --- Instructors API ---
-    Route::get('/instructors', [InstructorController::class, 'apiIndex']);
-    Route::post('/instructors', [InstructorController::class, 'apiStore']);
-    Route::get('/instructors/{instructor}', [InstructorController::class, 'apiShow']);
-    Route::put('/instructors/{instructor}', [InstructorController::class, 'apiUpdate']);
-    Route::delete('/instructors/{instructor}', [InstructorController::class, 'apiDestroy']);
+    // --- Subject-Types API ---
+    Route::get('/subject-types', [SubjectTypeController::class, 'apiIndex']);
+    Route::post('/subject-types', [SubjectTypeController::class, 'apiStore']);
+    Route::get('/subject-types/{subjectType}', [SubjectTypeController::class, 'apiShow']); // Route Model Binding
+    Route::put('/subject-types/{subjectType}', [SubjectTypeController::class, 'apiUpdate']);
+    Route::delete('/subject-types/{subjectType}', [SubjectTypeController::class, 'apiDestroy']);
+    Route::post('/subject-types/bulk-upload', [SubjectTypeController::class, 'apiBulkUpload']);
+
+    // --- Subject Category API ---
+    Route::get('/subject-categories', [SubjectCategoryController::class, 'apiIndex']);
+    Route::post('/subject-categories', [SubjectCategoryController::class, 'apiStore']);
+    Route::get('/subject-categories/{subjectCategory}', [SubjectCategoryController::class, 'apiShow']); // Route Model Binding
+    Route::put('/subject-categories/{subjectCategory}', [SubjectCategoryController::class, 'apiUpdate']);
+    Route::delete('/subject-categories/{subjectCategory}', [SubjectCategoryController::class, 'apiDestroy']);
+    Route::post('/subject-categories/bulk-upload', [SubjectCategoryController::class, 'apiBulkUpload']);
 
     // --- Subjects API ---
     Route::get('/subjects', [SubjectController::class, 'apiIndex']);
@@ -94,20 +104,7 @@ Route::prefix('v1')->group(function () {
     Route::put('/subjects/{subject}', [SubjectController::class, 'apiUpdate']);
     Route::delete('/subjects/{subject}', [SubjectController::class, 'apiDestroy']);
     // Route::post('/subjects/bulk-upload', [SubjectController::class, 'apiBulkUpload']); // يمكن إضافة API للرفع بالجملة
-
-    // --- Subject-Types API ---
-    Route::get('/subject-types', [SubjectTypeController::class, 'apiIndex']);
-    Route::post('/subject-types', [SubjectTypeController::class, 'apiStore']);
-    Route::get('/subject-types/{subjectType}', [SubjectTypeController::class, 'apiShow']); // Route Model Binding
-    Route::put('/subject-types/{subjectType}', [SubjectTypeController::class, 'apiUpdate']);
-    Route::delete('/subject-types/{subjectType}', [SubjectTypeController::class, 'apiDestroy']);
-
-    // --- Subject Category API ---
-    Route::get('/subject-categories', [SubjectCategoryController::class, 'apiIndex']);
-    Route::post('/subject-categories', [SubjectCategoryController::class, 'apiStore']);
-    Route::get('/subject-categories/{subjectCategory}', [SubjectCategoryController::class, 'apiShow']); // Route Model Binding
-    Route::put('/subject-categories/{subjectCategory}', [SubjectCategoryController::class, 'apiUpdate']);
-    Route::delete('/subject-categories/{subjectCategory}', [SubjectCategoryController::class, 'apiDestroy']);
+    Route::post('/subjects/bulk-upload', [SubjectController::class, 'apiBulkUpload']);
 
     // --- Users API ---
     Route::get('/users', [UserController::class, 'apiIndex']);
@@ -116,16 +113,26 @@ Route::prefix('v1')->group(function () {
     Route::put('/users/{user}', [UserController::class, 'apiUpdate']);
     Route::delete('/users/{user}', [UserController::class, 'apiDestroy']);
 
+    // --- Instructors API ---
+    Route::get('/instructors', [InstructorController::class, 'apiIndex']);
+    Route::post('/instructors', [InstructorController::class, 'apiStore']);
+    Route::get('/instructors/{instructor}', [InstructorController::class, 'apiShow']);
+    Route::put('/instructors/{instructor}', [InstructorController::class, 'apiUpdate']);
+    Route::delete('/instructors/{instructor}', [InstructorController::class, 'apiDestroy']);
+
     // --- Plans API ---
     Route::get('/plans', [PlanController::class, 'apiIndex']);
     Route::post('/plans', [PlanController::class, 'apiStore']);
     Route::get('/plans/{plan}', [PlanController::class, 'apiShow']); // Route model binding
     Route::put('/plans/{plan}', [PlanController::class, 'apiUpdate']);
     Route::delete('/plans/{plan}', [PlanController::class, 'apiDestroy']);
+    Route::post('/plans/bulk-upload', [PlanController::class, 'apiBulkUpload']); // *** روت الرفع للـ API ***
 
     // --- Plan Subjects API ---
     Route::post('/plans/{plan}/subjects', [PlanController::class, 'apiAddSubject']); // لإضافة مادة
     Route::delete('/plans/{plan}/subjects/{planSubject}', [PlanController::class, 'apiRemoveSubject']); // لحذف مادة (لاحظ استخدام planSubject ID هنا)
+    Route::post('/plans/{plan}/bulk-upload-subjects', [PlanController::class, 'apiBulkUploadPlanSubjects'])->name('api.plans.bulkUploadSubjects'); // *** الرابط الجديد ***
+    Route::post('/plans/{plan}/import-subjects', [PlanSubjectImportController::class, 'handleApiImport'])->name('api.plans.importSubjects');
 
     // --- Plan Expected Counts API ---
     Route::get('/plan-expected-counts', [PlanExpectedCountController::class, 'apiIndex']);

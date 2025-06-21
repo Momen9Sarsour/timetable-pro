@@ -11,13 +11,34 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="data-entry-header mb-0">Manage Subjects for Plan: <span
                         class="text-primary">{{ $plan->plan_name }}</span> ({{ $plan->plan_no }})</h1>
-                <a href="{{ route('data-entry.plans.index') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-1"></i> Back to Plans List
-                </a>
+
+                <div class="mb-3 text-end d-flex">
+                    <a href="{{ route('data-entry.plans.index') }}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-arrow-left me-2"></i> Back to Plans List
+                    </a>
+                    {{-- *** زر رفع ملف الإكسل الجديد *** --}}
+                    <button class="btn btn-success btn-sm me-2" data-bs-toggle="modal"
+                        data-bs-target="#importPlanSubjectsModal">
+                        <i class="fas fa-file-excel me-1"></i> Import Subjects to This Plan
+                    </button>
+                    {{-- <button class="btn btn-info me-2" data-bs-toggle="modal" data-bs-target="#bulkUploadPlanSubjectsModal">
+                        <i class="fas fa-file-excel me-2"></i> Bulk Upload Subjects to This Plan
+                    </button> --}}
+                </div>
             </div>
 
             {{-- Status Messages --}}
             @include('dashboard.data-entry.partials._status_messages')
+            @if (session('skipped_details'))
+                <div class="alert alert-warning mt-3">
+                    <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Skipped Rows During Upload:</h5>
+                    <ul class="mb-0 small" style="max-height: 200px; overflow-y: auto;">
+                        @foreach (session('skipped_details') as $detail)
+                            <li>{{ $detail }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
             @php
                 // Prepare Data
@@ -169,7 +190,8 @@
                                                                         style="max-height: 200px; overflow-y: auto;">
                                                                         @foreach ($allSubjects as $subject)
                                                                             @if (!in_array($subject->id, $addedSubjectIds ?? []))
-                                                                                <li><a href="#" class="text-decoration-none">
+                                                                                <li><a href="#"
+                                                                                        class="text-decoration-none">
                                                                                         <span
                                                                                             class="dropdown-item filterable-option"
                                                                                             data-value="{{ $subject->id }}">
@@ -202,7 +224,8 @@
                                                         </div>
                                                         <script>
                                                             document.addEventListener('DOMContentLoaded', () => {
-                                                                const level = "{{ $level }}", semester = "{{ $semester }}";
+                                                                const level = "{{ $level }}",
+                                                                    semester = "{{ $semester }}";
                                                                 const elements = {
                                                                     searchInput: document.getElementById(`selectSearchInput_${level}_${semester}`),
                                                                     optionsContainer: document.getElementById(`optionsListContainer_${level}_${semester}`),
@@ -211,7 +234,8 @@
                                                                     dropdownButton: document.getElementById(`subject_id_${level}_${semester}`)
                                                                 };
 
-                                                                let currentFocus = -1, visibleOptions = [];
+                                                                let currentFocus = -1,
+                                                                    visibleOptions = [];
 
                                                                 // الأحداث الرئيسية
                                                                 elements.dropdownButton.addEventListener('shown.bs.dropdown', () => {
@@ -233,7 +257,10 @@
                                                                         'Enter': () => selectItem(),
                                                                         'Escape': () => bootstrap.Dropdown.getInstance(elements.dropdownButton).hide()
                                                                     };
-                                                                    if (actions[e.key]) { e.preventDefault(); actions[e.key]() }
+                                                                    if (actions[e.key]) {
+                                                                        e.preventDefault();
+                                                                        actions[e.key]()
+                                                                    }
                                                                 });
 
                                                                 elements.optionsContainer.addEventListener('click', e => {
@@ -260,7 +287,9 @@
                                                                     visibleOptions.forEach(o => o.classList.remove('active'));
                                                                     if (currentFocus > -1) {
                                                                         visibleOptions[currentFocus].classList.add('active');
-                                                                        visibleOptions[currentFocus].scrollIntoView({block: 'nearest'});
+                                                                        visibleOptions[currentFocus].scrollIntoView({
+                                                                            block: 'nearest'
+                                                                        });
                                                                     }
                                                                 }
 
@@ -272,7 +301,7 @@
                                                                     bootstrap.Dropdown.getInstance(elements.dropdownButton).hide();
                                                                 }
                                                             });
-                                                            </script>
+                                                        </script>
                                                         {{-- <script>
                                                             document.addEventListener('DOMContentLoaded', function() {
                                                                 const level = "{{ $level }}";
@@ -349,3 +378,94 @@
 
 @push('scripts')
 @endpush
+
+
+{{-- *** مودال الرفع بالأكسل لمواد الخطة (جديد في نهاية الملف) *** --}}
+{{-- <div class="modal fade" id="bulkUploadPlanSubjectsModal" tabindex="-1"
+    aria-labelledby="bulkUploadPlanSubjectsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulkUploadPlanSubjectsModalLabel">Bulk Upload Subjects for Plan:
+                    {{ $plan->plan_no }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('data-entry.plans.bulkUploadSubjects', $plan->id) }}" method="POST"
+                enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="plan_subjects_excel_file" class="form-label">Select Excel File <span
+                                class="text-danger">*</span></label>
+                        <input
+                            class="form-control @error('plan_subjects_excel_file', 'bulkUploadPlanSubjects') is-invalid @enderror"
+                            type="file" id="plan_subjects_excel_file" name="plan_subjects_excel_file"
+                            accept=".xlsx, .xls, .csv" required>
+                        @error('plan_subjects_excel_file', 'bulkUploadPlanSubjects')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="alert alert-info small p-2">
+                        <p class="mb-1"><strong>File Format Instructions:</strong></p>
+                        <ul class="mb-0 ps-3">
+                            <li>First row headers, e.g.: <code>subject_identifier</code> (ID, No, or Name),
+                                <code>plan_level</code>, <code>plan_semester</code>.</li>
+                            <li>The <code>plan_identifier</code> is taken from the current plan page.</li>
+                            <li>System will attempt to find subject by ID, then No, then Name.</li>
+                            <li>If a subject entry (for this plan, level, semester) exists, it will be skipped (no
+                                updates).</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-upload me-1"></i> Upload and Process
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div> --}}
+
+
+{{-- *** مودال رفع ملف الإكسل لمواد الخطة (في نهاية الملف) *** --}}
+<div class="modal fade" id="importPlanSubjectsModal" tabindex="-1" aria-labelledby="importPlanSubjectsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importPlanSubjectsModalLabel">Import Subjects for Plan: {{ $plan->plan_no }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('data-entry.plans.importSubjectsExcel', $plan->id) }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="plan_subjects_excel_file_input" class="form-label">Select Excel File <span class="text-danger">*</span></label>
+                        <input class="form-control @error('plan_subjects_excel_file') is-invalid @enderror" type="file" id="plan_subjects_excel_file_input" name="plan_subjects_excel_file" accept=".xlsx, .xls, .csv" required>
+                        @error('plan_subjects_excel_file')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="alert alert-info small p-2">
+                        <strong>File Format Instructions:</strong><br>
+                        - First row should be headers: <code>plan_id</code> (or plan_name), <code>plan_level</code>, <code>plan_semester</code>, <code>subject_id</code> (or subject_no/subject_name).<br>
+                        - Rows not matching the current plan ({{ $plan->plan_no }}) will be skipped.<br>
+                        - Levels/Semesters like "First", "1", "سنة أولى" will be converted to numbers.<br>
+                        - Subjects will be matched by ID, Code, or Name (case-insensitive, ignoring Hamza variants).<br>
+                        - Empty rows or rows with missing required data will be skipped.<br>
+                        - Duplicate entries (same subject in same plan/level/semester) within the file or already in DB will be skipped.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-upload me-1"></i> Upload and Process
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{{-- *** نهاية مودال رفع الإكسل *** --}}
+

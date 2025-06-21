@@ -6,6 +6,7 @@ use App\Http\Controllers\DataEntry\InstructorController;
 use App\Http\Controllers\DataEntry\InstructorSubjectController;
 use App\Http\Controllers\DataEntry\PlanController;
 use App\Http\Controllers\DataEntry\PlanExpectedCountController;
+use App\Http\Controllers\DataEntry\PlanSubjectImportController;
 use App\Http\Controllers\DataEntry\RoleController;
 use App\Http\Controllers\DataEntry\RoomController;
 use App\Http\Controllers\DataEntry\RoomTypeController;
@@ -77,12 +78,21 @@ Route::prefix('dashboard')->group(function () {
         // Route::resource('rooms', RoomController::class)->except(['create', 'show', 'edit']);
         Route::post('/rooms/bulk-upload', [RoomController::class, 'bulkUpload'])->name('rooms.bulkUpload');
 
-        // Instructors CRUD Routes
-        Route::get('/instructors', [InstructorController::class, 'index'])->name('instructors.index');
-        Route::post('/instructors', [InstructorController::class, 'store'])->name('instructors.store');
-        Route::put('/instructors/{instructor}', [InstructorController::class, 'update'])->name('instructors.update');
-        Route::delete('/instructors/{instructor}', [InstructorController::class, 'destroy'])->name('instructors.destroy');
-        // Route::resource('instructors', InstructorController::class)->except(['create', 'show', 'edit']);
+        // Subject-Types CRUD Routes
+        Route::get('/subject-types', [SubjectTypeController::class, 'index'])->name('subject-types.index');
+        Route::post('/subject-types', [SubjectTypeController::class, 'store'])->name('subject-types.store');
+        Route::put('/subject-types/{subjectType}', [SubjectTypeController::class, 'update'])->name('subject-types.update');
+        Route::delete('/subject-types/{subjectType}', [SubjectTypeController::class, 'destroy'])->name('subject-types.destroy');
+        // Route::resource('subject-types', SubjectTypeController::class)->except(['create', 'show', 'edit']);
+        Route::post('/subject-types/bulk-upload', [SubjectTypeController::class, 'bulkUpload'])->name('subject-types.bulkUpload');
+
+        // Subject-Types CRUD Routes
+        Route::get('/subject-categories', [SubjectCategoryController::class, 'index'])->name('subject-categories.index');
+        Route::post('/subject-categories', [SubjectCategoryController::class, 'store'])->name('subject-categories.store');
+        Route::put('/subject-categories/{subjectCategory}', [SubjectCategoryController::class, 'update'])->name('subject-categories.update');
+        Route::delete('/subject-categories/{subjectCategory}', [SubjectCategoryController::class, 'destroy'])->name('subject-categories.destroy');
+        // Route::resource('subject-categories', SubjectCategoryController::class)->except(['create', 'show', 'edit']);
+        Route::post('/subject-categories/bulk-upload', [SubjectCategoryController::class, 'bulkUpload'])->name('subject-categories.bulkUpload');
 
         // Subject CRUD & Bulk Upload Routes
         Route::get('/subjects', [SubjectController::class, 'index'])->name('subjects.index');
@@ -91,20 +101,7 @@ Route::prefix('dashboard')->group(function () {
         Route::delete('/subjects/{subject}', [SubjectController::class, 'destroy'])->name('subjects.destroy');
         Route::post('/subjects/bulk-upload', [SubjectController::class, 'bulkUpload'])->name('subjects.bulkUpload');
         // Route::resource('subjects', SubjectController::class)->except(['create', 'show', 'edit']);
-
-        // Subject-Types CRUD Routes
-        Route::get('/subject-types', [SubjectTypeController::class, 'index'])->name('subject-types.index');
-        Route::post('/subject-types', [SubjectTypeController::class, 'store'])->name('subject-types.store');
-        Route::put('/subject-types/{subjectType}', [SubjectTypeController::class, 'update'])->name('subject-types.update');
-        Route::delete('/subject-types/{subjectType}', [SubjectTypeController::class, 'destroy'])->name('subject-types.destroy');
-        // Route::resource('subject-types', SubjectTypeController::class)->except(['create', 'show', 'edit']);
-
-        // Subject-Types CRUD Routes
-        Route::get('/subject-categories', [SubjectCategoryController::class, 'index'])->name('subject-categories.index');
-        Route::post('/subject-categories', [SubjectCategoryController::class, 'store'])->name('subject-categories.store');
-        Route::put('/subject-categories/{subjectCategory}', [SubjectCategoryController::class, 'update'])->name('subject-categories.update');
-        Route::delete('/subject-categories/{subjectCategory}', [SubjectCategoryController::class, 'destroy'])->name('subject-categories.destroy');
-        // Route::resource('subject-categories', SubjectCategoryController::class)->except(['create', 'show', 'edit']);
+        Route::post('/subjects/bulk-upload', [SubjectController::class, 'bulkUpload'])->name('subjects.bulkUpload');
 
         // Roles CRUD Routes
         Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
@@ -120,11 +117,20 @@ Route::prefix('dashboard')->group(function () {
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
         // Route::resource('roles', UserController::class)->except(['create', 'show', 'edit']);
 
+        // Instructors CRUD Routes
+        Route::get('/instructors', [InstructorController::class, 'index'])->name('instructors.index');
+        Route::post('/instructors', [InstructorController::class, 'store'])->name('instructors.store');
+        Route::put('/instructors/{instructor}', [InstructorController::class, 'update'])->name('instructors.update');
+        Route::delete('/instructors/{instructor}', [InstructorController::class, 'destroy'])->name('instructors.destroy');
+        // Route::resource('instructors', InstructorController::class)->except(['create', 'show', 'edit']);
+
         // Plans Management Page
         Route::get('/plans', [PlanController::class, 'index'])->name('plans.index');
         Route::post('/plans', [PlanController::class, 'store'])->name('plans.store');
         Route::put('/plans/{plan}', [PlanController::class, 'update'])->name('plans.update');
         Route::delete('/plans/{plan}', [PlanController::class, 'destroy'])->name('plans.destroy');
+        Route::post('/plans/bulk-upload', [PlanController::class, 'bulkUpload'])->name('plans.bulkUpload'); // *** روت الرفع للويب ***
+
         // سنضيف رابط لعرض تفاصيل الخطة وإدارة موادها لاحقاً، ربما show أو edit
         // Route::get('/plans/{plan}/manage-subjects', [PlanController::class, 'manageSubjects'])->name('plans.manageSubjects'); // رابط مقترح لصفحة إدارة المواد
         // Route::get('/plans/{plan}/manage-subjects', [PlanController::class, 'manageSubjects'])->name('plans.manageSubjects');
@@ -137,6 +143,11 @@ Route::prefix('dashboard')->group(function () {
         Route::post('/plans/{plan}/level/{level}/semester/{semester}/add-subject', [PlanController::class, 'addSubject'])->name('plans.addSubject');
         Route::delete('/plans/{plan}/remove-subject/{planSubject}', [PlanController::class, 'removeSubject'])->name('plans.removeSubject');
         // Route::resource('plans', PlanController::class)->except(['create', 'show', 'edit']);
+        // ... (الروابط القديمة للخطط) ...
+        // Route::post('/plans/{plan}/bulk-upload-subjects', [PlanController::class, 'bulkUploadPlanSubjects'])->name('plans.bulkUploadSubjects'); // *** الرابط الجديد ***
+        Route::post('/plans/{plan}/import-subjects-excel', [PlanController::class, 'importSubjectsExcel'])->name('plans.importSubjectsExcel');
+        // *** تعديل روت رفع ملف الإكسل لمواد الخطة ***
+        Route::post('/plans/{plan}/import-subjects-excel', [PlanSubjectImportController::class, 'handleImport'])->name('plans.importSubjectsExcel');
 
         // --- Plan Expected Counts Management ---
         Route::get('/plan-expected-counts', [PlanExpectedCountController::class, 'index'])->name('plan-expected-counts.index');

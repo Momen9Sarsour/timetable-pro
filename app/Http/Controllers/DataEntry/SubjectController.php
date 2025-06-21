@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log; // اختياري
 use Illuminate\Validation\Rule;
 use Exception;
+use Illuminate\Support\Facades\Validator;
 
 class SubjectController extends Controller
 {
@@ -111,10 +112,10 @@ class SubjectController extends Controller
 
         // 2. Prepare Data (validatedData جاهزة)
         $data = $validatedData;
-         // إذا أرسل المستخدم قيمة فارغة، يجب أن نخزن NULL وليس string فارغ (إذا كان الحقل يقبل NULL)
-         $dataToUpdate['load_theoretical_section'] = $request->filled('load_theoretical_section') ? $request->input('load_theoretical_section') : null;
-         $dataToUpdate['load_practical_section'] = $request->filled('load_practical_section') ? $request->input('load_practical_section') : null;
-         
+        // إذا أرسل المستخدم قيمة فارغة، يجب أن نخزن NULL وليس string فارغ (إذا كان الحقل يقبل NULL)
+        $dataToUpdate['load_theoretical_section'] = $request->filled('load_theoretical_section') ? $request->input('load_theoretical_section') : null;
+        $dataToUpdate['load_practical_section'] = $request->filled('load_practical_section') ? $request->input('load_practical_section') : null;
+
         // 3. Update Database
         try {
             $subject->update($data);
@@ -198,40 +199,211 @@ class SubjectController extends Controller
     //                          ->with('error', 'An error occurred during the upload process. Please ensure the file format is correct and try again.');
     //     }
     // }
+    // public function bulkUpload(Request $request)
+    // {
+    //     $request->validate([
+    //         'subject_file' => 'required|file|mimes:xlsx,xls,csv|max:5120',
+    //     ]);
+
+    //     $importer = new SubjectsImport(); // إنشاء instance من الـ Importer
+
+    //     try {
+    //         Excel::import($importer, $request->file('subject_file'));
+
+    //         // الحصول على الأخطاء (إن وجدت) من الـ Importer
+    //         $errors = $importer->getErrors();
+    //         $importedCount = $importer->getImportedRowCount();
+
+    //         if (!empty($errors)) {
+    //             // إذا كان هناك أخطاء validation
+    //             $errorMessages = [];
+    //             foreach ($errors as $rowIndex => $rowErrors) {
+    //                 $errorMessages[] = "Row " . $rowIndex . ": " . implode(', ', $rowErrors);
+    //             }
+    //             return redirect()->back()
+    //                 ->with('error', "Import completed with errors. {$importedCount} rows imported successfully. Please check the details below.")
+    //                 ->with('import_errors', $errorMessages);
+    //         }
+
+    //         // إذا لم يكن هناك أخطاء
+    //         return redirect()->route('data-entry.subjects.index')
+    //             ->with('success', "Subjects imported successfully! ({$importedCount} rows added).");
+    //     } catch (Exception $e) {
+    //         // التعامل مع أخطاء قراءة الملف أو أخطاء فادحة أخرى
+    //         Log::error('Subject Bulk Upload Failed (General): ' . $e->getMessage());
+    //         return redirect()->back()
+    //             ->with('error', 'An critical error occurred during the upload process. Please check the file or contact support. Error: ' . $e->getMessage());
+    //     }
+    // }
+
+    /**
+     * Helper function to normalize Arabic text.
+     */
+    private function normalizeArabicString($string)
+    {
+        if (is_null($string)) return null;
+        $search = array('أ', 'إ', 'آ', 'ى', 'ة');
+        $replace = array('ا', 'ا', 'ا', 'ي', 'ه'); // تطبيع بسيط
+        return str_replace($search, $replace, $string);
+    }
+
+    /**
+     * Helper function to find related ID by name or use ID if numeric.
+     */
+    private function findRelatedId($modelClass, $nameColumn, $valueFromExcel, &$skippedDetails, $rowNum, $attributeFriendlyName, $searchByIdColumn = 'id')
+    {
+        if (is_numeric($valueFromExcel)) {
+            if ($modelClass::where($searchByIdColumn, $valueFromExcel)->exists()) {
+                return (int)$valueFromExcel;
+            } else {
+                $skippedDetails[] = "Row {$rowNum}: Invalid {$attributeFriendlyName} ID '{$valueFromExcel}'. Record skipped.";
+                return null;
+            }
+        } elseif (!empty($valueFromExcel)) {
+            $normalizedValue = $this->normalizeArabicString(strtolower(trim($valueFromExcel)));
+            $record = $modelClass::all()->first(function ($item) use ($nameColumn, $normalizedValue) {
+                return $this->normalizeArabicString(strtolower(trim($item->$nameColumn))) === $normalizedValue;
+            });
+            if ($record) {
+                return $record->id;
+            } else {
+                $skippedDetails[] = "Row {$rowNum}: {$attributeFriendlyName} '{$valueFromExcel}' not found. Record skipped.";
+                return null;
+            }
+        }
+        // إذا كانت القيمة فارغة ولم تكن مطلوبة، قد نرجع null بدون تسجيل خطأ، أو نسجل خطأ إذا كانت مطلوبة
+        // $skippedDetails[] = "Row {$rowNum}: {$attributeFriendlyName} is empty. Record skipped."; // إذا كان الحقل مطلوباً
+        return null; // إذا كان الحقل اختيارياً والقيمة فارغة
+    }
+
+
+    /**
+     * Handle bulk upload of subjects from Excel file for Web.
+     */
     public function bulkUpload(Request $request)
     {
         $request->validate([
-            'subject_file' => 'required|file|mimes:xlsx,xls,csv|max:5120',
-        ]);
-
-        $importer = new SubjectsImport(); // إنشاء instance من الـ Importer
+            'subject_excel_file' => 'required|file|mimes:xlsx,xls,csv|max:5120',
+        ], [], ['subject_excel_file' => 'Excel file']);
 
         try {
-            Excel::import($importer, $request->file('subject_file'));
+            $rows = Excel::toCollection(collect(), $request->file('subject_excel_file'))->first();
 
-            // الحصول على الأخطاء (إن وجدت) من الـ Importer
-            $errors = $importer->getErrors();
-            $importedCount = $importer->getImportedRowCount();
-
-            if (!empty($errors)) {
-                // إذا كان هناك أخطاء validation
-                $errorMessages = [];
-                foreach ($errors as $rowIndex => $rowErrors) {
-                    $errorMessages[] = "Row " . $rowIndex . ": " . implode(', ', $rowErrors);
-                }
-                return redirect()->back()
-                    ->with('error', "Import completed with errors. {$importedCount} rows imported successfully. Please check the details below.")
-                    ->with('import_errors', $errorMessages);
+            if ($rows->isEmpty() || $rows->count() <= 1) {
+                return redirect()->route('data-entry.subjects.index')->with('error', 'Uploaded Excel file is empty or has no data rows.');
             }
 
-            // إذا لم يكن هناك أخطاء
-            return redirect()->route('data-entry.subjects.index')
-                ->with('success', "Subjects imported successfully! ({$importedCount} rows added).");
+            $createdCount = 0;
+            $updatedCount = 0;
+            $skippedCount = 0;
+            $skippedDetails = [];
+            $processedSubjectNos = collect();
+
+            $header = $rows->first()->map(fn($item) => strtolower(str_replace([' ', '-'], '_', $item ?? '')));
+            $dataRows = $rows->slice(1);
+
+            foreach ($dataRows as $rowKey => $rowArray) {
+                $row = $header->combine($rowArray->map(fn($val) => trim($val ?? '')));
+                $currentRowNumber = $rowKey + 2;
+
+                $subjectNo = $row->get('subject_no');
+                $subjectName = $row->get('subject_name');
+
+                if (empty($subjectNo) && empty($subjectName)) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Row {$currentRowNumber}: Skipped (empty subject_no & name).";
+                    continue;
+                }
+                if (empty($subjectNo) || empty($subjectName)) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Row {$currentRowNumber}: Skipped (missing subject_no or name).";
+                    continue;
+                }
+                if ($processedSubjectNos->contains($subjectNo)) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Row {$currentRowNumber}: Skipped (duplicate subject_no '{$subjectNo}' in file).";
+                    continue;
+                }
+
+                $subjectTypeId = $this->findRelatedId(SubjectType::class, 'subject_type_name', $row->get('subject_type_id'), $skippedDetails, $currentRowNumber, 'Subject Type');
+                if (is_null($subjectTypeId) && !empty($row->get('subject_type_id'))) {
+                    $skippedCount++;
+                    continue;
+                } // إذا كان هناك قيمة ولم يتم العثور عليها
+
+                $subjectCategoryId = $this->findRelatedId(SubjectCategory::class, 'subject_category_name', $row->get('subject_category_id'), $skippedDetails, $currentRowNumber, 'Subject Category');
+                if (is_null($subjectCategoryId) && !empty($row->get('subject_category_id'))) {
+                    $skippedCount++;
+                    continue;
+                }
+
+                $departmentId = $this->findRelatedId(Department::class, 'department_name', $row->get('department_id'), $skippedDetails, $currentRowNumber, 'Department');
+                if (is_null($departmentId) && !empty($row->get('department_id'))) {
+                    $skippedCount++;
+                    continue;
+                }
+
+
+                $dataToValidate = [
+                    'subject_no' => $subjectNo,
+                    'subject_name' => $subjectName,
+                    'subject_load' => $row->get('subject_load'),
+                    'theoretical_hours' => $row->get('theoretical_hours'),
+                    'practical_hours' => $row->get('practical_hours'),
+                    'capacity_theoretical_section' => $row->get('capacity_theoretical_section'),
+                    'capacity_practical_section' => $row->get('capacity_practical_section'),
+                    'subject_type_id' => $subjectTypeId,
+                    'subject_category_id' => $subjectCategoryId,
+                    'department_id' => $departmentId,
+                ];
+
+                $validator = Validator::make($dataToValidate, [
+                    'subject_no' => 'required|string|max:20',
+                    'subject_name' => 'required|string|max:255',
+                    'subject_load' => 'required|integer|min:0',
+                    'theoretical_hours' => 'required|integer|min:0',
+                    'practical_hours' => 'required|integer|min:0',
+                    'capacity_theoretical_section' => 'nullable|integer|min:1',
+                    'capacity_practical_section' => 'nullable|integer|min:1',
+                    'subject_type_id' => 'required|integer|exists:subjects_types,id',
+                    'subject_category_id' => 'required|integer|exists:subjects_categories,id',
+                    'department_id' => 'required|integer|exists:departments,id',
+                ]);
+
+                if ($validator->fails()) {
+                    $skippedCount++;
+                    $errors = implode(', ', $validator->errors()->all());
+                    $skippedDetails[] = "Row {$currentRowNumber} (SubjectNo: {$subjectNo}): Skipped - Validation: {$errors}";
+                    continue;
+                }
+                $validatedData = $validator->validated();
+                // استخدام القيم الافتراضية إذا كانت السعات null بعد التحقق
+                $validatedData['capacity_theoretical_section'] = $validatedData['capacity_theoretical_section'] ?? 50;
+                $validatedData['capacity_practical_section'] = $validatedData['capacity_practical_section'] ?? 25;
+
+
+                $subject = Subject::where('subject_no', $validatedData['subject_no'])->first();
+                if ($subject) {
+                    $subject->update($validatedData);
+                    $updatedCount++;
+                } else {
+                    Subject::create($validatedData);
+                    $createdCount++;
+                }
+                $processedSubjectNos->push($subjectNo);
+            }
+
+            $message = "Subjects bulk upload processed. ";
+            if ($createdCount > 0) $message .= "{$createdCount} new created. ";
+            if ($updatedCount > 0) $message .= "{$updatedCount} updated. ";
+            if ($skippedCount > 0) $message .= "{$skippedCount} skipped. ";
+            if (!empty($skippedDetails)) {
+                session()->flash('skipped_details', $skippedDetails);
+            }
+            return redirect()->route('data-entry.subjects.index')->with('success', trim($message));
         } catch (Exception $e) {
-            // التعامل مع أخطاء قراءة الملف أو أخطاء فادحة أخرى
-            Log::error('Subject Bulk Upload Failed (General): ' . $e->getMessage());
-            return redirect()->back()
-                ->with('error', 'An critical error occurred during the upload process. Please check the file or contact support. Error: ' . $e->getMessage());
+            Log::error('Subject Bulk Upload Failed: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
+            return redirect()->route('data-entry.subjects.index')->with('error', 'Upload error: ' . $e->getMessage());
         }
     }
 
@@ -401,46 +573,166 @@ class SubjectController extends Controller
     /**
      * Handle bulk upload (API).
      */
+    // public function apiBulkUpload(Request $request)
+    // {
+    //     Log::info('Bulk upload endpoint hit (API) - Feature disabled.');
+    //     return response()->json([
+    //         'success' => false,
+    //         'message' => 'Bulk upload feature is not yet available for the API.'
+    //     ], 501); // 501 Not Implemented
+
+    //     /* // كود تفعيلها لاحقاً
+    //     $validator = Validator::make($request->all(), [
+    //         'subject_file' => 'required|file|mimes:xlsx,xls,csv|max:5120',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+    //     }
+
+    //     try {
+    //         Excel::import(new SubjectsImport, $request->file('subject_file'));
+    //         return response()->json(['success' => true, 'message' => 'Subjects imported successfully!'], 200);
+    //     } catch (ValidationException $e) {
+    //         $failures = $e->failures();
+    //         $errorDetails = [];
+    //          foreach ($failures as $failure) {
+    //              $errorDetails[] = [
+    //                  'row' => $failure->row(),
+    //                  'attribute' => $failure->attribute(),
+    //                  'errors' => $failure->errors(),
+    //                  'value' => $failure->values()[$failure->attribute()] ?? null
+    //              ];
+    //          }
+    //          Log::warning('API Subject Bulk Upload Validation Failures: ', $failures);
+    //          return response()->json([
+    //             'success' => false,
+    //             'message' => 'Import failed due to validation errors.',
+    //             'errors' => $errorDetails
+    //         ], 422);
+    //     } catch (Exception $e) {
+    //          Log::error('API Subject Bulk Upload Failed (General): ' . $e->getMessage());
+    //          return response()->json(['success' => false, 'message' => 'An error occurred during the upload process.'], 500);
+    //     }*/
+    // }
+
+
+    /**
+     * Handle bulk upload of subjects from Excel file via API.
+     */
     public function apiBulkUpload(Request $request)
     {
-        Log::info('Bulk upload endpoint hit (API) - Feature disabled.');
-        return response()->json([
-            'success' => false,
-            'message' => 'Bulk upload feature is not yet available for the API.'
-        ], 501); // 501 Not Implemented
-
-        /* // كود تفعيلها لاحقاً
-        $validator = Validator::make($request->all(), [
-            'subject_file' => 'required|file|mimes:xlsx,xls,csv|max:5120',
-        ]);
-
+        $validator = Validator::make($request->all(), ['subject_excel_file' => 'required|file|mimes:xlsx,xls,csv|max:5120']);
         if ($validator->fails()) {
-            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+            return response()->json(['success' => false, 'message' => 'File validation failed.', 'errors' => $validator->errors()], 422);
         }
 
         try {
-            Excel::import(new SubjectsImport, $request->file('subject_file'));
-            return response()->json(['success' => true, 'message' => 'Subjects imported successfully!'], 200);
-        } catch (ValidationException $e) {
-            $failures = $e->failures();
-            $errorDetails = [];
-             foreach ($failures as $failure) {
-                 $errorDetails[] = [
-                     'row' => $failure->row(),
-                     'attribute' => $failure->attribute(),
-                     'errors' => $failure->errors(),
-                     'value' => $failure->values()[$failure->attribute()] ?? null
-                 ];
-             }
-             Log::warning('API Subject Bulk Upload Validation Failures: ', $failures);
-             return response()->json([
-                'success' => false,
-                'message' => 'Import failed due to validation errors.',
-                'errors' => $errorDetails
-            ], 422);
+            $rows = Excel::toCollection(collect(), $request->file('subject_excel_file'))->first();
+            if ($rows->isEmpty() || $rows->count() <= 1) {
+                return response()->json(['success' => false, 'message' => 'File empty or no data rows.'], 400);
+            }
+
+            $createdCount = 0;
+            $updatedCount = 0;
+            $skippedCount = 0;
+            $skippedDetails = [];
+            $processedSubjectNos = collect();
+            $header = $rows->first()->map(fn($item) => strtolower(str_replace([' ', '-'], '_', $item ?? '')));
+            $dataRows = $rows->slice(1);
+
+            foreach ($dataRows as $rowKey => $rowArray) {
+                $row = $header->combine($rowArray->map(fn($val) => trim($val ?? '')));
+                $currentRowNumber = $rowKey + 2;
+                $subjectNo = $row->get('subject_no');
+                $subjectName = $row->get('subject_name');
+
+                if (empty($subjectNo) && empty($subjectName)) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Row {$currentRowNumber}: Skipped (empty).";
+                    continue;
+                }
+                if (empty($subjectNo) || empty($subjectName)) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Row {$currentRowNumber}: Skipped (missing no or name).";
+                    continue;
+                }
+                if ($processedSubjectNos->contains($subjectNo)) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Row {$currentRowNumber}: Skipped (duplicate no '{$subjectNo}' in file).";
+                    continue;
+                }
+
+                $subjectTypeId = $this->findRelatedId(SubjectType::class, 'subject_type_name', $row->get('subject_type_id'), $skippedDetails, $currentRowNumber, 'Type');
+                if (is_null($subjectTypeId) && !empty($row->get('subject_type_id'))) {
+                    $skippedCount++;
+                    continue;
+                }
+                $subjectCategoryId = $this->findRelatedId(SubjectCategory::class, 'subject_category_name', $row->get('subject_category_id'), $skippedDetails, $currentRowNumber, 'Category');
+                if (is_null($subjectCategoryId) && !empty($row->get('subject_category_id'))) {
+                    $skippedCount++;
+                    continue;
+                }
+                $departmentId = $this->findRelatedId(Department::class, 'department_name', $row->get('department_id'), $skippedDetails, $currentRowNumber, 'Department');
+                if (is_null($departmentId) && !empty($row->get('department_id'))) {
+                    $skippedCount++;
+                    continue;
+                }
+
+                // $dataToValidate = [ /* ... نفس مصفوفة dataToValidate من دالة الويب ... */ ];
+                $dataToValidate = [
+                    'subject_no' => $subjectNo,
+                    'subject_name' => $subjectName,
+                    'subject_load' => $row->get('subject_load'),
+                    'theoretical_hours' => $row->get('theoretical_hours'),
+                    'practical_hours' => $row->get('practical_hours'),
+                    'capacity_theoretical_section' => $row->get('capacity_theoretical_section'),
+                    'capacity_practical_section' => $row->get('capacity_practical_section'),
+                    'subject_type_id' => $subjectTypeId,
+                    'subject_category_id' => $subjectCategoryId,
+                    'department_id' => $departmentId,
+                ];
+
+                $validator = Validator::make($dataToValidate, [
+                    'subject_no' => 'required|string|max:20',
+                    'subject_name' => 'required|string|max:255',
+                    'subject_load' => 'required|integer|min:0',
+                    'theoretical_hours' => 'required|integer|min:0',
+                    'practical_hours' => 'required|integer|min:0',
+                    'capacity_theoretical_section' => 'nullable|integer|min:1',
+                    'capacity_practical_section' => 'nullable|integer|min:1',
+                    'subject_type_id' => 'required|integer|exists:subjects_types,id',
+                    'subject_category_id' => 'required|integer|exists:subjects_categories,id',
+                    'department_id' => 'required|integer|exists:departments,id',
+                ]);
+                // $validator = Validator::make($dataToValidate, [ /* ... نفس قواعد الـ validation ... */ ]);
+                // if ($validator->fails()) { /* ... تجاهل وتسجيل ... */ continue; }
+                if ($validator->fails()) {
+                    $skippedCount++;
+                    $errors = implode(', ', $validator->errors()->all());
+                    $skippedDetails[] = "Row {$currentRowNumber} (SubjectNo: {$subjectNo}): Skipped - Validation: {$errors}";
+                    continue;
+                }
+                $validatedData = $validator->validated();
+                $validatedData['capacity_theoretical_section'] = $validatedData['capacity_theoretical_section'] ?? 50;
+                $validatedData['capacity_practical_section'] = $validatedData['capacity_practical_section'] ?? 25;
+
+                $subject = Subject::updateOrCreate(['subject_no' => $validatedData['subject_no']], $validatedData);
+                if ($subject->wasRecentlyCreated) {
+                    $createdCount++;
+                } elseif ($subject->wasChanged()) {
+                    $updatedCount++;
+                } else {
+                    $skippedCount++;
+                    $skippedDetails[] = "Row {$currentRowNumber} (No: {$subjectNo}): Data already up-to-date.";
+                }
+                $processedSubjectNos->push($subjectNo);
+            }
+
+            return response()->json(['success' => true, 'message' => "Subjects uploaded.", 'data' => compact('createdCount', 'updatedCount', 'skippedCount', 'skippedDetails')], 200);
         } catch (Exception $e) {
-             Log::error('API Subject Bulk Upload Failed (General): ' . $e->getMessage());
-             return response()->json(['success' => false, 'message' => 'An error occurred during the upload process.'], 500);
-        }*/
+            Log::error('API Subject Bulk Upload Failed: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Upload error.', 'error' => $e->getMessage()], 500);
+        }
     }
 }

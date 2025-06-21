@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Exception;
+use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
 
 class SubjectCategoryController extends Controller
 {
@@ -113,6 +115,92 @@ class SubjectCategoryController extends Controller
         }
     }
 
+
+    /**
+     * Handle bulk upload of subject categories from Excel file for Web.
+     */
+    public function bulkUpload(Request $request)
+    {
+        $request->validate([
+            'subject_category_excel_file' => 'required|file|mimes:xlsx,xls,csv|max:2048',
+        ], [], ['subject_category_excel_file' => 'Excel file']);
+
+        try {
+            $rows = Excel::toCollection(collect(), $request->file('subject_category_excel_file'))->first();
+
+            if ($rows->isEmpty() || $rows->count() <= 1) {
+                return redirect()->route('data-entry.subject-categories.index')
+                                 ->with('error', 'Uploaded Excel file is empty or has no data rows after the header.');
+            }
+
+            $createdCount = 0;
+            $skippedCount = 0;
+            $skippedDetails = [];
+            $processedNames = collect(); // لتتبع الأسماء التي تمت معالجتها من الملف الحالي
+
+            // الحصول على الصف الأول كعناوين (بتحويلها لـ snake_case)
+            // هذا يفترض أن اسم العمود في الإكسل هو "subject_category_name" أو ما يشبهه
+            $header = $rows->first()->map(fn ($item) => strtolower(str_replace([' ', '-'], '_', $item ?? '')));
+            $dataRows = $rows->slice(1); // إزالة صف العناوين
+
+            foreach ($dataRows as $rowKey => $rowArray) {
+                // تحويل الصف الحالي لمصفوفة باستخدام العناوين كمفاتيح
+                $row = $header->combine($rowArray->map(fn($val) => trim($val ?? '')));
+                $currentRowNumber = $rowKey + 2; // رقم الصف الفعلي في الإكسل
+
+                $categoryName = $row->get('subject_category_name', ''); // جلب القيمة
+
+                // 1. تجاهل الأسطر الفارغة
+                if (empty($categoryName)) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Row {$currentRowNumber}: Skipped because subject_category_name is empty.";
+                    continue;
+                }
+
+                // 2. فحص التكرار داخل الملف نفسه
+                if ($processedNames->contains($categoryName)) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Row {$currentRowNumber}: Skipped duplicate category name '{$categoryName}' from within this file.";
+                    continue;
+                }
+
+                // 3. التحقق من وجود الاسم في قاعدة البيانات (أسماء الفئات يجب أن تكون فريدة)
+                $existingCategory = SubjectCategory::where('subject_category_name', $categoryName)->first();
+
+                if ($existingCategory) {
+                    // الفئة موجودة بالفعل، تجاهلها (لا نقوم بالتحديث هنا عادةً)
+                    $skippedCount++;
+                    $skippedDetails[] = "Row {$currentRowNumber}: Subject category '{$categoryName}' already exists in the system.";
+                    $processedNames->push($categoryName); // اعتبره معالجاً
+                    continue;
+                }
+
+                // 4. إنشاء فئة مادة جديدة
+                SubjectCategory::create([
+                    'subject_category_name' => $categoryName,
+                ]);
+                $createdCount++;
+                $processedNames->push($categoryName);
+            }
+
+            $message = "Subject Categories bulk upload processed. ";
+            if ($createdCount > 0) $message .= "{$createdCount} new categories created. ";
+            if ($skippedCount > 0) $message .= "{$skippedCount} rows skipped. ";
+
+            if (!empty($skippedDetails)) {
+                // استخدام session flash لتمرير تفاصيل الصفوف المتجاهلة
+                session()->flash('skipped_details', $skippedDetails);
+            }
+
+            return redirect()->route('data-entry.subject-categories.index')->with('success', trim($message));
+
+        } catch (Exception $e) {
+            Log::error('Subject Category Bulk Upload Failed: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
+            return redirect()->route('data-entry.subject-categories.index')
+                             ->with('error', 'An error occurred during bulk upload: ' . $e->getMessage());
+        }
+    }
+
     // =============================================
     //             API Controller Methods
     // =============================================
@@ -159,6 +247,87 @@ class SubjectCategoryController extends Controller
             return response()->json(['success' => true, 'message' => 'Category deleted.'], 200);
         } catch (Exception $e) { /* ... */
             return response()->json(['success' => false, 'message' => 'Failed to delete.'], 500);
+        }
+    }
+
+    /**
+     * Handle bulk upload of subject categories from Excel file via API.
+     */
+    public function apiBulkUpload(Request $request)
+    {
+        // 1. التحقق من الملف المرفوع
+        $validator = Validator::make($request->all(), [
+            'subject_category_excel_file' => 'required|file|mimes:xlsx,xls,csv|max:2048',
+        ], [], ['subject_category_excel_file' => 'Excel file']);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed for uploaded file.',
+                'errors' => $validator->errors()
+            ], 422); // Unprocessable Entity
+        }
+
+        try {
+            // 2. قراءة البيانات من ملف الإكسل
+            $rows = Excel::toCollection(collect(), $request->file('subject_category_excel_file'))->first();
+
+            if ($rows->isEmpty() || $rows->count() <= 1) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The uploaded Excel file is empty or contains no data rows after the header.'
+                ], 400); // Bad Request
+            }
+
+            $createdCount = 0;
+            $skippedCount = 0;
+            $skippedDetails = [];
+            $processedNames = collect();
+
+            $header = $rows->first()->map(fn ($item) => strtolower(str_replace([' ', '-'], '_', $item ?? '')));
+            $dataRows = $rows->slice(1);
+
+            foreach ($dataRows as $rowKey => $rowArray) {
+                $row = $header->combine($rowArray->map(fn($val) => trim($val ?? '')));
+                $currentRowNumber = $rowKey + 2;
+                $categoryName = $row->get('subject_category_name', '');
+
+                if (empty($categoryName)) {
+                    $skippedCount++; $skippedDetails[] = "Row {$currentRowNumber}: Skipped (empty name)."; continue;
+                }
+                if ($processedNames->contains($categoryName)) {
+                    $skippedCount++; $skippedDetails[] = "Row {$currentRowNumber}: Skipped (duplicate '{$categoryName}' in file)."; continue;
+                }
+                if (SubjectCategory::where('subject_category_name', $categoryName)->exists()) {
+                    $skippedCount++; $skippedDetails[] = "Row {$currentRowNumber}: Category '{$categoryName}' already exists.";
+                    $processedNames->push($categoryName); continue;
+                }
+
+                SubjectCategory::create(['subject_category_name' => $categoryName]);
+                $createdCount++; $processedNames->push($categoryName);
+            }
+
+            // 3. بناء الاستجابة
+            $summaryMessage = "Subject Categories bulk upload processed via API.";
+            $responseData = [
+                'created_count' => $createdCount,
+                'skipped_count' => $skippedCount,
+                'skipped_details' => $skippedDetails,
+            ];
+
+            return response()->json([
+                'success' => true,
+                'message' => $summaryMessage,
+                'data' => $responseData
+            ], 200); // OK
+
+        } catch (Exception $e) {
+            Log::error('API Subject Category Bulk Upload Failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred during API bulk upload.',
+                'error_details' => $e->getMessage() // للمطور
+            ], 500); // Internal Server Error
         }
     }
 }

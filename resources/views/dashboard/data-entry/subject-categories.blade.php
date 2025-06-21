@@ -6,13 +6,30 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
              {{-- // تغيير العنوان --}}
              <h1 class="data-entry-header mb-0">Manage Subject Categories</h1>
-             {{-- // تغيير الـ target للـ Modal --}}
-             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSubjectCategoryModal">
+             <div class="d-flex">
+                {{-- // تغيير الـ target للـ Modal --}}
+             <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#addSubjectCategoryModal">
                  <i class="fas fa-plus me-1"></i> Add New Subject Category
              </button>
+             {{-- *** زر الرفع بالأكسل *** --}}
+             <button class="btn btn-outline-success me-2" data-bs-toggle="modal" data-bs-target="#bulkUploadSubjectCategoriesModal">
+                 <i class="fas fa-file-excel me-1"></i> Bulk Upload Categories
+             </button>
+             </div>
+
         </div>
 
         @include('dashboard.data-entry.partials._status_messages')
+        @if (session('skipped_details'))
+                <div class="alert alert-warning mt-3">
+                    <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Skipped Rows During Upload:</h5>
+                    <ul class="mb-0 small" style="max-height: 200px; overflow-y: auto;">
+                        @foreach (session('skipped_details') as $detail)
+                            <li>{{ $detail }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
         <div class="card shadow-sm">
             <div class="card-body">

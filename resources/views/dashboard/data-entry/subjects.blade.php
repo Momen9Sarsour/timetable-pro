@@ -22,21 +22,35 @@
 
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="data-entry-header mb-0">Manage Subjects</h1>
-                <div>
-                    {{-- // زر لإظهار Modal الرفع بالجملة --}}
-                    <button class="btn btn-outline-success me-2" data-bs-toggle="modal"
-                        data-bs-target="#bulkUploadSubjectModal">
-                        <i class="fas fa-file-excel me-1"></i> Bulk Upload
-                    </button>
+                <div class="d-flex">
                     {{-- // زر لإظهار Modal الإضافة الفردية --}}
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+                    <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
                         <i class="fas fa-plus me-1"></i> Add New Subject
                     </button>
+                    {{-- *** زر الرفع بالأكسل للمواد *** --}}
+                    <button class="btn btn-outline-success me-2" data-bs-toggle="modal"
+                        data-bs-target="#bulkUploadSubjectsModal">
+                        <i class="fas fa-file-excel me-1"></i> Bulk Upload Subjects
+                    </button>
+                    {{-- <button class="btn btn-outline-success me-2" data-bs-toggle="modal"
+                        data-bs-target="#bulkUploadSubjectModal">
+                        <i class="fas fa-file-excel me-1"></i> Bulk Upload
+                    </button> --}}
                 </div>
             </div>
 
             {{-- // عرض رسائل الحالة --}}
             @include('dashboard.data-entry.partials._status_messages')
+            @if (session('skipped_details'))
+                <div class="alert alert-warning mt-3">
+                    <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Skipped Rows During Upload:</h5>
+                    <ul class="mb-0 small" style="max-height: 200px; overflow-y: auto;">
+                        @foreach (session('skipped_details') as $detail)
+                            <li>{{ $detail }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
             <div class="card shadow-sm">
                 <div class="card-body">
@@ -74,16 +88,20 @@
                                         <td>{{ $subject->subjectCategory->subject_category_name ?? 'N/A' }}</td>
                                         <td>{{ $subject->department->department_name ?? 'N/A' }}</td>
                                         <td>
-                                            {{-- // زر التعديل --}}
-                                            <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal"
-                                                data-bs-target="#editSubjectModal-{{ $subject->id }}" title="Edit">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            {{-- // زر الحذف --}}
-                                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
-                                                data-bs-target="#deleteSubjectModal-{{ $subject->id }}" title="Delete">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+                                            <div class="d-flex">
+                                                {{-- // زر التعديل --}}
+                                                <button class="btn btn-sm btn-outline-primary me-2" data-bs-toggle="modal"
+                                                    data-bs-target="#editSubjectModal-{{ $subject->id }}" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                {{-- // زر الحذف --}}
+                                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+                                                    data-bs-target="#deleteSubjectModal-{{ $subject->id }}"
+                                                    title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+
 
                                             {{-- // تضمين Modals --}}
                                             @include('dashboard.data-entry.partials._subject_modals', [

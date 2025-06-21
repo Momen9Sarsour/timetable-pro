@@ -220,15 +220,15 @@
                             @if ($plan->planSubjectEntries()->count())
                                 <p>Are you sure you want to delete the academic plan: <strong>{{ $plan->plan_name }}
                                         ({{ $plan->plan_no }})</strong>?</p>
-                                <p>This academic plan (<strong id="planNameToForceDelete">{{ $plan->plan_name }}</strong>) has
+                                <p>This academic plan (<strong
+                                        id="planNameToForceDelete">{{ $plan->plan_name }}</strong>) has
                                     associated subjects.</p>
                                 <p><strong>Are you absolutely sure you want to delete this plan AND all its associated
                                         subject entries?</strong></p>
-                                        <h3>The count Subject of plan :{{ $plan->planSubjectEntries()->count() }}</h3>
+                                <h3>The count Subject of plan :{{ $plan->planSubjectEntries()->count() }}</h3>
                                 <p class="text-danger">This will remove the subjects from this specific plan structure
                                     but will NOT delete the subjects themselves from the system.</p>
                                 <p class="text-danger fw-bold">This action cannot be undone.</p>
-
                             @else
                                 <p>Are you sure you want to delete the academic plan: <strong>{{ $plan->plan_name }}
                                         ({{ $plan->plan_no }})</strong>?</p>
@@ -249,3 +249,51 @@
     @endif
 
 @endif
+
+
+
+
+{{-- *** مودال الرفع بالأكسل للخطط (جديد) *** --}}
+<div class="modal fade" id="bulkUploadPlansModal" tabindex="-1" aria-labelledby="bulkUploadPlansModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulkUploadPlansModalLabel">Bulk Upload Academic Plans from Excel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('data-entry.plans.bulkUpload') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="plan_excel_file" class="form-label">Select Excel File <span
+                                class="text-danger">*</span></label>
+                        <input class="form-control @error('plan_excel_file', 'bulkUploadPlans') is-invalid @enderror"
+                            type="file" id="plan_excel_file" name="plan_excel_file" accept=".xlsx, .xls, .csv"
+                            required>
+                        @error('plan_excel_file', 'bulkUploadPlans')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="alert alert-info small p-2">
+                        <p class="mb-1"><strong>File Format Instructions:</strong></p>
+                        <ul class="mb-0 ps-3">
+                            <li>First row headers: <code>plan_no</code>, <code>plan_name</code>, <code>year</code>,
+                                <code>plan_hours</code>, <code>department_id</code> (can be ID, Name, or Dept. No.),
+                                <code>is_active</code> (1 for active, 0 for inactive).</li>
+                            <li>If 'plan_no' exists, its data will be updated. Otherwise, a new plan is created.</li>
+                            <li>Empty rows or rows missing 'plan_no'/'plan_name' will be skipped.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-upload me-1"></i> Upload and Process
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{{-- *** نهاية مودال الرفع *** --}}
