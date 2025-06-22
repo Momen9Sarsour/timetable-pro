@@ -143,10 +143,8 @@ Route::prefix('dashboard')->group(function () {
         Route::post('/plans/{plan}/level/{level}/semester/{semester}/add-subject', [PlanController::class, 'addSubject'])->name('plans.addSubject');
         Route::delete('/plans/{plan}/remove-subject/{planSubject}', [PlanController::class, 'removeSubject'])->name('plans.removeSubject');
         // Route::resource('plans', PlanController::class)->except(['create', 'show', 'edit']);
-        // ... (الروابط القديمة للخطط) ...
+
         // Route::post('/plans/{plan}/bulk-upload-subjects', [PlanController::class, 'bulkUploadPlanSubjects'])->name('plans.bulkUploadSubjects'); // *** الرابط الجديد ***
-        Route::post('/plans/{plan}/import-subjects-excel', [PlanController::class, 'importSubjectsExcel'])->name('plans.importSubjectsExcel');
-        // *** تعديل روت رفع ملف الإكسل لمواد الخطة ***
         Route::post('/plans/{plan}/import-subjects-excel', [PlanSubjectImportController::class, 'handleImport'])->name('plans.importSubjectsExcel');
 
         // --- Plan Expected Counts Management ---

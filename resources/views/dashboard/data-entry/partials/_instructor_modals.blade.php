@@ -1,200 +1,224 @@
-{{-- // Modal لإضافة مدرس جديد --}}
-@if (!$instructor)
+{{-- ======================================= --}}
+{{-- مودال إضافة مدرس جديد --}}
+{{-- ======================================= --}}
 <div class="modal fade" id="addInstructorModal" tabindex="-1" aria-labelledby="addInstructorModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="addInstructorModalLabel">Add New Instructor</h5>
+                <h5 class="modal-title" id="addInstructorModalLabel">Add New Instructor & User Account</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ route('data-entry.instructors.store') }}" method="POST">
+            <form id="addInstructorForm" action="{{ route('data-entry.instructors.store') }}" method="POST">
                 @csrf
                 <div class="modal-body">
-                    <div class="row">
-                         {{-- // اختيار المستخدم لربطه --}}
-                        <div class="col-md-6 mb-3">
-                            <label for="add_user_id" class="form-label">Link to User Account <span class="text-danger">*</span></label>
-                            <select class="form-select @error('user_id') is-invalid @enderror" id="add_user_id" name="user_id" required>
-                                <option value="" selected disabled>Select user...</option>
-                                @foreach ($availableUsers as $user)
-                                    <option value="{{ $user->id }}" {{ old('user_id') == $user->id ? 'selected' : '' }}>{{ $user->name }} ({{ $user->email }})</option>
+                    {{-- عرض أخطاء الـ validation --}}
+                    @if ($errors->hasBag('addInstructorModal'))
+                        <div class="alert alert-danger small p-2 mb-3 validation-errors-container">
+                            <strong>Please correct the errors:</strong>
+                            <ul class="mb-0 ps-3">
+                                @foreach ($errors->getBag('addInstructorModal')->all() as $error)
+                                    <li>{{ $error }}</li>
                                 @endforeach
-                            </select>
-                            @error('user_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                            @if($availableUsers->isEmpty())
-                             <small class="text-muted">No available users found. Create a user first with an appropriate role (Instructor, HoD, Admin).</small>
-                            @endif
+                            </ul>
                         </div>
-                        {{-- // الرقم الوظيفي --}}
-                         <div class="col-md-6 mb-3">
-                            <label for="add_instructor_no" class="form-label">Instructor Number/ID <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control @error('instructor_no') is-invalid @enderror" id="add_instructor_no" name="instructor_no" value="{{ old('instructor_no') }}" required>
-                            @error('instructor_no') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-                    </div>
+                    @endif
 
+                    <h6>User Account Information</h6>
                     <div class="row">
-                        {{-- // اسم المدرس (يمكن ملؤه تلقائياً من اليوزر؟ أو نتركه للإدخال) --}}
-                         <div class="col-md-6 mb-3">
-                             <label for="add_instructor_name" class="form-label">Instructor Display Name <span class="text-danger">*</span></label>
-                             <input type="text" class="form-control @error('instructor_name') is-invalid @enderror" id="add_instructor_name" name="instructor_name" value="{{ old('instructor_name') }}" required>
-                             <small class="text-muted">Can be the same as the user account name.</small>
-                             @error('instructor_name') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                         </div>
-                        {{-- // الدرجة العلمية --}}
-                         <div class="col-md-6 mb-3">
-                            <label for="add_academic_degree" class="form-label">Academic Degree</label>
-                            <input type="text" class="form-control @error('academic_degree') is-invalid @enderror" id="add_academic_degree" name="academic_degree" value="{{ old('academic_degree') }}" placeholder="e.g., PhD, MSc, BSc">
-                            @error('academic_degree') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <div class="col-md-6 mb-1">
+                            <label for="add_user_name" class="form-label">Full Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control @error('name', 'addInstructorModal') is-invalid @enderror" id="add_user_name" name="name" value="{{ old('name') }}" required>
+                            @error('name', 'addInstructorModal') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="col-md-6 mb-1">
+                            <label for="add_user_email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control @error('email', 'addInstructorModal') is-invalid @enderror" id="add_user_email" name="email" value="{{ old('email') }}" required>
+                            @error('email', 'addInstructorModal') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-1">
+                            <label for="add_user_password" class="form-label">Password <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control @error('password', 'addInstructorModal') is-invalid @enderror" id="add_user_password" name="password" required>
+                            @error('password', 'addInstructorModal') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="col-md-6 mb-1">
+                            <label for="add_user_password_confirmation" class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="add_user_password_confirmation" name="password_confirmation" required>
+                        </div>
+                    </div>
+                    <div class="mb-1">
+                        <label for="add_role_id_for_instructor" class="form-label">Assign Role <span class="text-danger">*</span></label>
+                        <select class="form-select @error('role_id_for_instructor', 'addInstructorModal') is-invalid @enderror" id="add_role_id_for_instructor" name="role_id_for_instructor" required>
+                            <option value="" selected disabled>Select role...</option>
+                            @foreach ($instructorRoles as $role) {{-- $instructorRoles من الكنترولر --}}
+                                <option value="{{ $role->id }}" {{ old('role_id_for_instructor') == $role->id ? 'selected' : '' }}>{{ $role->display_name }}</option>
+                            @endforeach
+                        </select>
+                        @error('role_id_for_instructor', 'addInstructorModal') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
 
+                    <hr class="my-4">
+                    <h6>Instructor Specific Information</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-1">
+                            <label for="add_instructor_no" class="form-label">Employee Number <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control @error('instructor_no', 'addInstructorModal') is-invalid @enderror" id="add_instructor_no" name="instructor_no" value="{{ old('instructor_no') }}" required>
+                            @error('instructor_no', 'addInstructorModal') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="col-md-6 mb-1">
+                            <label for="add_academic_degree" class="form-label">Academic Degree</label>
+                            <input type="text" class="form-control @error('academic_degree', 'addInstructorModal') is-invalid @enderror" id="add_academic_degree" name="academic_degree" value="{{ old('academic_degree') }}">
+                            @error('academic_degree', 'addInstructorModal') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                    </div>
                      <div class="row">
-                        {{-- // القسم --}}
-                        <div class="col-md-6 mb-3">
-                            <label for="add_department_id" class="form-label">Department <span class="text-danger">*</span></label>
-                            <select class="form-select @error('department_id') is-invalid @enderror" id="add_department_id" name="department_id" required>
+                        <div class="col-md-6 mb-1">
+                            <label for="add_department_id_instructor" class="form-label">Department <span class="text-danger">*</span></label>
+                            <select class="form-select @error('department_id', 'addInstructorModal') is-invalid @enderror" id="add_department_id_instructor" name="department_id" required>
                                 <option value="" selected disabled>Select department...</option>
-                                @foreach ($departments as $dept)
+                                @foreach ($departments as $dept) {{-- $departments من الكنترولر --}}
                                     <option value="{{ $dept->id }}" {{ old('department_id') == $dept->id ? 'selected' : '' }}>{{ $dept->department_name }}</option>
                                 @endforeach
                             </select>
-                            @error('department_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            @error('department_id', 'addInstructorModal') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
-                        {{-- // الحد الأقصى للساعات --}}
-                         <div class="col-md-6 mb-3">
+                        <div class="col-md-6 mb-1">
                             <label for="add_max_weekly_hours" class="form-label">Max Weekly Hours</label>
-                            <input type="number" class="form-control @error('max_weekly_hours') is-invalid @enderror" id="add_max_weekly_hours" name="max_weekly_hours" value="{{ old('max_weekly_hours') }}" min="0">
-                            @error('max_weekly_hours') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            <input type="number" class="form-control @error('max_weekly_hours', 'addInstructorModal') is-invalid @enderror" id="add_max_weekly_hours" name="max_weekly_hours" value="{{ old('max_weekly_hours') }}" min="0">
+                            @error('max_weekly_hours', 'addInstructorModal') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                     </div>
-
-                    {{-- // إضافة حقول المكتب --}}
                     {{-- <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="add_office_location" class="form-label">Office Location</label>
-                            <input type="text" class="form-control @error('office_location') is-invalid @enderror" id="add_office_location" name="office_location" value="{{ old('office_location') }}">
-                            @error('office_location') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            <input type="text" class="form-control @error('office_location', 'addInstructorModal') is-invalid @enderror" id="add_office_location" name="office_location" value="{{ old('office_location') }}">
+                            @error('office_location', 'addInstructorModal') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="add_office_hours" class="form-label">Office Hours</label>
-                            <input type="text" class="form-control @error('office_hours') is-invalid @enderror" id="add_office_hours" name="office_hours" value="{{ old('office_hours') }}" placeholder="e.g., Mon/Wed 10:00 - 12:00">
-                            @error('office_hours') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            <input type="text" class="form-control @error('office_hours', 'addInstructorModal') is-invalid @enderror" id="add_office_hours" name="office_hours" value="{{ old('office_hours') }}">
+                            @error('office_hours', 'addInstructorModal') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                     </div> --}}
-
-                    {{-- // حقل تفضيلات التوفر (مؤقتاً كـ textarea) --}}
                     <div class="mb-3">
-                        <label for="add_availability_preferences" class="form-label">Availability Preferences (Optional)</label>
-                        <textarea class="form-control @error('availability_preferences') is-invalid @enderror" id="add_availability_preferences" name="availability_preferences" rows="3" placeholder="Enter preferred/unavailable times, e.g., Unavailable: Monday morning, Preferred: Tuesday afternoon">{{ old('availability_preferences') }}</textarea>
-                        <small class="text-muted">Enter preferences as text for now. JSON format can be used later.</small>
-                        @error('availability_preferences') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <label for="add_availability_preferences" class="form-label">Availability Preferences</label>
+                        <textarea class="form-control @error('availability_preferences', 'addInstructorModal') is-invalid @enderror" id="add_availability_preferences" name="availability_preferences" rows="2">{{ old('availability_preferences') }}</textarea>
+                        @error('availability_preferences', 'addInstructorModal') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary" {{ $availableUsers->isEmpty() ? 'disabled' : '' }}>Save Instructor</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Instructor</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-@endif
 
-{{-- // Modal لتعديل مدرس موجود --}}
-@if ($instructor)
-<div class="modal fade" id="editInstructorModal-{{ $instructor->id }}" tabindex="-1" aria-labelledby="editInstructorModalLabel-{{ $instructor->id }}" aria-hidden="true">
-     <div class="modal-dialog modal-lg">
+
+{{-- ======================================= --}}
+{{-- مودال تعديل مدرس --}}
+{{-- ======================================= --}}
+<div class="modal fade" id="editInstructorModal" tabindex="-1" aria-labelledby="editInstructorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="editInstructorModalLabel-{{ $instructor->id }}">Edit Instructor: {{ $instructor->instructor_name ?? $instructor->user->name }}</h5>
+                <h5 class="modal-title" id="editInstructorModalLabel">Edit Instructor</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-             <form action="{{ route('data-entry.instructors.update', $instructor->id) }}" method="POST">
+            <form id="editInstructorForm" action="#" method="POST"> {{-- Action يتغير بـ JS --}}
                 @csrf
                 @method('PUT')
                 <div class="modal-body">
-                    {{-- // نفس حقول نموذج الإضافة ولكن مع قيم المدرس الحالية --}}
-                     {{-- // حقل اليوزر يكون للقراءة فقط أو مخفي لأنه لا يجب تغييره --}}
+                    {{-- لعرض أخطاء الـ validation --}}
+                    @if ($errors->any() && session('error_instructor_id_on_edit'))
+                         @php $currentErrorBagName = 'editInstructorModal_' . session('error_instructor_id_on_edit'); @endphp
+                         @if ($errors->hasBag($currentErrorBagName))
+                            <div class="alert alert-danger small p-2 mb-3 validation-errors-container">
+                                <strong>Please correct the errors:</strong>
+                                <ul class="mb-0 ps-3">
+                                    @foreach ($errors->getBag($currentErrorBagName)->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                         @endif
+                    @endif
+
+                    <h6>User Account Information</h6>
+                    {{-- حقول اليوزر (مع old() input) --}}
                      <div class="row">
-                          <div class="col-md-6 mb-3">
-                            <label class="form-label">Linked User Account</label>
-                            <input type="text" class="form-control" value="{{ $instructor->user->name ?? 'N/A' }} ({{ $instructor->user->email ?? 'N/A' }})" disabled readonly>
-                            {{-- // لا نرسل user_id في التعديل --}}
+                        <div class="col-md-6 mb-1">
+                            <label for="edit_user_name" class="form-label">Full Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="edit_user_name" name="name" value="{{ old('name') }}" required>
                         </div>
-                         <div class="col-md-6 mb-3">
-                            <label for="edit_instructor_no_{{ $instructor->id }}" class="form-label">Instructor Number/ID <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control @error('instructor_no', 'update_'.$instructor->id) is-invalid @enderror" id="edit_instructor_no_{{ $instructor->id }}" name="instructor_no" value="{{ old('instructor_no', $instructor->instructor_no) }}" required>
-                            @error('instructor_no', 'update_'.$instructor->id) <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <div class="col-md-6 mb-1">
+                            <label for="edit_user_email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="edit_user_email" name="email" value="{{ old('email') }}" required>
                         </div>
                     </div>
-
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="edit_instructor_name_{{ $instructor->id }}" class="form-label">Instructor Display Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control @error('instructor_name', 'update_'.$instructor->id) is-invalid @enderror" id="edit_instructor_name_{{ $instructor->id }}" name="instructor_name" value="{{ old('instructor_name', $instructor->instructor_name) }}" required>
-                            @error('instructor_name', 'update_'.$instructor->id) <div class="invalid-feedback">{{ $message }}</div> @enderror
-                         </div>
-                         <div class="col-md-6 mb-3">
-                            <label for="edit_academic_degree_{{ $instructor->id }}" class="form-label">Academic Degree</label>
-                            <input type="text" class="form-control @error('academic_degree', 'update_'.$instructor->id) is-invalid @enderror" id="edit_academic_degree_{{ $instructor->id }}" name="academic_degree" value="{{ old('academic_degree', $instructor->academic_degree) }}">
-                            @error('academic_degree', 'update_'.$instructor->id) <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <div class="col-md-6 mb-1">
+                            <label for="edit_user_password" class="form-label">New Password (leave blank to keep current)</label>
+                            <input type="password" class="form-control" id="edit_user_password" name="password" value="">
+                        </div>
+                        <div class="col-md-6 mb-1">
+                            <label for="edit_user_password_confirmation" class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control" id="edit_user_password_confirmation" name="password_confirmation">
                         </div>
                     </div>
+                     <div class="mb-1">
+                        <label for="edit_role_id_for_instructor" class="form-label">Assign Role <span class="text-danger">*</span></label>
+                        <select class="form-select" id="edit_role_id_for_instructor" name="role_id_for_instructor" required>
+                            <option value="" disabled>Select role...</option>
+                            {{-- $instructorRoles يتم تمريرها من الكنترولر --}}
+                            @foreach ($instructorRoles as $role)
+                                <option value="{{ $role->id }}">{{ $role->display_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
 
+                    <hr class="my-4">
+                    <h6>Instructor Specific Information</h6>
+                    {{-- حقول المدرس (مع old() input) --}}
+                    <div class="row">
+                        <div class="col-md-6 mb-1">
+                            <label for="edit_instructor_no" class="form-label">Employee Number <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="edit_instructor_no" name="instructor_no" value="{{ old('instructor_no') }}" required>
+                        </div>
+                        <div class="col-md-6 mb-1">
+                            <label for="edit_academic_degree" class="form-label">Academic Degree</label>
+                            <input type="text" class="form-control" id="edit_academic_degree" name="academic_degree" value="{{ old('academic_degree') }}">
+                        </div>
+                    </div>
                      <div class="row">
-                         <div class="col-md-6 mb-3">
-                            <label for="edit_department_id_{{ $instructor->id }}" class="form-label">Department <span class="text-danger">*</span></label>
-                            <select class="form-select @error('department_id', 'update_'.$instructor->id) is-invalid @enderror" id="edit_department_id_{{ $instructor->id }}" name="department_id" required>
+                        <div class="col-md-6 mb-1">
+                            <label for="edit_department_id_instructor" class="form-label">Department <span class="text-danger">*</span></label>
+                            <select class="form-select" id="edit_department_id_instructor" name="department_id" required>
                                 <option value="" disabled>Select department...</option>
+                                {{-- $departments يتم تمريرها من الكنترولر --}}
                                 @foreach ($departments as $dept)
-                                    <option value="{{ $dept->id }}" {{ old('department_id', $instructor->department_id) == $dept->id ? 'selected' : '' }}>{{ $dept->department_name }}</option>
+                                    <option value="{{ $dept->id }}">{{ $dept->department_name }}</option>
                                 @endforeach
                             </select>
-                            @error('department_id', 'update_'.$instructor->id) <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="edit_max_weekly_hours_{{ $instructor->id }}" class="form-label">Max Weekly Hours</label>
-                            <input type="number" class="form-control @error('max_weekly_hours', 'update_'.$instructor->id) is-invalid @enderror" id="edit_max_weekly_hours_{{ $instructor->id }}" name="max_weekly_hours" value="{{ old('max_weekly_hours', $instructor->max_weekly_hours) }}" min="0">
-                            @error('max_weekly_hours', 'update_'.$instructor->id) <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <div class="col-md-6 mb-1">
+                            <label for="edit_max_weekly_hours" class="form-label">Max Weekly Hours</label>
+                            <input type="number" class="form-control" id="edit_max_weekly_hours" name="max_weekly_hours" value="{{ old('max_weekly_hours') }}" min="0">
                         </div>
                     </div>
-
-                     {{-- // حقول المكتب --}}
-                    {{-- <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="edit_office_location_{{ $instructor->id }}" class="form-label">Office Location</label>
-                            <input type="text" class="form-control @error('office_location', 'update_'.$instructor->id) is-invalid @enderror" id="edit_office_location_{{ $instructor->id }}" name="office_location" value="{{ old('office_location', $instructor->office_location) }}">
-                            @error('office_location', 'update_'.$instructor->id) <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="edit_office_hours_{{ $instructor->id }}" class="form-label">Office Hours</label>
-                            <input type="text" class="form-control @error('office_hours', 'update_'.$instructor->id) is-invalid @enderror" id="edit_office_hours_{{ $instructor->id }}" name="office_hours" value="{{ old('office_hours', $instructor->office_hours) }}">
-                            @error('office_hours', 'update_'.$instructor->id) <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-                    </div> --}}
-
-                    <div class="mb-3">
-                         {{-- // تحويل JSON المخزن إلى نص للعرض (أو استخدام حقل input منفصل إذا أردت) --}}
-                        @php
-                             $availabilityText = '';
-                             if (is_string($instructor->availability_preferences)) {
-                                 $availabilityText = $instructor->availability_preferences; // إذا كان النص بسيطاً
-                             } elseif (is_array($instructor->availability_preferences) || is_object($instructor->availability_preferences)) {
-                                 // محاولة تحويل JSON المعقد لنص مقروء (يمكن تحسينها)
-                                 $availabilityText = json_encode($instructor->availability_preferences, JSON_PRETTY_PRINT);
-                             }
-                        @endphp
-                        <label for="edit_availability_preferences_{{ $instructor->id }}" class="form-label">Availability Preferences (Optional)</label>
-                        <textarea class="form-control @error('availability_preferences', 'update_'.$instructor->id) is-invalid @enderror" id="edit_availability_preferences_{{ $instructor->id }}" name="availability_preferences" rows="3">{{ old('availability_preferences', $availabilityText) }}</textarea>
-                         <small class="text-muted">Enter preferences as text for now.</small>
-                        @error('availability_preferences', 'update_'.$instructor->id) <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    <div class="mb-1">
+                        <label for="add_availability_preferences" class="form-label">Availability Preferences</label>
+                        <textarea class="form-control @error('availability_preferences', 'addInstructorModal') is-invalid @enderror" id="add_availability_preferences" name="availability_preferences" rows="2">{{ old('availability_preferences') }}</textarea>
+                        @error('availability_preferences', 'addInstructorModal') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
+                    {{-- ... باقي حقول المدرس (office_location, office_hours, availability_preferences) بنفس الطريقة ... --}}
 
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">Update Instructor</button>
                 </div>
             </form>
@@ -202,28 +226,29 @@
     </div>
 </div>
 
-{{-- // Modal لتأكيد الحذف --}}
-<div class="modal fade" id="deleteInstructorModal-{{ $instructor->id }}" tabindex="-1" aria-labelledby="deleteInstructorModalLabel-{{ $instructor->id }}" aria-hidden="true">
-     <div class="modal-dialog">
+
+{{-- ======================================= --}}
+{{-- مودال حذف مدرس --}}
+{{-- ======================================= --}}
+<div class="modal fade" id="deleteInstructorModal" tabindex="-1" aria-labelledby="deleteInstructorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="deleteInstructorModalLabel-{{ $instructor->id }}">Confirm Deletion</h5>
+                <h5 class="modal-title" id="deleteInstructorModalLabel">Confirm Deletion</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-             <form action="{{ route('data-entry.instructors.destroy', $instructor->id) }}" method="POST">
+            <form id="deleteInstructorForm" action="#" method="POST"> {{-- Action يتغير بـ JS --}}
                 @csrf
                 @method('DELETE')
                 <div class="modal-body">
-                    <p>Are you sure you want to delete the instructor record for: <strong>{{ $instructor->instructor_name ?? $instructor->user->name }} ({{ $instructor->instructor_no }})</strong>?</p>
-                    <p class="text-warning small">Note: This will only delete the instructor-specific data. The associated user account ({{ $instructor->user->email ?? 'N/A' }}) will not be deleted.</p>
-                    <p class="text-danger small">Any scheduled classes assigned to this instructor might be affected.</p>
+                    <p>Are you sure you want to delete the instructor <strong id="deleteInstructorName">this instructor</strong> and their associated user account?</p>
+                    <p class="text-danger small">This action cannot be undone and will also delete the user login.</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger">Yes, Delete Instructor Record</button>
+                    <button type="submit" class="btn btn-danger">Yes, Delete Instructor & User</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-@endif
