@@ -11,86 +11,167 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 
-class InstructorSubjectController extends Controller
+class InstructorSubjectsController extends Controller
 {
     // =============================================
     //            Web Controller Methods
     // =============================================
+
     /**
-     * Display a listing of the resource.
+     * Display a listing of instructors and their assigned subjects.
      */
     public function index()
     {
         try {
-            // جلب المدرسين مع القسم وعدد المواد المعينة (لتجنب تحميل كل المواد)
-            $instructors = Instructor::with(['user:id,name', 'department:id,department_name'])
-                ->withCount('sections') // إضافة عمود subjects_count
-                ->latest()
-                ->paginate(10); // Pagination للصفحة الرئيسية
+            // جلب المدرسين مع تحميل العلاقات اللازمة بكفاءة
+            $instructors = Instructor::with([
+                'user:id,name',
+                'department:id,department_name',
+                'subjects:subjects.id,subject_no,subject_name' // جلب المواد المعينة مع الحقول الأساسية
+            ])
+                ->withCount('subjects') // إضافة عمود subjects_count
+                ->latest('id')
+                ->paginate(15); // استخدام Pagination
 
-            return view('dashboard.data-entry.instructor-subject', compact('instructors')); // View جديد للعرض
+            return view('dashboard.data-entry.instructor-subjects', compact('instructors'));
         } catch (Exception $e) {
             Log::error('Error fetching instructor-subject index: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Could not load instructor assignments.');
+            return redirect()->back()->with('error', 'Could not load instructor-subject assignments page.');
         }
     }
 
     /**
      * Show the form for editing the assigned subjects for a specific instructor.
      */
-
-    public function editAssignments(Instructor $instructor) // Route Model Binding للمدرس
+    public function edit(Instructor $instructor)
     {
         try {
-            // جلب كل المواد مع شعبها (مع تحميل العلاقات اللازمة للشعبة)
-            $allSubjectsWithSections = Subject::with([
-                'subjectCategory:id,subject_category_name', // فئة المادة
-                // جلب شعب المادة مع تحميل مدرسينها
-                'planSubjectEntries.sections.instructors:id,instructor_name' // لمعرفة إذا كانت الشعبة مأخوذة
-            ])
-                ->orderBy('subject_no')
-                ->get();
+            // تحميل معلومات المدرس الأساسية
+            $instructor->load('user:id,name', 'department:id,department_name');
 
-            // جلب IDs الشعب المعينة لهذا المدرس المحدد
-            $assignedSectionIds = $instructor->sections()->pluck('sections.id')->toArray();
+            // جلب كل المواد المتاحة في النظام، مع تحميل قسم كل مادة
+            $allSubjects = Subject::with('department:id,department_name')
+                ->orderBy('subject_no')
+                ->get(['id', 'subject_no', 'subject_name', 'department_id']);
+
+            // جلب IDs المواد المعينة حالياً لهذا المدرس (الطريقة الأكثر أماناً)
+            $assignedSubjectIds = $instructor->subjects()->pluck('subjects.id')->toArray();
 
             return view('dashboard.data-entry.instructor-subject-edit', compact(
                 'instructor',
-                'allSubjectsWithSections',
-                'assignedSectionIds'
+                'allSubjects',
+                'assignedSubjectIds'
             ));
         } catch (Exception $e) {
-            Log::error('Error loading edit assignments view for instructor ID ' . $instructor->id . ': ' . $e->getMessage());
-            return redirect()->route('data-entry.instructor-subject.index')->with('error', 'Could not load assignment editing page.');
+            Log::error('Error loading edit assignments view for instructor ID ' . $instructor->id . ': ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
+            return redirect()->route('data-entry.instructor-subjects.index')->with('error', 'Could not load the assignment editing page. A server error occurred.');
         }
     }
 
-
     /**
-     * Update the sections assigned to the specified instructor.
+     * Update the subjects assigned to the specified instructor.
      */
-    public function syncAssignments(Request $request, Instructor $instructor)
+    public function sync(Request $request, Instructor $instructor)
     {
-        // 1. Validation (فقط section_ids)
         $validatedData = $request->validate([
-            'section_ids' => 'nullable|array', // قد تكون فارغة إذا أردنا إزالة كل التعيينات
-            'section_ids.*' => 'integer|exists:sections,id',
+            'subject_ids' => 'nullable|array',
+            'subject_ids.*' => 'integer|exists:subjects,id',
+        ], [
+            'subject_ids.array' => 'The selected subjects must be in a valid format.',
+            'subject_ids.*.exists' => 'One or more of the selected subjects do not exist.',
         ]);
 
         try {
-            // 2. استخدام sync() لتحديث الارتباطات في جدول instructor_section
-            $instructor->sections()->sync($validatedData['section_ids'] ?? []);
+            // استخدام sync() لتحديث الارتباطات في الجدول الوسيط
+            $instructor->subjects()->sync($validatedData['subject_ids'] ?? []);
 
-            // 3. Redirect إلى صفحة العرض الرئيسية مع رسالة نجاح
-            return redirect()->route('data-entry.instructor-subject.index')
-                ->with('success', 'Section assignments updated successfully for ' . ($instructor->instructor_name ?? optional($instructor->user)->name));
+            $instructorName = $instructor->instructor_name ?? optional($instructor->user)->name ?? "ID: {$instructor->id}";
+            return redirect()->route('data-entry.instructor-subjects.index')
+                ->with('success', 'Subject assignments updated successfully for ' . $instructorName);
         } catch (Exception $e) {
-            Log::error('Error syncing sections for instructor ID ' . $instructor->id . ': ' . $e->getMessage());
-            // العودة لصفحة التعديل نفسها مع رسالة خطأ
-            return redirect()->route('data-entry.instructor-subject.edit', $instructor->id)
-                ->with('error', 'Failed to update section assignments.');
+            Log::error('Error syncing subjects for instructor ID ' . $instructor->id . ': ' . $e->getMessage());
+            return redirect()->route('data-entry.instructor-subjects.edit', $instructor->id)
+                ->with('error', 'Failed to update subject assignments due to a server error.');
         }
     }
+
+
+
+    /**
+     * Display a listing of the resource.
+     */
+    // public function index()
+    // {
+    //     try {
+    //         // جلب المدرسين مع القسم وعدد المواد المعينة (لتجنب تحميل كل المواد)
+    //         $instructors = Instructor::with(['user:id,name', 'department:id,department_name'])
+    //             ->withCount('sections') // إضافة عمود subjects_count
+    //             ->latest()
+    //             ->paginate(10); // Pagination للصفحة الرئيسية
+
+    //         return view('dashboard.data-entry.instructor-subjects', compact('instructors')); // View جديد للعرض
+    //     } catch (Exception $e) {
+    //         Log::error('Error fetching instructor-subject index: ' . $e->getMessage());
+    //         return redirect()->back()->with('error', 'Could not load instructor assignments.');
+    //     }
+    // }
+
+    // /**
+    //  * Show the form for editing the assigned subjects for a specific instructor.
+    //  */
+
+    // public function editAssignments(Instructor $instructor) // Route Model Binding للمدرس
+    // {
+    //     try {
+    //         // جلب كل المواد مع شعبها (مع تحميل العلاقات اللازمة للشعبة)
+    //         $allSubjectsWithSections = Subject::with([
+    //             'subjectCategory:id,subject_category_name', // فئة المادة
+    //             // جلب شعب المادة مع تحميل مدرسينها
+    //             'planSubjectEntries.sections.instructors:id,instructor_name' // لمعرفة إذا كانت الشعبة مأخوذة
+    //         ])
+    //             ->orderBy('subject_no')
+    //             ->get();
+
+    //         // جلب IDs الشعب المعينة لهذا المدرس المحدد
+    //         $assignedSectionIds = $instructor->sections()->pluck('sections.id')->toArray();
+
+    //         return view('dashboard.data-entry.instructor-subject-edit', compact(
+    //             'instructor',
+    //             'allSubjectsWithSections',
+    //             'assignedSectionIds'
+    //         ));
+    //     } catch (Exception $e) {
+    //         Log::error('Error loading edit assignments view for instructor ID ' . $instructor->id . ': ' . $e->getMessage());
+    //         return redirect()->route('data-entry.instructor-subject.index')->with('error', 'Could not load assignment editing page.');
+    //     }
+    // }
+
+
+    // /**
+    //  * Update the sections assigned to the specified instructor.
+    //  */
+    // public function syncAssignments(Request $request, Instructor $instructor)
+    // {
+    //     // 1. Validation (فقط section_ids)
+    //     $validatedData = $request->validate([
+    //         'section_ids' => 'nullable|array', // قد تكون فارغة إذا أردنا إزالة كل التعيينات
+    //         'section_ids.*' => 'integer|exists:sections,id',
+    //     ]);
+
+    //     try {
+    //         // 2. استخدام sync() لتحديث الارتباطات في جدول instructor_section
+    //         $instructor->sections()->sync($validatedData['section_ids'] ?? []);
+
+    //         // 3. Redirect إلى صفحة العرض الرئيسية مع رسالة نجاح
+    //         return redirect()->route('data-entry.instructor-subject.index')
+    //             ->with('success', 'Section assignments updated successfully for ' . ($instructor->instructor_name ?? optional($instructor->user)->name));
+    //     } catch (Exception $e) {
+    //         Log::error('Error syncing sections for instructor ID ' . $instructor->id . ': ' . $e->getMessage());
+    //         // العودة لصفحة التعديل نفسها مع رسالة خطأ
+    //         return redirect()->route('data-entry.instructor-subject.edit', $instructor->id)
+    //             ->with('error', 'Failed to update section assignments.');
+    //     }
+    // }
 
     // public function editAssignments(Instructor $instructor) // استخدام Route Model Binding
     // {

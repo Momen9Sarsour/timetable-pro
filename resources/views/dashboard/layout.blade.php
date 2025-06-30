@@ -241,9 +241,19 @@
 
                         {{-- @can('sections') --}}
                         <li
-                            class="nav-item {{ request()->routeIs('data-entry.instructor-subject.*') ? 'active' : '' }}">
-                            <a href="{{ route('data-entry.instructor-subject.index') }}"
-                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.instructor-subject') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
+                            class="nav-item {{ request()->routeIs('data-entry.instructor-section.*') ? 'active' : '' }}">
+                            <a href="{{ route('data-entry.instructor-section.index') }}"
+                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.instructor-section') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
+                                <i class="fas fa-link fa-fw me-2"></i> Instructor Section
+                            </a>
+                        </li>
+                        {{-- @endcan --}}
+
+                        {{-- @can('sections') --}}
+                        <li
+                            class="nav-item {{ request()->routeIs('data-entry.instructor-subjects.*') ? 'active' : '' }}">
+                            <a href="{{ route('data-entry.instructor-subjects.index') }}"
+                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.instructor-subjects') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
                                 <i class="fas fa-link fa-fw me-2"></i> Instructor Subjects
                             </a>
                         </li>

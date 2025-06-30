@@ -5,11 +5,30 @@
         <div class="data-entry-container">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="data-entry-header mb-0">Manage Instructors</h1>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addInstructorModal">
-                    <i class="fas fa-plus me-1"></i> Add New Instructor
-                </button>
+                <div class="d-flex">
+                    <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#addInstructorModal">
+                        <i class="fas fa-plus me-1"></i> Add New Instructor
+                    </button>
+                    {{-- *** زر رفع ملف الإكسل الجديد *** --}}
+                    <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#importInstructorsModal">
+                        <i class="fas fa-file-excel me-1"></i> Import from Excel
+                    </button>
+                </div>
             </div>
             @include('dashboard.data-entry.partials._status_messages')
+            @if (session('skipped_details') && count(session('skipped_details')) > 0)
+                <div class="alert alert-warning mt-3">
+                    <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Import Process: Skipped Rows Details
+                    </h5>
+                    <ul class="mb-0 small"
+                        style="max-height: 200px; overflow-y: auto; list-style-type: none; padding-left:0;">
+                        @foreach (session('skipped_details') as $detail)
+                            <li><i class="fas fa-times-circle text-danger me-1"></i> {{ $detail }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <div class="card shadow-sm">
                 <div class="card-body">
                     <div class="table-responsive">
@@ -64,7 +83,7 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="mt-3 d-flex justify-content-center"> {{ $instructors->links() }} </div>
+                    <div class="mt-3 d-flex justify-content-center"> {{ $instructors->links('pagination::bootstrap-5') }} </div>
                 </div>
             </div>
 
@@ -177,7 +196,7 @@
                 @if ($editErrorBagName && $errors->hasBag($editErrorBagName))
                     console.warn(
                         "Reopening edit modal for instructor due to validation errors. Bag: {{ $editErrorBagName }}"
-                        );
+                    );
                     // هنا نحتاج لإعادة فتح المودال مع البيانات القديمة.
                     // الـ JavaScript الحالي سيعبئ بالبيانات من الزر، ليس بالـ old()
                     // هذا يتطلب إما:
@@ -191,7 +210,7 @@
                     $('#editInstructorModal').find('select[name="role_id_for_instructor"]').val(
                         "{{ old('role_id_for_instructor') }}");
                     $('#editInstructorModal').find('input[name="instructor_no"]').val(
-                    "{{ old('instructor_no') }}");
+                        "{{ old('instructor_no') }}");
                     // ... أكمل باقي الحقول
                 @endif
             @endif

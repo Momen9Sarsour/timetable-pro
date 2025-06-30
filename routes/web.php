@@ -3,7 +3,11 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataEntry\DepartmentController;
 use App\Http\Controllers\DataEntry\InstructorController;
+use App\Http\Controllers\DataEntry\InstructorLoadAssignmentController;
+use App\Http\Controllers\DataEntry\InstructorSectionController;
 use App\Http\Controllers\DataEntry\InstructorSubjectController;
+use App\Http\Controllers\DataEntry\InstructorSubjectOldController;
+use App\Http\Controllers\DataEntry\InstructorSubjectsController;
 use App\Http\Controllers\DataEntry\PlanController;
 use App\Http\Controllers\DataEntry\PlanExpectedCountController;
 use App\Http\Controllers\DataEntry\PlanSubjectImportController;
@@ -123,6 +127,9 @@ Route::prefix('dashboard')->group(function () {
         Route::put('/instructors/{instructor}', [InstructorController::class, 'update'])->name('instructors.update');
         Route::delete('/instructors/{instructor}', [InstructorController::class, 'destroy'])->name('instructors.destroy');
         // Route::resource('instructors', InstructorController::class)->except(['create', 'show', 'edit']);
+        // *** روت جديد لرفع ملف الإكسل للمدرسين ***
+        Route::post('/instructors/import-excel', [InstructorController::class, 'importExcel'])->name('instructors.importExcel');
+
 
         // Plans Management Page
         Route::get('/plans', [PlanController::class, 'index'])->name('plans.index');
@@ -178,14 +185,25 @@ Route::prefix('dashboard')->group(function () {
         Route::put('/sections/update-in-context/{section}', [SectionController22::class, 'updateSectionInContext'])->name('sections.updateInContext'); // {section} هنا هو section_id
         Route::delete('/sections/destroy-in-context/{section}', [SectionController22::class, 'destroySectionInContext'])->name('sections.destroyInContext');
 
+        // --- Instructor Section Subject Assignments ---
+        Route::get('/instructor-section', [InstructorSectionController::class, 'index'])->name('instructor-section.index'); // صفحة العرض الرئيسية
+        Route::get('/instructor-section/{instructor}/edit', [InstructorSectionController::class, 'editAssignments'])->name('instructor-section.edit');
+        Route::post('/instructor-section/{instructor}/sync', [InstructorSectionController::class, 'syncAssignments'])->name('instructor-section.sync');
+        // --- Instructor Load Assignment from Excel (العمليات الجديدة) ---
+        // روت لتوليد الشعب الناقصة (يُستدعى من زر)
+        Route::post('/instructor-load-assignment/generate-missing-sections', [InstructorLoadAssignmentController::class, 'generateMissingSections'])->name('instructor-load.generateMissingSections');
+        // روت لمعالجة رفع ملف إكسل لتوزيع الأحمال
+        Route::post('/instructor-load-assignment/import-excel', [InstructorLoadAssignmentController::class, 'importInstructorLoadsExcel'])->name('instructor-load.importExcel');
+
+        //////////////////////////////////////////////////////////////////////////////////////
         // --- Instructor Subject Assignments ---
-        // Route::get('/instructor-subject', [InstructorSubjectController::class, 'index'])->name('instructor-subject.index'); // لعرض الواجهة
-        // Route::post('/instructor-subject', [InstructorSubjectController::class, 'syncSubjects'])->name('instructor-subject.sync'); // لمعالجة حفظ الارتباطات
-        Route::get('/instructor-subject', [InstructorSubjectController::class, 'index'])->name('instructor-subject.index'); // صفحة العرض الرئيسية
-        // روت لعرض واجهة التعديل لمدرس معين (GET)
-        Route::get('/instructor-subject/{instructor}/edit', [InstructorSubjectController::class, 'editAssignments'])->name('instructor-subject.edit');
-        // روت لحفظ التغييرات (POST أو PUT)
-        Route::post('/instructor-subject/{instructor}/sync', [InstructorSubjectController::class, 'syncAssignments'])->name('instructor-subject.sync');
+        // Route::get('/instructor-subjects', [InstructorSubjectsController::class, 'index'])->name('instructor-subjects.index'); // صفحة العرض الرئيسية
+        // Route::post('/instructor-subjects', [InstructorSubjectsController::class, 'syncSubjects'])->name('instructor-subjects.sync'); // لمعالجة حفظ الارتباطات
+        // --- Instructor-Subject Mappings (الجديد لربط المواد) ---
+        Route::get('/instructor-subject-mappings', [InstructorSubjectsController::class, 'index'])->name('instructor-subjects.index');
+        Route::get('/instructor-subject-mappings/{instructor}/edit', [InstructorSubjectsController::class, 'edit'])->name('instructor-subjects.edit');
+        Route::post('/instructor-subject-mappings/{instructor}/sync', [InstructorSubjectsController::class, 'sync'])->name('instructor-subjects.sync');
+
 
         // Timeslots Management Page
         // Route::get('/timeslots', [DataEntryController::class, 'timeslots'])->name('timeslots');

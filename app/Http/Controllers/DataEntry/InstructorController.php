@@ -7,11 +7,13 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\Department;
 use App\Models\Instructor;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log; // اختياري
@@ -333,6 +335,301 @@ class InstructorController extends Controller
         }
     }
 
+    private $createdCount = 0;
+    private $updatedCount = 0;
+    private $skippedCount = 0;
+    private $skippedDetails = [];
+    private $processedInstructorNos = []; // لتتبع التكرار داخل الملف
+
+    /**
+     * Handle the import of instructors from an Excel file.
+     */
+    public function importExcel(Request $request)
+    {
+        $request->validate(['instructor_excel_file' => 'required|file|mimes:xlsx,xls,csv|max:5120']);
+        $this->resetCounters();
+
+        try {
+            $rows = Excel::toArray(new \stdClass(), $request->file('instructor_excel_file'))[0];
+            if (count($rows) <= 1) {
+                return redirect()->route('data-entry.instructors.index')->with('error', 'Uploaded Excel file is empty or contains only a header row.');
+            }
+
+            $header = array_map('strtolower', array_map('trim', array_shift($rows)));
+            // البحث عن مواقع الأعمدة (مع مرونة في الأسماء)
+            $instructorNoCol = $this->getColumnIndex($header, ['instructor_no', 'instructorno', 'رقم المدرس', 'الرقم الوظيفي']);
+            $instructorNameCol = $this->getColumnIndex($header, ['instructor_name', 'instructorname', 'اسم المدرس', 'الاسم']);
+            $departmentCol = $this->getColumnIndex($header, ['department_id', 'departmentid', 'department', 'القسم']);
+            $emailCol = $this->getColumnIndex($header, ['email', 'البريد الالكتروني', 'الايميل']);
+            $degreeCol = $this->getColumnIndex($header, ['academic_degree', 'academicdegree', 'degree', 'الدرجة العلمية']);
+            $maxHoursCol = $this->getColumnIndex($header, ['max_weekly_hours', 'maxweeklyhours', 'ساعات الدوام']);
+
+            if (is_null($instructorNoCol) || is_null($instructorNameCol) || is_null($departmentCol)) {
+                $missing = [];
+                if (is_null($instructorNoCol)) $missing[] = "'instructor_no'";
+                if (is_null($instructorNameCol)) $missing[] = "'instructor_name'";
+                if (is_null($departmentCol)) $missing[] = "'department_id' or 'department_name'";
+                return redirect()->route('data-entry.instructors.index')->with('error', 'Excel file is missing required columns: ' . implode(', ', $missing));
+            }
+
+            $currentRowNumber = 1;
+            DB::beginTransaction(); // بدء Transaction لضمان سلامة البيانات
+
+            foreach ($rows as $row) {
+                $currentRowNumber++;
+                $rowData = [];
+                foreach ($header as $index => $colName) {
+                    $rowData[$colName] = $row[$index] ?? null;
+                }
+
+                if (count(array_filter($row)) == 0) {
+                    $this->skippedDetails[] = "Row {$currentRowNumber}: Skipped (empty).";
+                    $this->skippedCount++;
+                    continue;
+                }
+
+                $instructorNo = trim($rowData[$header[$instructorNoCol]] ?? null);
+                if (empty($instructorNo)) {
+                    $this->skippedDetails[] = "Row {$currentRowNumber}: Skipped (missing instructor_no).";
+                    $this->skippedCount++;
+                    continue;
+                }
+
+                // منع تكرار معالجة نفس الرقم الوظيفي من الملف
+                if (in_array($instructorNo, $this->processedInstructorNos)) {
+                    $this->skippedDetails[] = "Row {$currentRowNumber}: Skipped (duplicate instructor_no '{$instructorNo}' within the file).";
+                    $this->skippedCount++;
+                    continue;
+                }
+                $this->processedInstructorNos[] = $instructorNo;
+
+                $instructorNameInput = trim($rowData[$header[$instructorNameCol]] ?? null);
+                $departmentIdentifier = trim($rowData[$header[$departmentCol]] ?? null);
+                $emailInput = isset($emailCol) ? trim($rowData[$header[$emailCol]] ?? null) : null;
+                $degreeInputFromFile = isset($degreeCol) ? trim($rowData[$header[$degreeCol]] ?? null) : null;
+                $maxHoursInput = isset($maxHoursCol) ? trim($rowData[$header[$maxHoursCol]] ?? null) : null;
+
+                if (empty($instructorNameInput) || empty($departmentIdentifier)) {
+                    $this->skippedDetails[] = "Row {$currentRowNumber} (EmpNo:{$instructorNo}): Skipped (missing instructor_name or department).";
+                    $this->skippedCount++;
+                    continue;
+                }
+
+                // 1. استخراج الاسم والدرجة العلمية
+                $name = $instructorNameInput;
+                $degreeFromName = null;
+                if (preg_match('/\(.+\)/u', $instructorNameInput, $matches)) {
+                    $degreeFromName = trim($matches[0], '()');
+                    $name = trim(str_replace($matches[0], '', $instructorNameInput));
+                }
+                $academicDegree = $degreeFromName ?: $degreeInputFromFile;
+
+                // 2. البحث عن القسم
+                $department = $this->findDepartment($departmentIdentifier);
+                if (!$department) {
+                    $this->skippedDetails[] = "Row {$currentRowNumber} (EmpNo:{$instructorNo}): Skipped (Department '{$departmentIdentifier}' not found).";
+                    $this->skippedCount++;
+                    continue;
+                }
+
+                // 3. تجهيز الإيميل
+                $email = $emailInput;
+                if (empty($email)) {
+                    $baseEmailName = 'momen' . preg_replace('/[^A-Za-z0-9]/', '', $instructorNo); // إزالة أي رموز من رقم المدرس
+                    $email = $this->generateUniqueEmail($baseEmailName, '@ptc.edu'); // افترض نطاق الكلية
+                } else {
+                    // التحقق من صحة الإيميل إذا تم إدخاله
+                    $emailValidator = Validator::make(['email' => $email], ['email' => 'email']);
+                    if ($emailValidator->fails()) {
+                        $this->skippedDetails[] = "Row {$currentRowNumber} (EmpNo:{$instructorNo}): Skipped (Invalid email format '{$email}').";
+                        $this->skippedCount++;
+                        continue;
+                    }
+                }
+
+                // 4. البحث عن المدرس أو إنشاء جديد (User و Instructor)
+                $instructor = Instructor::where('instructor_no', $instructorNo)->first();
+                $userToUpdateOrCreate = null;
+
+                if ($instructor) { // تحديث مدرس موجود
+                    $userToUpdateOrCreate = $instructor->user;
+                    if (!$userToUpdateOrCreate) { // في حالة نادرة أن المدرس موجود بدون مستخدم
+                        Log::warning("Instructor ID {$instructor->id} exists without a user. Creating a new user.");
+                        $userToUpdateOrCreate = $this->createUserForInstructor($name, $email, 'instructor'); // افترض دور افتراضي
+                        $instructor->user_id = $userToUpdateOrCreate->id;
+                    }
+
+                    // تحديث بيانات المستخدم
+                    $userData = ['name' => $name, 'email' => $email];
+                    // التحقق من تفرد الإيميل عند التحديث
+                    if (User::where('email', $email)->where('id', '!=', $userToUpdateOrCreate->id)->exists()) {
+                        $this->skippedDetails[] = "Row {$currentRowNumber} (EmpNo:{$instructorNo}): Skipped (Email '{$email}' already taken by another user).";
+                        $this->skippedCount++;
+                        continue;
+                    }
+                    $userToUpdateOrCreate->update($userData);
+
+                    // تحديث بيانات المدرس
+                    $instructor->instructor_name = $name;
+                    $instructor->academic_degree = $academicDegree;
+                    $instructor->department_id = $department->id;
+                    if (!is_null($maxHoursInput) && is_numeric($maxHoursInput)) {
+                        $instructor->max_weekly_hours = (int)$maxHoursInput;
+                    }
+                    // يمكن إضافة تحديث للحقول الأخرى المعلقة
+                    $instructor->save();
+                    $this->updatedCount++;
+                } else { // إنشاء مدرس جديد ومستخدم جديد
+                    // التحقق من تفرد الإيميل قبل إنشاء مستخدم جديد
+                    if (User::where('email', $email)->exists()) {
+                        $this->skippedDetails[] = "Row {$currentRowNumber} (EmpNo:{$instructorNo}): Skipped (Generated/Provided email '{$email}' already exists).";
+                        $this->skippedCount++;
+                        continue;
+                    }
+                    $userToUpdateOrCreate = $this->createUserForInstructor($name, $email, 'instructor'); // افترض دور افتراضي
+
+                    Instructor::create([
+                        'user_id' => $userToUpdateOrCreate->id,
+                        'instructor_no' => $instructorNo,
+                        'instructor_name' => $name,
+                        'academic_degree' => $academicDegree,
+                        'department_id' => $department->id,
+                        'max_weekly_hours' => (!is_null($maxHoursInput) && is_numeric($maxHoursInput)) ? (int)$maxHoursInput : null,
+                        // يمكن إضافة الحقول المعلقة
+                    ]);
+                    $this->createdCount++;
+                }
+            } // نهاية حلقة الصفوف
+
+            DB::commit(); // تأكيد كل العمليات
+
+            // بناء رسالة النجاح
+            $messages = [];
+            if ($this->createdCount > 0) $messages[] = "{$this->createdCount} new instructor(s) created.";
+            if ($this->updatedCount > 0) $messages[] = "{$this->updatedCount} existing instructor(s) updated.";
+            if ($this->skippedCount > 0) $messages[] = "{$this->skippedCount} row(s) were skipped.";
+            if (empty($messages)) {
+                return redirect()->route('data-entry.instructors.index')->with('info', 'Excel file processed. No changes made or no valid data found.');
+            } else {
+                return redirect()->route('data-entry.instructors.index')->with('success', implode(' ', $messages))->with('skipped_details', $this->skippedDetails);
+            }
+        } catch (Exception $e) {
+            DB::rollBack(); // تراجع في حالة الخطأ
+            Log::error('Instructors Excel Import Failed: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
+            return redirect()->route('data-entry.instructors.index')
+                ->with('error', 'An error occurred during Excel import: ' . $e->getMessage())
+                ->with('skipped_details', $this->skippedDetails); // إرجاع ما تم تخطيه حتى الآن
+        }
+    }
+
+    // --- دوال مساعدة للـ Import ---
+    private function resetCounters()
+    {
+        $this->createdCount = 0;
+        $this->updatedCount = 0;
+        $this->skippedCount = 0;
+        $this->skippedDetails = [];
+        $this->processedInstructorNos = [];
+    }
+    private function getColumnIndex(array $header, array $possibleNames)
+    {
+        $normalizedHeader = array_map(fn($h) => strtolower(str_replace([' ', '_', '-'], '', trim($h))), $header);
+
+        foreach ($possibleNames as $name) {
+            $normalizedName = strtolower(str_replace([' ', '_', '-'], '', trim($name)));
+            $index = array_search($normalizedName, $normalizedHeader);
+            if ($index !== false) {
+                return $index; // Return the original index from the header
+            }
+        }
+        return null;
+    }
+
+    private function findDepartment($identifier)
+    {
+        if (is_numeric($identifier)) return Department::find($identifier);
+        $normalized = $this->normalizeArabicStringForSearch($identifier);
+        return Department::whereRaw('REPLACE(LOWER(department_name), " ", "") LIKE ?', ["%{$normalized}%"])
+            ->orWhereRaw('LOWER(department_no) LIKE ?', ["%{$normalized}%"])
+            ->first();
+    }
+
+    private function normalizeArabicStringForSearch($string)
+    {
+        // Normalize Hamza (أ, إ, آ -> ا)
+        $string = str_replace(['أ', 'إ', 'آ'], 'ا', $string);
+        // Normalize Alef Maqsura (ى -> ي)
+        $string = str_replace('ى', 'ي', $string);
+        // Normalize Taa Marbuta (ة -> ه)
+        $string = str_replace('ة', 'ه', $string);
+        // Remove "ال" from the beginning of words
+        $string = preg_replace('/\bال/u', '', $string);
+        // Remove extra spaces and convert to lowercase
+        $string = strtolower(preg_replace('/\s+/u', '', trim($string)));
+
+        $string = preg_replace('/[أإآ]/u', 'ا', $string); // توحيد الألفات
+        $string = preg_replace('/^ال/u', '', $string); // إزالة "ال" التعريف من البداية
+        $string = preg_replace('/\s+/u', '', trim($string)); // إزالة كل الفراغات وتحويل لحروف صغيرة
+        return strtolower($string);
+    }
+
+    private function generateUniqueEmail($baseName, $domain, $counter = 0) {
+        $email = $baseName . ($counter > 0 ? str_pad($counter, 2, '0', STR_PAD_LEFT) : '') . $domain;
+        if (User::where('email', $email)->exists()) {
+            return $this->generateUniqueEmail($baseName, $domain, $counter + 1);
+        }
+        return $email;
+    }
+
+    // private function generateUniqueEmail($baseName, $domain = '@ptc.edu', $instructorNo = null, $counter = 0): string
+    // {
+    //     // بناء الجزء الأول من الإيميل (يفضل استخدام شيء فريد مثل الرقم الوظيفي إذا توفر)
+    //     $prefix = Str::slug($baseName, ''); // إزالة الفراغات والرموز من الاسم
+    //     if (empty($prefix) && $instructorNo) { // إذا كان الاسم عربياً بالكامل، استخدم الرقم الوظيفي
+    //         $prefix = 'inst' . preg_replace('/[^A-Za-z0-9]/', '', $instructorNo);
+    //     } elseif (empty($prefix) && empty($instructorNo)) {
+    //         $prefix = 'instructor' . Str::random(4); // اسم عشوائي إذا فشل كل شيء
+    //     }
+
+
+    //     $emailTry = $prefix . ($counter > 0 ? str_pad($counter, 2, '0', STR_PAD_LEFT) : ($instructorNo ? preg_replace('/[^A-Za-z0-9]/', '', $instructorNo) : '')) . $domain;
+    //     if (empty($emailTry)) { // في حالة نادرة جداً أن كل شيء فارغ
+    //         $emailTry = 'user' . time() . $counter . $domain;
+    //     }
+
+
+    //     // ضمان أن الجزء المحلي لا يتجاوز 64 حرفاً (حد شائع)
+    //     $localPart = explode('@', $emailTry)[0];
+    //     if (strlen($localPart) > 60) { // ترك بعض الحروف للـ counter إذا لزم الأمر
+    //         $localPart = substr($localPart, 0, 60);
+    //         $emailTry = $localPart . $domain;
+    //     }
+
+
+    //     if (User::where('email', $emailTry)->exists()) {
+    //         // إذا كان الإيميل موجوداً، حاول بإضافة/زيادة العداد
+    //         // إذا لم يكن هناك رقم وظيفي، استخدم عداداً عشوائياً أكثر
+    //         $newBaseForCounter = $instructorNo ? preg_replace('/[^A-Za-z0-9]/', '', $instructorNo) : Str::random(2);
+    //         return $this->generateUniqueEmail($baseName, $domain, $newBaseForCounter . ($counter + 1)); // تغيير طريقة العداد
+    //     }
+    //     return $emailTry;
+    // }
+
+    private function createUserForInstructor($name, $email, $roleName = 'instructor')
+    {
+        $role = Role::where('name', $roleName)->first();
+        if (!$role) { // دور افتراضي إذا لم يوجد
+            $role = Role::firstOrCreate(['name' => 'instructor'], ['display_name' => 'Instructor']);
+        }
+        return User::create([
+            'name' => $name,
+            'email' => $email,
+            'password' => Hash::make('123456789'), // كلمة مرور افتراضية
+            'role_id' => $role->id,
+            'email_verified_at' => now(),
+        ]);
+    }
+
 
     // =============================================
     //             API Controller Methods
@@ -357,8 +654,8 @@ class InstructorController extends Controller
                 $searchTerm = $request->q;
                 $query->where(function ($q) use ($searchTerm) {
                     $q->where('instructor_no', 'like', "%{$searchTerm}%")
-                      ->orWhere('instructor_name', 'like', "%{$searchTerm}%")
-                      ->orWhereHas('user', fn($userQuery) => $userQuery->where('name', 'like', "%{$searchTerm}%")->orWhere('email', 'like', "%{$searchTerm}%"));
+                        ->orWhere('instructor_name', 'like', "%{$searchTerm}%")
+                        ->orWhereHas('user', fn($userQuery) => $userQuery->where('name', 'like', "%{$searchTerm}%")->orWhere('email', 'like', "%{$searchTerm}%"));
                 });
             }
 
@@ -439,7 +736,6 @@ class InstructorController extends Controller
                 'data' => $instructor,
                 'message' => 'Instructor and user account created successfully.'
             ], 201);
-
         } catch (Exception $e) {
             DB::rollBack();
             Log::error('API Instructor & User Creation Failed: ' . $e->getMessage());
@@ -530,7 +826,6 @@ class InstructorController extends Controller
                 'data' => $instructor,
                 'message' => 'Instructor and user account updated successfully.'
             ], 200);
-
         } catch (Exception $e) {
             DB::rollBack();
             Log::error('API Instructor & User Update Failed for Instructor ID ' . $instructor->id . ': ' . $e->getMessage());
@@ -562,6 +857,159 @@ class InstructorController extends Controller
             DB::rollBack();
             Log::error('API Instructor & User Deletion Failed for Instructor ID ' . $instructor->id . ': ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to delete instructor: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * API: Handle the import of instructors from an Excel file.
+     */
+    public function apiImportExcel(Request $request)
+    {
+        // 1. التحقق من وجود الملف وصيغته (باستخدام Validator لـ API)
+        $validator = Validator::make($request->all(), [
+            'instructor_excel_file' => 'required|file|mimes:xlsx,xls,csv|max:5120',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed for uploaded file.',
+                'errors' => $validator->errors()
+            ], 422); // Unprocessable Entity
+        }
+
+        $this->resetCounters(); // إعادة تعيين العدادات لكل عملية رفع
+
+        try {
+            $rows = Excel::toArray(new \stdClass(), $request->file('instructor_excel_file'))[0];
+
+            if (count($rows) <= 1) { // إذا كان الملف فارغاً أو يحتوي على العناوين فقط
+                return response()->json(['success' => false, 'message' => 'Uploaded Excel file is empty or contains only a header row.'], 400);
+            }
+
+            $header = array_map('strtolower', array_map('trim', array_shift($rows)));
+            $instructorNoCol = $this->getColumnIndex($header, ['instructor_no', 'instructorno', 'رقم المدرس', 'الرقم الوظيفي']);
+            $instructorNameCol = $this->getColumnIndex($header, ['instructor_name', 'instructorname', 'اسم المدرس', 'الاسم']);
+            $departmentCol = $this->getColumnIndex($header, ['department_id', 'departmentid', 'department', 'القسم']);
+            $emailCol = $this->getColumnIndex($header, ['email', 'البريد الالكتروني', 'الايميل']);
+            $degreeCol = $this->getColumnIndex($header, ['academic_degree', 'academicdegree', 'degree', 'الدرجة العلمية']);
+            $maxHoursCol = $this->getColumnIndex($header, ['max_weekly_hours', 'maxweeklyhours', 'ساعات النصاب']);
+
+            if (is_null($instructorNoCol) || is_null($instructorNameCol) || is_null($departmentCol)) {
+                $missing = []; /* ... (نفس منطق تحديد الأعمدة المفقودة) ... */
+                if(is_null($instructorNoCol)) $missing[] = "'instructor_no'";
+                if(is_null($instructorNameCol)) $missing[] = "'instructor_name'";
+                if(is_null($departmentCol)) $missing[] = "'department_id' or 'department_name'";
+                return response()->json(['success' => false, 'message' => 'Excel file is missing required columns: ' . implode(', ', $missing)], 400);
+            }
+
+            $currentRowNumber = 1;
+            // لا نحتاج Transaction هنا لكل صف، يمكن عمل Transaction كبير حول الحلقة كلها إذا أردت
+            // ولكن إذا فشل صف واحد، قد ترغب في تجاهله فقط ومتابعة الباقي
+
+            foreach ($rows as $row) {
+                $currentRowNumber++;
+                $rowData = []; foreach ($header as $index => $colName) { $rowData[$colName] = $row[$index] ?? null; }
+
+                if (count(array_filter($row)) == 0) { $this->skippedDetails[] = "Row {$currentRowNumber}: Skipped (empty)."; $this->skippedCount++; continue; }
+
+                $instructorNo = trim($rowData[$header[$instructorNoCol]] ?? null);
+                if (empty($instructorNo)) { $this->skippedDetails[] = "Row {$currentRowNumber}: Skipped (missing instructor_no)."; $this->skippedCount++; continue; }
+
+                if (in_array($instructorNo, $this->processedInstructorNos)) { $this->skippedDetails[] = "Row {$currentRowNumber}: Skipped (duplicate instructor_no '{$instructorNo}' within file)."; $this->skippedCount++; continue; }
+                $this->processedInstructorNos[] = $instructorNo;
+
+                $instructorNameInput = trim($rowData[$header[$instructorNameCol]] ?? null);
+                $departmentIdentifier = trim($rowData[$header[$departmentCol]] ?? null);
+                $emailInput = isset($emailCol) ? trim($rowData[$header[$emailCol]] ?? null) : null;
+                $degreeInputFromFile = isset($degreeCol) ? trim($rowData[$header[$degreeCol]] ?? null) : null;
+                $maxHoursInput = isset($maxHoursCol) ? trim($rowData[$header[$maxHoursCol]] ?? null) : null;
+
+                if (empty($instructorNameInput) || empty($departmentIdentifier)) { $this->skippedDetails[] = "Row {$currentRowNumber} (EmpNo:{$instructorNo}): Skipped (missing name or department)."; $this->skippedCount++; continue; }
+
+                $name = $instructorNameInput; $degreeFromName = null;
+                if (preg_match('/\(.+\)/u', $instructorNameInput, $matches)) { $degreeFromName = trim($matches[0], '()'); $name = trim(str_replace($matches[0], '', $instructorNameInput)); }
+                $academicDegree = $degreeFromName ?: $degreeInputFromFile;
+
+                $department = $this->findDepartment($departmentIdentifier);
+                if (!$department) { $this->skippedDetails[] = "Row {$currentRowNumber} (EmpNo:{$instructorNo}): Skipped (Department '{$departmentIdentifier}' not found)."; $this->skippedCount++; continue; }
+
+                $email = $emailInput;
+                if (empty($email)) { $baseEmailName = 'momen' . preg_replace('/[^A-Za-z0-9]/', '', $instructorNo); $email = $this->generateUniqueEmail($baseEmailName, '@ptc.edu', $instructorNo); }
+                else { $emailValidator = Validator::make(['email' => $email], ['email' => 'email']); if ($emailValidator->fails()) { $this->skippedDetails[] = "Row {$currentRowNumber} (EmpNo:{$instructorNo}): Skipped (Invalid email '{$email}')."; $this->skippedCount++; continue; } }
+
+                // --- التحديث أو الإنشاء (داخل Transaction لكل مدرس لضمان سلامة User و Instructor معاً) ---
+                DB::transaction(function () use ($instructorNo, $name, $email, $academicDegree, $department, $maxHoursInput, $currentRowNumber) {
+                    $instructor = Instructor::where('instructor_no', $instructorNo)->first();
+                    $defaultRoleName = 'instructor'; // الدور الافتراضي للمدرس الجديد
+
+                    if ($instructor) { // تحديث
+                        $user = $instructor->user;
+                        if (!$user) {
+                            Log::warning("Instructor ID {$instructor->id} (EmpNo: {$instructorNo}) exists without a user. Creating user for update.");
+                            $user = $this->createUserForInstructor($name, $email, $defaultRoleName);
+                            $instructor->user_id = $user->id; // ربط المستخدم الجديد
+                        } else {
+                            if (User::where('email', $email)->where('id', '!=', $user->id)->exists()) {
+                                $this->skippedDetails[] = "Row {$currentRowNumber} (EmpNo:{$instructorNo}): Update Skipped (Email '{$email}' already taken).";
+                                $this->skippedCount++;
+                                DB::rollBack(); // التراجع عن أي تغييرات محتملة في هذا الـ transaction
+                                return; // الخروج من الـ closure الخاص بالـ transaction
+                            }
+                            $user->name = $name;
+                            $user->email = $email;
+                            // لا نغير كلمة المرور أو الدور عند التحديث من الإكسل عادةً إلا إذا كان هناك عمود مخصص
+                            $user->save();
+                        }
+                        $instructor->instructor_name = $name;
+                        $instructor->academic_degree = $academicDegree;
+                        $instructor->department_id = $department->id;
+                        if (!is_null($maxHoursInput) && is_numeric($maxHoursInput)) $instructor->max_weekly_hours = (int)$maxHoursInput;
+                        $instructor->save();
+                        $this->updatedCount++;
+                    } else { // إنشاء جديد
+                        if (User::where('email', $email)->exists()) {
+                            $this->skippedDetails[] = "Row {$currentRowNumber} (EmpNo:{$instructorNo}): Create Skipped (Email '{$email}' already exists for new user).";
+                            $this->skippedCount++;
+                            DB::rollBack(); return;
+                        }
+                        $user = $this->createUserForInstructor($name, $email, $defaultRoleName);
+                        Instructor::create([
+                            'user_id' => $user->id, 'instructor_no' => $instructorNo, 'instructor_name' => $name,
+                            'academic_degree' => $academicDegree, 'department_id' => $department->id,
+                            'max_weekly_hours' => (!is_null($maxHoursInput) && is_numeric($maxHoursInput)) ? (int)$maxHoursInput : null,
+                        ]);
+                        $this->createdCount++;
+                    }
+                }); // نهاية الـ Transaction لكل مدرس
+                // -----------------------------------------------------------------------------------
+
+            } // نهاية حلقة الصفوف
+
+            $summary = [];
+            if ($this->createdCount > 0) $summary['new_instructors_created'] = $this->createdCount;
+            if ($this->updatedCount > 0) $summary['existing_instructors_updated'] = $this->updatedCount;
+            if ($this->skippedCount > 0) $summary['rows_skipped'] = $this->skippedCount;
+
+            if (empty($summary) && empty(array_filter($this->skippedDetails))) {
+                 return response()->json(['success' => true, 'message' => 'Excel file processed. No new data imported or all data already matched/skipped.', 'summary' => $summary, 'skipped_details' => $this->skippedDetails], 200);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Instructors import processed.",
+                'summary' => $summary,
+                'skipped_details' => $this->skippedDetails
+            ], 200);
+
+        } catch (Exception $e) {
+            Log::error('API Instructors Excel Import Failed: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
+            // إرجاع أي تفاصيل تم تجميعها حتى الآن
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred during Excel import: ' . $e->getMessage(),
+                'skipped_details' => $this->skippedDetails
+            ], 500);
         }
     }
 

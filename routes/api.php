@@ -119,6 +119,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/instructors/{instructor}', [InstructorController::class, 'apiShow']);
     Route::put('/instructors/{instructor}', [InstructorController::class, 'apiUpdate']);
     Route::delete('/instructors/{instructor}', [InstructorController::class, 'apiDestroy']);
+    // *** روت جديد لرفع ملف الإكسل للمدرسين عبر API ***
+    Route::post('/instructors/import-excel', [InstructorController::class, 'apiImportExcel'])->name('api.instructors.importExcel');
 
     // --- Plans API ---
     Route::get('/plans', [PlanController::class, 'apiIndex']);
