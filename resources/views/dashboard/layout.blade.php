@@ -115,6 +115,7 @@
             {{-- // قائمة منسدلة لإدارة البيانات --}}
             @php
                 $isActiveMenu = request()->routeIs('data-entry.*');
+                $isActiveAlgorithm = request()->routeIs('algorithm-control*');
             @endphp
 
             <li class="nav-item">
@@ -184,7 +185,8 @@
                         {{-- @endcan --}}
 
                         {{-- @can('manage-subjects') --}}
-                        <li class="nav-item {{ request()->routeIs('data-entry.subject-categories.*') ? 'active' : '' }}">
+                        <li
+                            class="nav-item {{ request()->routeIs('data-entry.subject-categories.*') ? 'active' : '' }}">
 
                             <a href="{{ route('data-entry.subject-categories.index') }}"
                                 class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.subject-types') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
@@ -285,9 +287,39 @@
             <li>
                 <a href="#"><i class="fas fa-sliders-h"></i> Constraints</a>
             </li>
-            <li>
+            {{-- <li>
                 <a href="#"><i class="fas fa-cogs"></i> Algorithm Control</a>
+            </li> --}}
+
+            <li class="nav-item">
+                <a class="nav-link d-flex align-items-center py-1 small {{ $isActiveAlgorithm ? '' : 'collapsed' }}"
+                    data-bs-toggle="collapse" href="#dataAlgorithmMenu" role="button"
+                    aria-expanded="{{ $isActiveAlgorithm ? 'true' : 'false' }}" aria-controls="dataAlgorithmMenu">
+                    <i class="fas fa-database me-2 fa-4xs"></i>
+                    <span class="small">Algorithm Control</span>
+                    <i class="fas fa-chevron-down ms-auto fa-3xs"></i>
+                </a>
+                <div class="collapse {{ $isActiveAlgorithm ? 'show' : '' }}" id="dataAlgorithmMenu">
+                    <ul class="nav flex-column">
+                        <li class="{{ request()->routeIs('algorithm-control.crossover-types.*') ? 'active' : '' }}">
+                            <a href="{{ route('algorithm-control.crossover-types.index') }}"><i
+                                    class="fas fa-code-branch fa-fw me-2"></i> Crossover Methods</a>
+                        </li>
+                        <li class="{{ request()->routeIs('algorithm-control.selection-types.*') ? 'active' : '' }}">
+                            <a href="{{ route('algorithm-control.selection-types.index') }}"><i
+                                    class="fas fa-check-double fa-fw me-2"></i> Selection Methods</a>
+                        </li>
+                            {{-- رابط جديد لنتائج الخوارزمية --}}
+                            <li class="{{ request()->routeIs('algorithm-control.timetable.results.index') || request()->routeIs('algorithm-control.timetable.result.show') ? 'active' : '' }}">
+                                <a href="{{ route('algorithm-control.timetable.results.index') }}">
+                                    <i class="fas fa-calendar-alt"></i> Generation Results
+                                </a>
+                            </li>
+
+                    </ul>
+                </div>
             </li>
+
             <li>
                 <a href="#"><i class="fas fa-chart-bar"></i> Reports & Analytics</a>
             </li>

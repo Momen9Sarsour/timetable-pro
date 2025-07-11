@@ -25,6 +25,7 @@ return new class extends Migration
                 'Friday',
                 'Saturday'
             ]);
+            // $table->foreignId('gene_id')->constrained('genes', 'gene_id')->onDelete('cascade')->nullable();
             $table->time('start_time'); // وقت بداية الفترة
             $table->time('end_time'); // وقت نهاية الفترة
 

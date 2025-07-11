@@ -1,0 +1,33 @@
+roles
+    id | name | display_name | description
+users
+    id | name | email | email_verified_at | password | role_id | rememberToken
+departments
+    id | department_no | department_name
+subjects_types
+    id | subject_type_name
+subjects_categories
+    id | subject_category_name
+rooms_types
+    id | room_type_name
+instructors
+    id | instructor_no | instructor_name | academic_degree | user_id | department_id | availability_preferences | max_weekly_hours
+subjects
+    id | subject_no | subject_name | theoretical_hours | practical_hours | load_theoretical_section | load_practical_section | subject_type_id | subject_category_id | department_id | required_room_type_id
+rooms
+    id | room_no | room_name | room_size | room_gender | room_branch | room_type_id
+plans
+    id | plan_no | plan_name | year | plan_hours | is_active | department_id
+plan_subjects
+    id | plan_id | subject_id | plan_level | plan_semester
+plan_expected_counts
+    id | plan_level | plan_semester | male_count | female_count | branch | academic_year
+timeslots
+    id | day | start_time | end_time
+sections
+    id | plan_subject_id | activity_type | section_number | student_count | section_gender | branch | academic_year | semester
+instructor_subject
+instructor_id | subject_id
+instructor_section
+instructor_id | section_id
+

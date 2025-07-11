@@ -1,0 +1,54 @@
+<?php
+
+namespace App\Http\Controllers\Algorithm;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use App\Services\GeneticAlgorithm\GeneticAlgorithmService;
+use Exception;
+
+class TimetableGenerationController extends Controller
+{
+    //
+    /**
+     * Start a new timetable generation process.
+     * تبدأ عملية توليد جدول دراسي جديدة بناءً على الإعدادات المرسلة من الفورم.
+     * هذه الدالة هي مجرد "وسيط" يستدعي العامل الحقيقي (Service).
+     */
+    public function start(Request $request)
+    {
+        // 1. التحقق من صحة الإعدادات القادمة من مودال "Generate Schedule"
+        $settings = $request->validate([
+            'population_size' => 'required|integer|min:10|max:500',
+            'max_generations' => 'required|integer|min:10|max:10000',
+            'mutation_rate' => 'required|numeric|min:0|max:1',
+            'crossover_type_id' => 'required|integer|exists:crossover_types,crossover_id',
+            'selection_type_id' => 'required|integer|exists:selection_types,selection_type_id',
+            'stop_at_first_valid' => 'nullable|boolean',
+        ]);
+        // التعامل مع checkbox
+        $settings['stop_at_first_valid'] = $request->has('stop_at_first_valid');
+
+        try {
+            Log::info("Controller is starting the Genetic Algorithm service with settings:", $settings);
+
+            // 2. إنشاء كائن جديد من الـ Service
+            $geneticAlgorithm = new GeneticAlgorithmService();
+
+            // 3. تمرير الإعدادات للـ Service وتشغيله
+            // run() هي الدالة التي ستقوم بكل العمل
+            $geneticAlgorithm->setSettings($settings)->run();
+
+            // 4. إعادة التوجيه مع رسالة نجاح عند الانتهاء
+            // TODO: لاحقاً، يمكن إعادة التوجيه لصفحة تعرض نتائج التشغيلة الأخيرة
+            return redirect()->route('dashboard.index')
+                ->with('success', 'Timetable generation process completed successfully! Check the results.');
+        } catch (Exception $e) {
+            // إذا حدث أي خطأ فادح أثناء التشغيل، يتم التقاطه هنا
+            Log::critical("Controller caught a critical error from GA service: " . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'The timetable generation process failed. Please check the system logs for more details.');
+        }
+    }
+}

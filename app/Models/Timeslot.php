@@ -14,6 +14,7 @@ class Timeslot extends Model
         'start_time',
         'end_time',
     ];
+    // protected $primaryKey = 'timeslot_id';
 
     // لا تحتاج timestamps إذا لم تضفها في الـ migration
     // public $timestamps = false;

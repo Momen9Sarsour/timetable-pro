@@ -38,5 +38,23 @@ php artisan make:migration create_logs_table
 	id |  user_id (FK) | action | loggable | details | ip_address | user_agent
 
 
+------------------------------------------------------------------------------------------------
+                جداول الخوارزمية يعمري
+------------------------------------------------------------------------------------------------
+php artisan make:migration create_populations_table
+- population_id |  populations_size |  crossover_id |  selection_id |  mutation_rate |  generations_count |  start_time |  end_time |  status  ======  |  best_chromosome_id
 
+php artisan make:migration create_chromosomes_table
+- chromosome_id |  population_id |  penalty_calue |  generation_number |  is_best_of_generation
 
+php artisan make:migration create_genes_table
+- gene_id |  chromosome_id |  section_id |  instructor_id |  room_id |  timeslot_id
+
+php artisan make:migration create_timeslot_table
+- timeslot_id |  gene_id |  start_time |  end_time |  day
+
+php artisan make:migration create_crossover_types_table
+-crossover_id |  name |  description |  is_active
+
+php artisan make:migration create_selection_types_table
+-selection_types_id |  name |  description |  is_active

@@ -1,0 +1,36 @@
+1. افتح ملف .env في مشروعك وغير السطر التالي
+# من:
+QUEUE_CONNECTION=sync
+# إلى:
+QUEUE_CONNECTION=database
+
+إنشاء جدول الـ jobs
+php artisan queue:table
+php artisan migrate
+
+ هذا سينشئ ملفاً جديداً في app/Jobs/GenerateTimetableJob.php.
+
+3. تعديل ملف GenerateTimetableJob.php
+
+
+
+
+4: تعديل TimetableGenerationController@start
+// 3. *** إرسال المهمة (Job) إلى الطابور ***
+GenerateTimetableJob::dispatch($validatedSettings, $populationRun);
+// أو dispatch(new GenerateTimetableJob($validatedSettings, $populationRun));
+
+5: تشغيل الـ Queue Worker
+php artisan queue:work
+
+
+
+
+
+النتيجة النهائية:
+1. تضغط "Start Generation" في المتصفح.
+2. الكنترولر يستجيب فوراً برسالة نجاح، والمتصفح لا يتجمد.
+3. في الخلفية، يتم إضافة مهمة جديدة لجدول jobs.
+4. الـ Terminal الذي يعمل فيه php artisan queue:work سيقوم بأخذ هذه المهمة ويبدأ بتنفيذها (سترى رسائل Processing... و Processed.).
+5. الخوارزمية ستعمل الآن في هذا الـ Terminal ويمكنها أن تأخذ الوقت الذي تحتاجه (دقائق أو حتى ساعات) بدون أن تؤثر على المستخدم أو تسبب خطأ Maximum execution time.
+6. يمكنك مراقبة جدول populations في قاعدة البيانات لترى تغير الحالة من pending إلى running ثم إلى completed أو failed.

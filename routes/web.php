@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\Algorithm\TimetableGenerationController;
+use App\Http\Controllers\Algorithm\TimetableResultController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DataEntry\CrossoverTypeController;
 use App\Http\Controllers\DataEntry\DepartmentController;
 use App\Http\Controllers\DataEntry\InstructorController;
 use App\Http\Controllers\DataEntry\InstructorLoadAssignmentController;
@@ -16,6 +19,7 @@ use App\Http\Controllers\DataEntry\RoomController;
 use App\Http\Controllers\DataEntry\RoomTypeController;
 use App\Http\Controllers\DataEntry\SectionController;
 use App\Http\Controllers\DataEntry\SectionController22;
+use App\Http\Controllers\DataEntry\SelectionTypeController;
 use App\Http\Controllers\DataEntry\SubjectCategoryController;
 use App\Http\Controllers\DataEntry\SubjectController;
 use App\Http\Controllers\DataEntry\SubjectTypeController;
@@ -199,7 +203,6 @@ Route::prefix('dashboard')->group(function () {
         // --- Instructor Subject Assignments ---
         // Route::get('/instructor-subjects', [InstructorSubjectsController::class, 'index'])->name('instructor-subjects.index'); // صفحة العرض الرئيسية
         // Route::post('/instructor-subjects', [InstructorSubjectsController::class, 'syncSubjects'])->name('instructor-subjects.sync'); // لمعالجة حفظ الارتباطات
-        // --- Instructor-Subject Mappings (الجديد لربط المواد) ---
         Route::get('/instructor-subject-mappings', [InstructorSubjectsController::class, 'index'])->name('instructor-subjects.index');
         Route::get('/instructor-subject-mappings/{instructor}/edit', [InstructorSubjectsController::class, 'edit'])->name('instructor-subjects.edit');
         Route::post('/instructor-subject-mappings/{instructor}/sync', [InstructorSubjectsController::class, 'sync'])->name('instructor-subjects.sync');
@@ -218,11 +221,31 @@ Route::prefix('dashboard')->group(function () {
         Route::get('/settings', [DataEntryController::class, 'settings'])->name('settings');
         // Add POST/PUT/DELETE routes for settings later
 
-
+        // TimetableGenerationController
+        // Route::post('/timetable/generate', [TimetableGenerationController::class, 'start'])->name('timetable.generate.start');
+        // --- Algorithm Base Data Management ---
+        // Route::resource('crossover-types', CrossoverTypeController::class)->except(['show']);
+        // Route::resource('selection-types', SelectionTypeController::class)->except(['show']);
+        // --- End Data Management Routes ---
     });
-    // --- End Data Management Routes ---
 
+    Route::prefix('algorithm/control')->name('algorithm-control.')->group(function () {
 
+        // --- Algorithm Base Data Management ---
+        Route::resource('crossover-types', CrossoverTypeController::class)->except(['create', 'show', 'edit']);
+        Route::resource('selection-types', SelectionTypeController::class)->except(['create', 'show', 'edit']);
+
+        // TimetableGenerationController
+        Route::post('/timetable/generate', [TimetableGenerationController::class, 'start'])->name('timetable.generate.start');
+        // 1. صفحة عرض قائمة عمليات التشغيل وأفضل الحلول
+        Route::get('/timetable-results', [TimetableResultController::class, 'index'])->name('timetable.results.index');
+
+        // 2. صفحة عرض تفصيلي لجدول (كروموسوم) معين
+        // لاحظ أننا نستخدم {chromosome} الآن لـ Route Model Binding
+        Route::get('/timetable-result/{chromosome}', [TimetableResultController::class, 'show'])->name('timetable.result.show');
+        // --- End Timetable Results Routes ---
+
+});
     // Other dashboard routes (Constraints, Algorithm, Reports...) can go here
 
 });

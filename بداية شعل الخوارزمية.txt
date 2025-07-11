@@ -1,0 +1,124 @@
+1. انشاء الجداول هذول يعمري
+php artisan make:migration create_populations_table
+- population_id |  populations_size |  crossover_id |  selection_id |  mutation_rate |  generations_count |  start_time |  end_time |  status  |  best_chromosome_id
+
+php artisan make:migration create_chromosomes_table
+- chromosome_id |  population_id |  penalty_calue |  generation_number |  is_best_of_generation
+
+php artisan make:migration create_genes_table
+- gene_id |  chromosome_id |  section_id |  instructor_id |  room_id |  timeslot_id
+
+php artisan make:migration create_timeslot_table
+- timeslot_id | start_time |  end_time |  day |  gene_id 
+
+php artisan make:migration create_crossover_types_table
+-crossover_id |  name |  description |  is_active
+
+php artisan make:migration create_selection_types_table
+-selection_types_id |  name |  description |  is_active
+
+2. انشاء العلاقات بين الجداول الي هي على النحو التالي
+php artisan make:model Population
+php artisan make:model Chromosome
+php artisan make:model Gene
+php artisan make:model Timeslot
+php artisan make:model CrossoverType
+php artisan make:model SelectionType
+
+3. بتعمل العلاقات يعمري في هذه الملفات
+
+4. انشاء كنترلور عشان تستقبل فيه اعدادات الخوارزمية
+app\Http\Controllers\Algorithm\TimetableGenerationController.php
+1. بتعمل دالة ال start لاستقبال الاعدادات من المستخدم والتحقق منها ثم تشغيل ملف السيرفس الخاص بالخوارزمية يعمري
+2. ثم بتعمل إنشاء سجل جديد لعملية التشغيل في جدول POPULATIONS
+3.  إنشاء وتشغيل الـ Service
+4. إعادة التوجيه مع رسالة نجاح او فشل
+public function start(Request $request){
+    $validatedSettings = $request->validate([]);
+    $populationRun = Population::create([]);
+    Log::info("New Population Run created with ID: {$populationRun->population_id}. Starting GA Service.");
+    $gaService = new GeneticAlgorithmService($validatedSettings, $populationRun);
+    $gaService->run(); // بدء التنفيذ
+    return redirect()->route('dashboard.index')->with('success', 'Timetable generation process');
+}
+
+
+5. انشاء ملف service عشان نعمل فيه كافة امور الخوارزمية لانها تعبر اسرع من الكنترلور يعمري فانتا اعمل هذا الملفات
+app\Services\GeneticAlgorithmService.php
+public function __construct(array $settings, Population $populationRun){}
+public function run(){
+    1. تحديث حالة التشغيل إلى "running"
+    2. جلب كل البيانات اللازمة مرة واحدة (لتحسين الأداء)
+    3. إنشاء الجيل الأول العشوائي
+    4. حلقة الأجيال (ستتم إضافتها لاحقاً)
+    5. تحديث حالة التشغيل إلى "completed" (مؤقتاً)
+}
+private function loadInitialData(){
+    $this->sections = Section::all(); // يجب أن يكون لديك شعب منشأة
+    $this->instructors = Instructor::all(); // أو المدرسون المعينون لمواد هذه الشعب
+    $this->rooms = Room::all(); // أو القاعات المناسبة
+    $this->timeslots = Timeslot::all(); // جدولنا الأساسي للأوقات
+}
+private function createInitialPopulation(){
+    $chromosomes = [];
+    إنشاء كروموسوم جديد
+    $genes = [];
+    لكل شعبة يجب جدولتها، أنشئ جيناً عشوائياً
+    إدخال كل الجينات لهذا الكروموسوم دفعة واحدة
+    $chromosomes[] = $chromosome;
+}
+private function evaluateFitness()
+{
+    TODO: Implement fitness calculation logic
+    - Loop through each chromosome.
+    - Loop through its genes.
+    - Check for conflicts (hard constraints).
+    - Check for preferences (soft constraints).
+    - Calculate and update the penalty_value for each chromosome.
+}
+private function selectParents()
+{
+    TODO: Implement selection logic (e.g., roulette wheel, tournament)
+}
+private function crossoverAndMutate()
+{
+    TODO: Implement crossover and mutation logic
+}
+
+
+
+
+
+
+عند الانشاء هتلاقي في الداتا بيز عدد السجلات هيك في الجداول التالية
+populations = 1
+chromosomes = population_size
+genes = population_size * sections_count
+
+
+$totalPenalty = 0;
+
+// --- التحقق من التعارضات الصارمة (Hard Constraints) ---
+// سنستخدم Collection functions لتسهيل العملية
+
+// 1. التحقق من تعارض الوقت (نفس الفترة الزمنية محجوزة أكثر من مرة لمورد معين)
+
+    // إذا كان هناك أكثر من محاضرة في نفس الفترة الزمنية، تحقق من وجود تعارض
+
+        // تعارض المدرسين: هل هناك أي مدرس مكرر في هذه الفترة؟ 1000
+        // تعارض القاعات: هل هناك أي قاعة مكررة في هذه الفترة؟ 1000
+        // تعارض الشعب: هل هناك أي شعبة مكررة في هذه الفترة؟ 1000
+
+// 2. التحقق من سعة القاعة ونوعها (لكل جين على حدة)
+
+    // 500 سعة القاعة عقوبة 500 نقطة إذا كانت الشعبة أكبر من القاعة
+
+    // التحقق من نوع القاعة
+
+        // إذا كانت الشعبة عملية ولكن القاعة ليست مختبر  1000 عقوبة كبيرة جداً
+        // إذا كانت الشعبة نظرية ولكن القاعة مختبر (أقل خطورة ولكن غير مفضل) 200 عقوبة متوسطة
+
+
+// --- التحقق من التعارضات المرنة (Soft Constraints) - سنضيفها لاحقاً ---
+// - إرهاق المدرسين (محاضرات متتالية)
+// - فراغات الطلاب

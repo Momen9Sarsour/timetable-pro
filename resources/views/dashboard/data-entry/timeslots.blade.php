@@ -48,7 +48,7 @@
                     @endforelse
                 </tbody>
             </table>
-        </div> <div class="mt-3 d-flex justify-content-center"> {{ $timeslots->links() }} </div> </div> </div>
+        </div> <div class="mt-3 d-flex justify-content-center"> {{ $timeslots->links('pagination::bootstrap-5') }} </div> </div> </div>
 
         {{-- *** تضمين المودالات من الـ partial *** --}}
         @include('dashboard.data-entry.partials._timeslot_modals')
