@@ -23,8 +23,8 @@ class GeneticAlgorithmService
     private Collection $instructors;
     private Collection $rooms;
     private Collection $timeslots;
-    private Collection $theoryRooms; // ** قاعات نظرية مفلترة**
-    private Collection $practicalRooms; // ** قاعات عملية مفلترة**
+    private Collection $theoryRooms; // **جديد: قاعات نظرية مفلترة**
+    private Collection $practicalRooms; // **جديد: قاعات عملية مفلترة**
 
     /**
      * تهيئة الـ Service
@@ -146,61 +146,6 @@ class GeneticAlgorithmService
         Log::info("Data loaded: " . $this->sectionsToSchedule->count() . " sections to be scheduled.");
     }
 
-    /**
-     * إنشاء الجيل الأول من الجداول العشوائية
-     */
-    private function createInitialPopulation(int $generationNumber): Collection
-    {
-        Log::info("Creating initial population (Generation #{$generationNumber})");
-        $newChromosomesData = [];
-        // انشاء مجموعة جداول عشوائية Chromosomes
-        for ($i = 0; $i < $this->settings['population_size']; $i++) {
-            $newChromosomesData[] = [
-                'population_id' => $this->populationRun->population_id,
-                'penalty_value' => -1, // قيمة مبدئية
-                'generation_number' => $generationNumber,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-        }
-        Chromosome::insert($newChromosomesData); // إدخال كل الكروموسومات دفعة واحدة
-
-        // جلب الكروموسومات التي تم إنشاؤها للتو للحصول على IDs
-        $createdChromosomes = Chromosome::where('population_id', $this->populationRun->population_id)
-        ->where('generation_number', $generationNumber)->get();
-
-        $allGenesToInsert = [];
-        foreach ($createdChromosomes as $chromosome) {
-            foreach ($this->sectionsToSchedule as $section) {
-                $instructor = $this->getRandomInstructorForSection($section);
-                $room = $this->getRandomRoomForSection($section);
-                $allGenesToInsert[] = [
-                    'chromosome_id' => $chromosome->chromosome_id,
-                    'section_id' => $section->id,
-                    // 'instructor_id' => $this->instructors->random()->id,
-                    'instructor_id' => $instructor->id,
-                    // 'room_id' => $this->rooms->random()->id,
-                    'room_id' => $room->id,
-                    'timeslot_id' => $this->timeslots->random()->id, // *** استخدام الطريقة الصحيحة ***
-                ];
-            }
-        }
-
-        // إدخال كل الجينات لكل الكروموسومات دفعة واحدة (أكثر كفاءة)
-        foreach (array_chunk($allGenesToInsert, 500) as $chunk) {
-            Gene::insert($chunk);
-        }
-
-
-        // dd([
-        //     'createdChromosomes' => $createdChromosomes,
-        //     '$this->timeslots->random()->id' => $this->timeslots->random()->id,
-        //     'allGenesToInsert' => $allGenesToInsert,
-        //     'array_chunk($allGenesToInsert,500)' => array_chunk($allGenesToInsert,500),
-        // ]);
-        return $createdChromosomes;
-    }
-
     private function getRandomInstructorForSection(Section $section)
     {
         // 1. جلب المدرسين المعينين للمادة من خلال جدول instructor_subject
@@ -211,7 +156,7 @@ class GeneticAlgorithmService
             return $suitableInstructors->random();
         }
 
-        // جلب المدرسين المعينين لهذه الشعبة المحددة من خلال instructor_section
+        // *** (الخيار المعلق) جلب المدرسين المعينين لهذه الشعبة المحددة من خلال instructor_section ***
         // if ($section->instructors->isNotEmpty()) {
         //     return $section->instructors->random();
         // }
@@ -246,6 +191,71 @@ class GeneticAlgorithmService
 
         // 4. حل بديل أخير إذا لم يتم العثور على أي نوع
         return Room::all()->random();
+    }
+
+    /**
+     * إنشاء الجيل الأول من الجداول العشوائية
+     */
+    private function createInitialPopulation(int $generationNumber): Collection
+    {
+        Log::info("Creating initial population (Generation #{$generationNumber})");
+        $newChromosomesData = [];
+        // انشاء مجموعة جداول عشوائية Chromosomes
+        for ($i = 0; $i < $this->settings['population_size']; $i++) {
+            $newChromosomesData[] = [
+                'population_id' => $this->populationRun->population_id,
+                'penalty_value' => -1, // قيمة مبدئية
+                'generation_number' => $generationNumber,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+        Chromosome::insert($newChromosomesData); // إدخال كل الكروموسومات دفعة واحدة
+
+        // جلب الكروموسومات التي تم إنشاؤها للتو للحصول على IDs
+        $createdChromosomes = Chromosome::where('population_id', $this->populationRun->population_id)
+            ->where('generation_number', $generationNumber)->get();
+
+        // foreach ($createdChromosomes as $chromosome) {
+        //     foreach ($this->sectionsToSchedule as $section) {
+        //         $allGenesToInsert[] = [
+        //             'chromosome_id' => $chromosome->chromosome_id,
+        //             'section_id' => $section->id,
+        //             'instructor_id' => $this->instructors->random()->id,
+        //             'room_id' => $this->rooms->random()->id,
+        //             'timeslot_id' => $this->timeslots->random()->id, // *** استخدام الطريقة الصحيحة ***
+        //         ];
+        //     }
+        // }
+        $allGenesToInsert = [];
+        foreach ($createdChromosomes as $chromosome) {
+            foreach ($this->sectionsToSchedule as $section) {
+                $instructor = $this->getRandomInstructorForSection($section);
+                $room = $this->getRandomRoomForSection($section);
+
+                $allGenesToInsert[] = [
+                    'chromosome_id' => $chromosome->chromosome_id,
+                    'section_id' => $section->id,
+                    'instructor_id' => $instructor->id,
+                    'room_id' => $room->id,
+                    'timeslot_id' => $this->timeslots->random()->id,
+                ];
+            }
+        }
+
+        // إدخال كل الجينات لكل الكروموسومات دفعة واحدة (أكثر كفاءة)
+        foreach (array_chunk($allGenesToInsert, 500) as $chunk) {
+            Gene::insert($chunk);
+        }
+
+
+        // dd([
+        //     'createdChromosomes' => $createdChromosomes,
+        //     '$this->timeslots->random()->id' => $this->timeslots->random()->id,
+        //     'allGenesToInsert' => $allGenesToInsert,
+        //     'array_chunk($allGenesToInsert,500)' => array_chunk($allGenesToInsert,500),
+        // ]);
+        return $createdChromosomes;
     }
 
     /**

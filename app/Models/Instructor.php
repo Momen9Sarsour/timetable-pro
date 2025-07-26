@@ -69,13 +69,15 @@ class Instructor extends Model
         return $this->belongsToMany(Section::class, 'instructor_section');
     }
 
-    /**
-     * Get the subjects that the instructor can teach.
-     * علاقة: المدرس يمكنه تدريس عدة مواد (Many To Many) - تحتاج لجدول ربط instructor_subject
-     * (إذا احتجت لهذه العلاقة لاحقاً)
-     */
-    // public function teachableSubjects()
-    // {
-    //     return $this->belongsToMany(Subject::class, 'instructor_subject', 'instructor_id', 'subject_id');
-    // }
+    public function canTeach(Subject $subject): bool
+    {
+        // الطريقة الأكثر كفاءة هي التحقق من وجود العلاقة
+        //  exists() تنفذ استعلاماً سريعاً للتحقق من وجود سجل واحد على الأقل يطابق الشرط
+        return $this->subjects()->where('subjects.id', $subject->id)->exists();
+
+        // طريقة أخرى (أقل كفاءة إذا لم تكن العلاقة محملة مسبقاً):
+        // $assignedSubjectIds = $this->subjects->pluck('id');
+        // return $assignedSubjectIds->contains($subject->id);
+    }
+
 }

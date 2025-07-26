@@ -90,7 +90,7 @@ class TimetableResultController extends Controller
                 'section.planSubject.subject',
                 'instructor.user',
                 'room.roomType',
-                'timeslot'
+                'timeslot',
             ])->get();
 
             // استخدام Service لفحص التعارضات وتحديدها

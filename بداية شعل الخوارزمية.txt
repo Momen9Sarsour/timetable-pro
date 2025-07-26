@@ -9,7 +9,7 @@ php artisan make:migration create_genes_table
 - gene_id |  chromosome_id |  section_id |  instructor_id |  room_id |  timeslot_id
 
 php artisan make:migration create_timeslot_table
-- timeslot_id | start_time |  end_time |  day |  gene_id 
+- timeslot_id | start_time |  end_time |  day |  gene_id
 
 php artisan make:migration create_crossover_types_table
 -crossover_id |  name |  description |  is_active
@@ -122,3 +122,19 @@ $totalPenalty = 0;
 // --- التحقق من التعارضات المرنة (Soft Constraints) - سنضيفها لاحقاً ---
 // - إرهاق المدرسين (محاضرات متتالية)
 // - فراغات الطلاب
+
+
+عقوبة الجدول = (تعارضات الدكاترة × 1000)
+              + (تعارضات القاعات × 1000)
+              + (تعارضات الشعب × 1000)
+              + (مشاكل السعة × 500)
+              + (مشاكل نوع القاعة × 300)
+              + (تعارض التفضيلات × 200)
+              + (مشاكل الراحة × 100)
+
+
+
+ملخص سريع للعمليات:
+المستخدم بيدخل البيانات → 2. النظام بيسجل طلب جديد → 3. بيبدأ شغل في الخلفية → 4. بيعمل جداول عشوائية → 5. بيقيم الجداول → 6. بيكرر العملية مع تحسين الجداول → 7. لما يخلص بيختار أفضل جدول → 8. بيخزن النتيجة
+
+

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Algorithm\TimetableGenerationController;
 use App\Http\Controllers\Algorithm\TimetableResultController;
+use App\Http\Controllers\Algorithm\TimetableViewController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataEntry\CrossoverTypeController;
 use App\Http\Controllers\DataEntry\DepartmentController;
@@ -206,6 +207,7 @@ Route::prefix('dashboard')->group(function () {
         Route::get('/instructor-subject-mappings', [InstructorSubjectsController::class, 'index'])->name('instructor-subjects.index');
         Route::get('/instructor-subject-mappings/{instructor}/edit', [InstructorSubjectsController::class, 'edit'])->name('instructor-subjects.edit');
         Route::post('/instructor-subject-mappings/{instructor}/sync', [InstructorSubjectsController::class, 'sync'])->name('instructor-subjects.sync');
+        Route::post('/instructor-subject-mappings/import-excel', [InstructorSubjectsController::class, 'importExcel'])->name('instructor-subject.importExcel');
 
 
         // Timeslots Management Page
@@ -245,7 +247,21 @@ Route::prefix('dashboard')->group(function () {
         Route::get('/timetable-result/{chromosome}', [TimetableResultController::class, 'show'])->name('timetable.result.show');
         // --- End Timetable Results Routes ---
 
-});
-    // Other dashboard routes (Constraints, Algorithm, Reports...) can go here
+    });
+
+    // --- Timetable Viewing Routes ---
+    Route::prefix('timetables')->name('dashboard.timetables.')->group(function () {
+        // 1. عرض جداول الشعب
+        Route::get('/sections', [TimetableViewController::class, 'viewSectionTimetables'])->name('sections');
+        // 2. عرض جداول المدرسين
+        Route::get('/instructors', [TimetableViewController::class, 'viewInstructorTimetables'])->name('instructors');
+        // 3. عرض جداول القاعات
+        Route::get('/rooms', [TimetableViewController::class, 'viewRoomTimetables'])->name('rooms');
+
+        // (اختياري لاحقاً) روابط التصدير
+        // Route::get('/export/section/{sectionId}', [TimetableViewController::class, 'exportSectionTimetable'])->name('export.section');
+        // Route::get('/export/instructor/{instructorId}', [TimetableViewController::class, 'exportInstructorTimetable'])->name('export.instructor');
+        // Route::get('/export/room/{roomId}', [TimetableViewController::class, 'exportRoomTimetable'])->name('export.room');
+    });
 
 });

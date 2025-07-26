@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Maatwebsite\Excel\Facades\Excel;
 
 class InstructorSubjectsController extends Controller
 {
@@ -93,6 +94,219 @@ class InstructorSubjectsController extends Controller
             return redirect()->route('data-entry.instructor-subjects.edit', $instructor->id)
                 ->with('error', 'Failed to update subject assignments due to a server error.');
         }
+    }
+
+    /**
+     * Handle the import of instructor-subject assignments from an Excel file.
+     */
+    public function importExcel(Request $request)
+    {
+        $request->validate([
+            'assignments_excel_file' => 'required|file|mimes:xlsx,xls,csv|max:5120',
+        ]);
+
+        // تعريف العدادات
+        $createdCount = 0;
+        $alreadyExistedCount = 0;
+        $skippedDetails = [];
+        $processedInstructors = []; // لتجنب معالجة نفس المدرس مرتين
+
+        try {
+            $rows = Excel::toArray(new \stdClass(), $request->file('assignments_excel_file'))[0];
+            if (count($rows) <= 1) {
+                return redirect()->back()->with('error', 'The uploaded Excel file is empty or contains only a header row.');
+            }
+
+            $header = array_map('strtolower', array_map('trim', array_shift($rows)));
+            $instructorCol = $this->getColumnIndex($header, ['instructor_name', 'instructor_id', 'instructorid']);
+            $subjectCol = $this->getColumnIndex($header, ['subject_no', 'subject_id', 'subjectid', 'subjectname', 'subject_name']);
+
+            if (is_null($instructorCol) || is_null($subjectCol)) {
+                return redirect()->back()->with('error', 'Excel file is missing required columns: instructor identifier and subject identifier.');
+            }
+
+            $currentRowNumber = 1;
+
+            DB::beginTransaction(); // بدء Transaction
+
+            foreach ($rows as $row) {
+                $currentRowNumber++;
+                if (count(array_filter($row)) == 0) {
+                    continue;
+                } // تجاهل الصفوف الفارغة
+
+                $instructorIdentifier = trim($row[$instructorCol] ?? null);
+                $subjectsString = trim($row[$subjectCol] ?? null);
+
+                if (empty($instructorIdentifier) || empty($subjectsString)) {
+                    $skippedDetails[] = "Row {$currentRowNumber}: Skipped (missing instructor or subject information).";
+                    continue;
+                }
+
+                // 1. إيجاد المدرس
+                $instructor = $this->findInstructor($instructorIdentifier);
+                if (!$instructor) {
+                    $skippedDetails[] = "Row {$currentRowNumber}: Skipped (Instructor '{$instructorIdentifier}' not found).";
+                    continue;
+                }
+
+                // تجاهل إذا تم معالجة المدرس من قبل في نفس الملف
+                if (in_array($instructor->id, $processedInstructors)) {
+                    $skippedDetails[] = "Row {$currentRowNumber}: Skipped (Instructor '{$instructor->instructor_name}' is duplicated in the file, only first entry is processed).";
+                    continue;
+                }
+                $processedInstructors[] = $instructor->id;
+
+
+                // 2. معالجة المواد
+                $subjectIdentifiers = array_map('trim', explode(',', $subjectsString)); // تقسيم المواد
+                $subjectIdsToAssign = [];
+
+                foreach ($subjectIdentifiers as $subjectIdentifier) {
+                    if (empty($subjectIdentifier)) continue;
+
+                    $subject = $this->findSubject($subjectIdentifier);
+                    if ($subject) {
+                        $subjectIdsToAssign[] = $subject->id;
+                    } else {
+                        $skippedDetails[] = "Row {$currentRowNumber}: Subject '{$subjectIdentifier}' for instructor '{$instructor->instructor_name}' not found and was skipped.";
+                    }
+                }
+
+                // 3. تحديث التعيينات (إضافة الجديد فقط)
+                if (!empty($subjectIdsToAssign)) {
+                    // جلب IDs المواد المعينة حالياً للمدرس
+                    $currentlyAssignedIds = $instructor->subjects()->pluck('subjects.id')->toArray();
+
+                    // حساب IDs المواد الجديدة فقط التي سيتم إضافتها
+                    $newIdsToAdd = array_diff($subjectIdsToAssign, $currentlyAssignedIds);
+
+                    if (!empty($newIdsToAdd)) {
+                        // استخدام attach() لإضافة الجديد فقط دون التأثير على القديم
+                        $instructor->subjects()->attach($newIdsToAdd);
+                        $createdCount += count($newIdsToAdd);
+                    }
+
+                    // حساب عدد المواد التي كانت موجودة بالفعل
+                    $alreadyExistedCount += count(array_intersect($subjectIdsToAssign, $currentlyAssignedIds));
+                }
+            }
+
+            DB::commit(); // تأكيد كل التغييرات إذا لم تحدث أخطاء
+
+            // بناء رسالة النجاح
+            $messages = [];
+            if ($createdCount > 0) $messages[] = "{$createdCount} new assignments were added.";
+            if ($alreadyExistedCount > 0) $messages[] = "{$alreadyExistedCount} assignments already existed and were unchanged.";
+            if (!empty($skippedDetails)) $messages[] = count($skippedDetails) . " entries were skipped.";
+
+            if (empty($messages)) {
+                return redirect()->route('data-entry.instructor-subjects.index')->with('info', 'Excel file processed. No changes were made.');
+            } else {
+                return redirect()->route('data-entry.instructor-subjects.index')
+                    ->with('success', implode(' ', $messages))
+                    ->with('skipped_details', $skippedDetails);
+            }
+        } catch (Exception $e) {
+            DB::rollBack(); // التراجع عن أي تغييرات في حال حدوث خطأ
+            Log::error('Instructor-Subject Excel Import Failed: ' . $e->getMessage());
+            return redirect()->route('data-entry.instructor-subjects.index')
+                ->with('error', 'An error occurred during Excel import: ' . $e->getMessage());
+        }
+    }
+
+    private function getColumnIndex(array $header, array $possibleNames): ?int
+    {
+        // تنظيف وتوحيد الأسماء المحتملة (حروف صغيرة وبدون فراغات)
+        $normalizedPossibleNames = array_map(fn($name) => strtolower(str_replace([' ', '_'], '', $name)), $possibleNames);
+
+        // تنظيف العناوين الفعلية من الملف
+        $normalizedHeader = array_map(fn($h) => strtolower(str_replace([' ', '_'], '', $h)), $header);
+
+        foreach ($normalizedPossibleNames as $name) {
+            $index = array_search($name, $normalizedHeader);
+            if ($index !== false) {
+                return $index; // وجدنا تطابقاً، أرجع الفهرس
+            }
+        }
+
+        return null; // لم يتم العثور على أي اسم مطابق
+    }
+
+    private function findInstructor($identifier)
+    {
+        if (is_numeric($identifier)) {
+            return Instructor::find($identifier);
+        }
+        // البحث بالاسم (في instructor_name أو user->name)
+        return Instructor::where('instructor_name', 'like', "%{$identifier}%")
+            ->orWhereHas('user', fn($q) => $q->where('name', 'like', "%{$identifier}%"))
+            ->first();
+    }
+
+    private function findSubject($identifier)
+    {
+        // إذا كان المعرّف فارغاً، لا تبحث
+        if (empty($identifier)) {
+            return null;
+        }
+
+        // 1. البحث بالـ ID إذا كان المعرّف رقمياً
+        if (is_numeric($identifier)) {
+            $subject = Subject::find($identifier);
+            if ($subject) {
+                return $subject;
+            }
+        }
+
+        // 2. البحث برقم المادة (subject_no) - تجاهل حالة الأحرف والفراغات
+        $normalizedIdentifier = strtolower(trim($identifier));
+        $subject = Subject::whereRaw('LOWER(REPLACE(subject_no, " ", "")) = ?', [$normalizedIdentifier])->first();
+        if ($subject) {
+            return $subject;
+        }
+
+        // 3. البحث باسم المادة (subject_name) - تجاهل حالة الأحرف، الفراغات، والهمزات
+        $normalizedArabicIdentifier = $this->normalizeArabicString($identifier);
+        // البحث بتطابق شبه تام (بعد إزالة الفراغات)
+        $subject = Subject::whereRaw('REPLACE(LOWER(subject_name), " ", "") = ?', [$normalizedArabicIdentifier])->first();
+        if ($subject) {
+            return $subject;
+        }
+        // إذا فشل، جرب بحثاً أوسع قليلاً (قد يكون أقل دقة إذا كانت الأسماء متشابهة)
+        return Subject::whereRaw('LOWER(subject_name) LIKE ?', ["%{$normalizedArabicIdentifier}%"])->first();
+    }
+
+    /**
+
+     **3. `normalizeArabicString($string)`**
+
+     *   **وظيفتها:** تأخذ نصاً (غالباً باللغة العربية) وتقوم بتنظيفه لتوحيد صيغته قبل مقارنته مع ما هو موجود في قاعدة البيانات. تزيل الفراغات الزائدة وتوحد أشكال الهمزة.
+
+     * Helper function to normalize a string for comparison.
+     * It converts to lowercase, trims whitespace, and normalizes Arabic Alif variants.
+     *
+     * @param string $string The input string.
+     * @return string The normalized string.
+     */
+
+    private function normalizeArabicString($string): string
+    {
+        // 1. إزالة الفراغات من البداية والنهاية وتحويل لحروف صغيرة
+        $string = strtolower(trim($string));
+
+        // 2. توحيد أشكال حرف الألف (أ, إ, آ) إلى ألف بدون همزة (ا)
+        // هذا يجعل البحث عن "اساسيات" يجد "أساسيات" والعكس
+        $string = str_replace(['أ', 'إ', 'آ'], 'ا', $string);
+
+        // 3. (اختياري) توحيد الياء والتاء المربوطة
+        // $string = str_replace(['ى'], 'ي', $string); // ياء مقصورة إلى ياء عادية
+        // $string = str_replace(['ة'], 'ه', $string); // تاء مربوطة إلى هاء
+
+        // 4. إزالة الفراغات المتعددة بين الكلمات واستبدالها بفراغ واحد
+        $string = preg_replace('/\s+/u', ' ', $string);
+
+        return $string;
     }
 
 

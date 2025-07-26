@@ -282,14 +282,14 @@
                         <div class="col-md-4 mb-3">
                             <label for="setting_max_generations" class="form-label">Max Generations</label>
                             <input type="number" class="form-control" id="setting_max_generations"
-                                name="max_generations" value="{{ config('algorithm.settings.max_generations', 500) }}"
-                                required min="10" step="100">
+                                name="max_generations" value="{{ config('algorithm.settings.max_generations', 100) }}"
+                                required min="10" step="10">
                             <small class="text-muted">When to stop if no solution is found.</small>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="setting_mutation_rate" class="form-label">Mutation Rate</label>
                             <input type="number" class="form-control" id="setting_mutation_rate"
-                                name="mutation_rate" value="{{ config('algorithm.settings.mutation_rate', 0.01) }}"
+                                name="mutation_rate" value="{{ config('algorithm.settings.mutation_rate', 0.5) }}"
                                 required min="0" max="1" step="0.01">
                             <small class="text-muted">e.g., 0.01 for 1%.</small>
                         </div>
@@ -327,7 +327,7 @@
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" role="switch"
                             id="setting_stop_at_first_valid" name="stop_at_first_valid" value="1"
-                            {{ config('algorithm.settings.stop_at_first_valid', false) ? 'checked' : '' }}>
+                            {{ config('algorithm.settings.stop_at_first_valid', true) ? 'checked' : '' }}>
                         <label class="form-check-label" for="setting_stop_at_first_valid">Stop at First Valid
                             Solution</label>
                         <small class="text-muted d-block">Stops when it finds a schedule with zero hard-constraint

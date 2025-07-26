@@ -133,11 +133,17 @@
                                                     @endphp
                                                     <div class="event-block {{ $isConflict ? 'conflict' : '' }}">
                                                         <div class="event-subject">
+                                                            {{ optional($gene->section->planSubject->plan)->plan_no }}
+                                                            {{ optional($gene->section->planSubject)->plan_level }} - semester: 
+                                                            {{ optional($gene->section->planSubject)->plan_semester }}
+                                                        </div>
+                                                        <div class="event-subject">
                                                             {{ optional($gene->section->planSubject->subject)->subject_no }}
+                                                             - {{ optional($gene->section->planSubject->subject)->subject_name }}
                                                         </div>
                                                         <div class="event-details">
                                                             {{ optional($gene->instructor->user)->name }}<br>
-                                                            Room: {{ optional($gene->room)->room_no }} | Sec:
+                                                            Room: {{ optional($gene->room)->room_name }} | Sec:
                                                             {{ optional($gene->section)->section_number }}({{ optional($gene->section)->activity_type }})
                                                         </div>
                                                     </div>

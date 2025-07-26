@@ -154,54 +154,54 @@ class TimetableGenerationController extends Controller
 
 
 
-    public function show(Population $population)
-    {
-        try {
-            // جلب أفضل كروموسوم (جدول) لهذه العملية
-            // إذا كان best_chromosome_id مسجلاً، استخدمه. وإلا، ابحث عن الأفضل.
-            if ($population->best_chromosome_id) {
-                $bestChromosome = Chromosome::find($population->best_chromosome_id);
-            } else {
-                $bestChromosome = $population->chromosomes()->orderBy('penalty_value', 'asc')->first();
-            }
+    // public function show(Population $population)
+    // {
+    //     try {
+    //         // جلب أفضل كروموسوم (جدول) لهذه العملية
+    //         // إذا كان best_chromosome_id مسجلاً، استخدمه. وإلا، ابحث عن الأفضل.
+    //         if ($population->best_chromosome_id) {
+    //             $bestChromosome = Chromosome::find($population->best_chromosome_id);
+    //         } else {
+    //             $bestChromosome = $population->chromosomes()->orderBy('penalty_value', 'asc')->first();
+    //         }
 
-            if (!$bestChromosome) {
-                return redirect()->route('dashboard.index')->with('error', 'No valid schedule found for this generation run yet.');
-            }
+    //         if (!$bestChromosome) {
+    //             return redirect()->route('dashboard.index')->with('error', 'No valid schedule found for this generation run yet.');
+    //         }
 
-            // جلب كل الجينات (المحاضرات) مع كل تفاصيلها اللازمة للعرض
-            $genes = $bestChromosome->genes()->with([
-                'section.planSubject.subject',
-                'instructor.user',
-                'room',
-                'timeslot'
-            ])->get();
+    //         // جلب كل الجينات (المحاضرات) مع كل تفاصيلها اللازمة للعرض
+    //         $genes = $bestChromosome->genes()->with([
+    //             'section.planSubject.subject',
+    //             'instructor.user',
+    //             'room',
+    //             'timeslot'
+    //         ])->get();
 
-            // *** استخدام Service جديد لفحص التعارضات وتحديدها ***
-            $conflictChecker = new ConflictCheckerService($genes);
-            $conflicts = $conflictChecker->getConflicts(); // مصفوفة بتفاصيل التعارضات
-            $conflictingGeneIds = $conflictChecker->getConflictingGeneIds(); // مصفوفة بـ IDs الجينات المتعارضة
+    //         // *** استخدام Service جديد لفحص التعارضات وتحديدها ***
+    //         $conflictChecker = new ConflictCheckerService($genes);
+    //         $conflicts = $conflictChecker->getConflicts(); // مصفوفة بتفاصيل التعارضات
+    //         $conflictingGeneIds = $conflictChecker->getConflictingGeneIds(); // مصفوفة بـ IDs الجينات المتعارضة
 
-            // جلب كل الفترات الزمنية المتاحة لعرض الجدول بشكل صحيح
-            $timeslots = Timeslot::orderBy('start_time')->get()->groupBy('day');
+    //         // جلب كل الفترات الزمنية المتاحة لعرض الجدول بشكل صحيح
+    //         $timeslots = Timeslot::orderBy('start_time')->get()->groupBy('day');
 
-            // تحضير بيانات الجدول للعرض
-            $scheduleData = [];
-            foreach ($genes as $gene) {
-                $scheduleData[$gene->timeslot->day][$gene->timeslot->start_time][] = $gene;
-            }
+    //         // تحضير بيانات الجدول للعرض
+    //         $scheduleData = [];
+    //         foreach ($genes as $gene) {
+    //             $scheduleData[$gene->timeslot->day][$gene->timeslot->start_time][] = $gene;
+    //         }
 
-            return view('dashboard.timetable-result.show', compact(
-                'population',
-                'bestChromosome',
-                'scheduleData',
-                'timeslots',
-                'conflicts',
-                'conflictingGeneIds'
-            ));
-        } catch (Exception $e) {
-            Log::error("Error showing timetable result: " . $e->getMessage());
-            return redirect()->route('dashboard.index')->with('error', 'Could not display the schedule result.');
-        }
-    }
+    //         return view('dashboard.timetable-result.show', compact(
+    //             'population',
+    //             'bestChromosome',
+    //             'scheduleData',
+    //             'timeslots',
+    //             'conflicts',
+    //             'conflictingGeneIds'
+    //         ));
+    //     } catch (Exception $e) {
+    //         Log::error("Error showing timetable result: " . $e->getMessage());
+    //         return redirect()->route('dashboard.index')->with('error', 'Could not display the schedule result.');
+    //     }
+    // }
 }

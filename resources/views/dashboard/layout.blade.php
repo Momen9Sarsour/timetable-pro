@@ -116,6 +116,7 @@
             @php
                 $isActiveMenu = request()->routeIs('data-entry.*');
                 $isActiveAlgorithm = request()->routeIs('algorithm-control*');
+                $isViewTimetables = request()->routeIs('dashboard.timetables.*');
             @endphp
 
             <li class="nav-item">
@@ -309,13 +310,44 @@
                             <a href="{{ route('algorithm-control.selection-types.index') }}"><i
                                     class="fas fa-check-double fa-fw me-2"></i> Selection Methods</a>
                         </li>
-                            {{-- رابط جديد لنتائج الخوارزمية --}}
-                            <li class="{{ request()->routeIs('algorithm-control.timetable.results.index') || request()->routeIs('algorithm-control.timetable.result.show') ? 'active' : '' }}">
-                                <a href="{{ route('algorithm-control.timetable.results.index') }}">
-                                    <i class="fas fa-calendar-alt"></i> Generation Results
-                                </a>
-                            </li>
+                        {{-- رابط جديد لنتائج الخوارزمية --}}
+                        <li
+                            class="{{ request()->routeIs('algorithm-control.timetable.results.index') || request()->routeIs('algorithm-control.timetable.result.show') ? 'active' : '' }}">
+                            <a href="{{ route('algorithm-control.timetable.results.index') }}">
+                                <i class="fas fa-calendar-alt"></i> Generation Results
+                            </a>
+                        </li>
 
+                    </ul>
+                </div>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link d-flex align-items-center py-1 small {{ $isViewTimetables ? '' : 'collapsed' }}"
+                    data-bs-toggle="collapse" href="#ViewTimetablesMenu" role="button"
+                    aria-expanded="{{ $isViewTimetables ? 'true' : 'false' }}" aria-controls="ViewTimetablesMenu">
+                    <i class="fas fa-database me-2 fa-4xs"></i>
+                    <span class="small">View Timetables</span>
+                    <i class="fas fa-chevron-down ms-auto fa-3xs"></i>
+                </a>
+                <div class="collapse {{ $isViewTimetables ? 'show' : '' }}" id="ViewTimetablesMenu">
+
+
+                    {{-- <li class="has-submenu {{ request()->routeIs('dashboard.timetables.*') ? 'active open' : '' }}">
+                <a href="#"><i class="fas fa-calendar-alt fa-fw me-2"></i> View Timetables</a> --}}
+                    <ul class="nav flex-column">
+                        <li class="{{ request()->routeIs('dashboard.timetables.sections') ? 'active' : '' }}">
+                            <a href="{{ route('dashboard.timetables.sections') }}"><i
+                                    class="fas fa-users-class fa-fw me-2"></i> Section Timetables</a>
+                        </li>
+                        <li class="{{ request()->routeIs('dashboard.timetables.instructors') ? 'active' : '' }}">
+                            <a href="{{ route('dashboard.timetables.instructors') }}"><i
+                                    class="fas fa-chalkboard-teacher fa-fw me-2"></i> Instructor Timetables</a>
+                        </li>
+                        <li class="{{ request()->routeIs('dashboard.timetables.rooms') ? 'active' : '' }}">
+                            <a href="{{ route('dashboard.timetables.rooms') }}"><i
+                                    class="fas fa-door-open fa-fw me-2"></i> Room Timetables</a>
+                        </li>
                     </ul>
                 </div>
             </li>
