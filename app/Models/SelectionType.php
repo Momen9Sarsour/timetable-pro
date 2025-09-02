@@ -14,7 +14,7 @@ class SelectionType extends Model
     protected $primaryKey = 'selection_type_id';
 
     // الحقول المسموح بتعبئتها
-    protected $fillable = ['name', 'description', 'is_active'];
+    protected $fillable = ['name', 'slug', 'description', 'is_active'];
 
     public function populations()
     {

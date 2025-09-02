@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\AuditLogController;
+use App\Http\Controllers\Api\AvailableResourceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DataEntry\RoleController;
@@ -9,6 +11,7 @@ use App\Http\Controllers\DataEntry\SubjectController;
 use App\Http\Controllers\DataEntry\DepartmentController;
 use App\Http\Controllers\DataEntry\InstructorController;
 use App\Http\Controllers\DataEntry\InstructorSubjectController;
+use App\Http\Controllers\DataEntry\InstructorSubjectsController;
 use App\Http\Controllers\DataEntry\PlanController;
 use App\Http\Controllers\DataEntry\PlanExpectedCountController;
 use App\Http\Controllers\DataEntry\PlanSubjectImportController;
@@ -201,14 +204,14 @@ Route::prefix('v1')->group(function () {
 
     // --- Instructor Subject Assignments API ---
     // جلب قائمة المدرسين مع عدد المواد
-    Route::get('/instructor-assignments', [InstructorSubjectController::class, 'apiIndex'])->name('api.instructor-assignments.index');
+    Route::get('/instructor-assignments', [InstructorSubjectsController::class, 'apiIndex'])->name('api.instructor-assignments.index');
     // جلب كل المواد لمدرس معين (مع تحديد المعين منها)
-    Route::get('/instructor-assignments/{instructor}', [InstructorSubjectController::class, 'apiShowAssignments'])->name('api.instructor-assignments.show'); // استخدام {instructor} لـ RMB
-    Route::post('/instructors/{instructor}/subjects/sync', [InstructorSubjectController::class, 'apiSyncAssignments']); // تحديث (مزامنة) المواد المعينة (استخدمنا POST للتبسيط، يمكن استخدام PUT)
-    Route::get('/instructors/{instructor}/assigned-sections', [InstructorSubjectController::class, 'apiGetAssignedSections']); // جلب الشعب المعينة فقط للمدرس
-    Route::get('/instructors/sections/available', [InstructorSubjectController::class, 'apiGetAvailableSections']); // جلب كل الشعب المتاحة (مع فلاتر اختيارية)
-    // Route::get('/instructors/{instructor}/subjects', [InstructorSubjectController::class, 'apiGetAssignedSubjects']); // جلب المواد المعينة
-    // Route::get('/instructors/{instructor}/available-subjects', [InstructorSubjectController::class, 'apiGetAvailableSubjects']); // جلب المواد المتاحة
+    Route::get('/instructor-assignments/{instructor}', [InstructorSubjectsController::class, 'apiShowAssignments'])->name('api.instructor-assignments.show'); // استخدام {instructor} لـ RMB
+    Route::post('/instructors/{instructor}/subjects/sync', [InstructorSubjectsController::class, 'apiSyncAssignments']); // تحديث (مزامنة) المواد المعينة (استخدمنا POST للتبسيط، يمكن استخدام PUT)
+    Route::get('/instructors/{instructor}/assigned-sections', [InstructorSubjectsController::class, 'apiGetAssignedSections']); // جلب الشعب المعينة فقط للمدرس
+    Route::get('/instructors/sections/available', [InstructorSubjectsController::class, 'apiGetAvailableSections']); // جلب كل الشعب المتاحة (مع فلاتر اختيارية)
+    // Route::get('/instructors/{instructor}/subjects', [InstructorSubjectsController::class, 'apiGetAssignedSubjects']); // جلب المواد المعينة
+    // Route::get('/instructors/{instructor}/available-subjects', [InstructorSubjectsController::class, 'apiGetAvailableSubjects']); // جلب المواد المتاحة
 
     // --- Timeslots API ---
     Route::get('/timeslots', [TimeslotController::class, 'apiIndex']);
@@ -230,3 +233,4 @@ Route::prefix('v1')->group(function () {
     // ...
 
 });
+

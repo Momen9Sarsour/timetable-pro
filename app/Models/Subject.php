@@ -19,7 +19,7 @@ class Subject extends Model
         'subject_category_id',
         'department_id',
         'load_theoretical_section',
-        'load_practical_section',  
+        'load_practical_section',
     ];
 
     /**
@@ -76,6 +76,14 @@ class Subject extends Model
         return $this->belongsToMany(Instructor::class, 'instructor_subject', 'subject_id', 'instructor_id')
             ->withTimestamps(); // إذا أضفت timestamps للجدول الوسيط
     }
+
+    public function requiredRoomType()
+{
+    // نفترض أن جدول `subjects` يحتوي على حقل `required_room_type_id`
+    // الذي هو مفتاح أجنبي لجدول `room_types`.
+    return $this->belongsTo(RoomType::class, 'required_room_type_id', 'id');
+}
+
 
 
     /**

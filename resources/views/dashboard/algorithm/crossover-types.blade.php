@@ -20,6 +20,7 @@
                             <tr>
                                 <th>#</th>
                                 <th>Name</th>
+                                <th>Slug</th>
                                 <th>Description</th>
                                 <th>Status</th>
                                 <th>Actions</th>
@@ -30,6 +31,7 @@
                             <tr>
                                 <td>{{ $crossoverTypes->firstItem() + $index }}</td>
                                 <td><strong>{{ $type->name }}</strong></td>
+                                <td><strong>{{ $type->slug }}</strong></td>
                                 <td>{{ Str::limit($type->description, 80) }}</td>
                                 <td>
                                     @if($type->is_active)

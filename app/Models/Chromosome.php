@@ -21,6 +21,14 @@ class Chromosome extends Model
         'penalty_value',
         'generation_number',
         'is_best_of_generation',
+
+        'student_conflict_penalty',
+        'teacher_conflict_penalty',
+        'room_conflict_penalty',
+        'capacity_conflict_penalty',
+        'room_type_conflict_penalty',
+        'teacher_eligibility_conflict_penalty',
+        'fitness_value',
     ];
 
     /**

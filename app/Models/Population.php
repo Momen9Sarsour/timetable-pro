@@ -15,15 +15,23 @@ class Population extends Model
 
     // الحقول المسموح بتعبئتها
     protected $fillable = [
+        'academic_year',
+        'semester',
+        'theory_credit_to_slots',
+        'practical_credit_to_slots',
         'population_size',
         'crossover_id',
         'selection_id',
         'mutation_rate',
         'generations_count',
-        'best_chromosome_id',
+        'crossover_rate',
+        'mutation_id',
+        'selection_size',
+        'stop_at_first_valid',
+        'status',
         'start_time',
         'end_time',
-        'status',
+        'best_chromosome_id',
     ];
 
     /**
@@ -61,4 +69,9 @@ class Population extends Model
         // علاقة "واحد إلى واحد" مع جدول Chromosome
         return $this->belongsTo(Chromosome::class, 'best_chromosome_id', 'chromosome_id');
     }
+
+    public function mutationType()
+{
+    return $this->belongsTo(MutationType::class, 'mutation_id', 'mutation_id');
+}
 }

@@ -15,6 +15,7 @@ return new class extends Migration
             // $table->id();
             $table->id('selection_type_id'); // اسم الحقل PK كما طلبته (ملاحظة: الاسم يجب أن يكون فريداً)
             $table->string('name')->unique();
+            $table->string('slug')->unique();
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();

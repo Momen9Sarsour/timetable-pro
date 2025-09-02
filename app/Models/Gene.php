@@ -15,10 +15,24 @@ class Gene extends Model
     // الحقول المسموح بتعبئتها
     protected $fillable = [
         'chromosome_id',
+        'lecture_unique_id',
         'section_id',
         'instructor_id',
         'room_id',
-        'timeslot_id', // هذا يربط بجدول timeslots الأساسي
+        //'timeslot_id', // هذا يربط بجدول timeslots الأساسي
+        'timeslot_ids',
+        'block_type', // 'theory' أو 'practical'
+        'block_duration', // مدة البلوك بالساعات
+        'is_continuous', // هل البلوك متصل أم مقسم
+        'student_group_id', // رقم مجموعة الطلاب
+
+    ];
+
+    // **(الأهم)** هذا السطر يحول الـ JSON إلى مصفوفة PHP والعكس تلقائياً
+    protected $casts = [
+        'timeslot_ids' => 'array',
+        'student_group_id' => 'array',
+        'is_continuous' => 'boolean',
     ];
 
     /**

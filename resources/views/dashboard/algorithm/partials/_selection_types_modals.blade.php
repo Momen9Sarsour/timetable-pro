@@ -12,6 +12,17 @@
                         <input type="text" class="form-control @error('name') is-invalid @enderror" id="add_selection_name" name="name" value="{{ old('name') }}" required>
                         @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
+                    <div class="form-group mb-3">
+                        <label for="slug" class="form-label">Slug</label>
+                        <input type="text"name="slug" id="slug" class="form-control @error('slug') is-invalid @enderror"
+                            value="{{ old('slug') }}"
+                            placeholder="Enter unique slug (e.g., single-point, uniform, etc.)">
+                        @error('slug')
+                            <div class="invalid-feedback">
+                                {{ $message }}
+                            </div>
+                        @enderror
+                    </div>
                     <div class="mb-3">
                         <label for="add_selection_description" class="form-label">Description</label>
                         <textarea class="form-control @error('description') is-invalid @enderror" id="add_selection_description" name="description" rows="3">{{ old('description') }}</textarea>
@@ -42,6 +53,10 @@
                     <div class="mb-3">
                         <label for="edit_selection_name_{{ $type->selection_type_id }}" class="form-label">Method Name <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="edit_selection_name_{{ $type->selection_type_id }}" name="name" value="{{ old('name', $type->name) }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_selection_slug_{{ $type->slug }}" class="form-label">Method slug <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="edit_selection_slug_{{ $type->slug }}" name="slug" value="{{ old('slug', $type->slug) }}" required>
                     </div>
                     <div class="mb-3">
                         <label for="edit_selection_description_{{ $type->selection_type_id }}" class="form-label">Description</label>

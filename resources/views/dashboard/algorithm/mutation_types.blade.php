@@ -4,9 +4,9 @@
 <div class="main-content">
     <div class="data-entry-container">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="data-entry-header mb-0">Manage Selection Methods</h1>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSelectionModal">
-                <i class="fas fa-plus me-1"></i> Add New Selection Method
+            <h1 class="data-entry-header mb-0">Manage mutation Methods</h1>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addmutationModal">
+                <i class="fas fa-plus me-1"></i> Add New mutation Method
             </button>
         </div>
 
@@ -27,9 +27,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse ($selectionTypes as $index => $type)
+                            @forelse ($mutationTypes as $index => $type)
                             <tr>
-                                <td>{{ $selectionTypes->firstItem() + $index }}</td>
+                                <td>{{ $mutationTypes->firstItem() + $index }}</td>
                                 <td><strong>{{ $type->name }}</strong></td>
                                 <td><strong>{{ $type->slug }}</strong></td>
                                 <td>{{ Str::limit($type->description, 80) }}</td>
@@ -41,25 +41,25 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-primary py-0 px-1 me-1" data-bs-toggle="modal" data-bs-target="#editSelectionModal-{{ $type->selection_type_id }}">Edit</button>
-                                    <button class="btn btn-sm btn-outline-danger py-0 px-1" data-bs-toggle="modal" data-bs-target="#deleteSelectionModal-{{ $type->selection_type_id }}">Delete</button>
+                                    <button class="btn btn-sm btn-outline-primary py-0 px-1 me-1" data-bs-toggle="modal" data-bs-target="#editmutationModal-{{ $type->mutation_id }}">Edit</button>
+                                    <button class="btn btn-sm btn-outline-danger py-0 px-1" data-bs-toggle="modal" data-bs-target="#deletemutationModal-{{ $type->mutation_id }}">Delete</button>
                                     {{-- تضمين المودالات لكل صف --}}
-                                    @include('dashboard.algorithm.partials._selection_types_modals', ['type' => $type])
+                                    @include('dashboard.algorithm.partials._mutation_types_modals', ['type' => $type])
                                 </td>
                             </tr>
                             @empty
-                            <tr><td colspan="5" class="text-center text-muted">No selection methods found.</td></tr>
+                            <tr><td colspan="5" class="text-center text-muted">No mutation methods found.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
                 <div class="mt-3 d-flex justify-content-center">
-                    {{ $selectionTypes->links() }}
+                    {{ $mutationTypes->links('pagination::bootstrap-5') }}
                 </div>
             </div>
         </div>
         {{-- مودال الإضافة العام --}}
-        @include('dashboard.algorithm.partials._selection_types_modals', ['type' => null])
+        @include('dashboard.algorithm.partials._mutation_types_modals', ['type' => null])
     </div>
 </div>
 @endsection

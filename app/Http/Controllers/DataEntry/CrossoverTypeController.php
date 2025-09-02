@@ -40,6 +40,7 @@ class CrossoverTypeController extends Controller
     {
         $validatedData = $request->validate([
             'name' => 'required|string|max:100|unique:crossover_types,name',
+            'slug' => 'required|string|max:255|unique:crossover_types,slug|alpha_dash',
             'description' => 'nullable|string|max:500',
             'is_active' => 'sometimes|boolean',
         ]);
@@ -79,6 +80,7 @@ class CrossoverTypeController extends Controller
         $errorBagName = 'editCrossoverModal_' . $crossoverType->crossover_id;
         $validatedData = $request->validate([
             'name' => ['required', 'string', 'max:100', Rule::unique('crossover_types')->ignore($crossoverType->crossover_id, 'crossover_id')],
+            'slug' => 'required|string|max:255|unique:crossover_types,slug,' . $crossoverType->crossover_id . ',crossover_id',
             'description' => 'nullable|string|max:500',
             'is_active' => 'sometimes|boolean',
         ]);

@@ -275,23 +275,56 @@
                         <div class="col-md-4 mb-3">
                             <label for="setting_population_size" class="form-label">Population Size</label>
                             <input type="number" class="form-control" id="setting_population_size"
-                                name="population_size" value="{{ config('algorithm.settings.population_size', 100) }}"
+                                name="population_size" value="{{ config('algorithm.settings.population_size', 10) }}"
                                 required min="10" step="10">
                             <small class="text-muted">No. of schedules per generation.</small>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="setting_max_generations" class="form-label">Max Generations</label>
                             <input type="number" class="form-control" id="setting_max_generations"
-                                name="max_generations" value="{{ config('algorithm.settings.max_generations', 100) }}"
+                                name="max_generations" value="{{ config('algorithm.settings.max_generations', 10) }}"
                                 required min="10" step="10">
                             <small class="text-muted">When to stop if no solution is found.</small>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="setting_mutation_rate" class="form-label">Mutation Rate</label>
                             <input type="number" class="form-control" id="setting_mutation_rate"
-                                name="mutation_rate" value="{{ config('algorithm.settings.mutation_rate', 0.5) }}"
+                                name="mutation_rate" value="{{ config('algorithm.settings.mutation_rate', 0.05) }}"
                                 required min="0" max="1" step="0.01">
                             <small class="text-muted">e.g., 0.01 for 1%.</small>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+                    <h6 class="mb-3">Lecture Duration Settings</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="setting_theory_credit_to_slots" class="form-label">Slots per Theory Credit
+                                Hour</label>
+                            <input type="number"
+                                class="form-control @error('theory_credit_to_slots') is-invalid @enderror"
+                                id="setting_theory_credit_to_slots" name="theory_credit_to_slots"
+                                value="{{ old('theory_credit_to_slots', 1) }}" required min="1"
+                                max="4">
+                            <small class="text-muted">How many consecutive timeslots for each theoretical credit hour.
+                                (e.g., 1)</small>
+                            @error('theory_credit_to_slots')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="setting_practical_credit_to_slots" class="form-label">Slots per Practical
+                                Credit Hour</label>
+                            <input type="number"
+                                class="form-control @error('practical_credit_to_slots') is-invalid @enderror"
+                                id="setting_practical_credit_to_slots" name="practical_credit_to_slots"
+                                value="{{ old('practical_credit_to_slots', 2) }}" required min="1"
+                                max="4">
+                            <small class="text-muted">How many consecutive timeslots for each practical credit hour.
+                                (e.g., 2)</small>
+                            @error('practical_credit_to_slots')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
 
@@ -323,7 +356,40 @@
                         </div>
                     </div>
 
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="crossover_rate" class="form-label">Crossover Rate (0.0 - 1.0)</label>
+                            <input type="number" class="form-control" id="crossover_rate" value="0.8"
+                                step="0.1" min="0" max="1" name="crossover_rate"
+                                value="{{ config('algorithm.settings.crossover_rate', 0.1) }}" required
+                                min="10" step="10">
+                            <small class="text-muted">احتمالية تطبيق التزاوج بين الآباء</small>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="setting_mutation_type_id" class="form-label">Mutation Type</label>
+                            <select class="form-select" id="setting_mutation_type_id" name="mutation_type_id"
+                                required>
+                                {{-- جلب الخيارات من قاعدة البيانات --}}
+                                @foreach (\App\Models\mutationType::where('is_active', true)->get() as $type)
+                                    <option value="{{ $type->mutation_id }}" title="{{ $type->description }}"
+                                        {{ config('algorithm.settings.mutation_type_id') == $type->mutation_id ? 'selected' : '' }}>
+                                        {{ $type->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <small class="text-muted">When to stop if no solution is found.</small>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="setting_selection_size" class="form-label">Selection Tournament Size</label>
+                            <input type="number" class="form-control" id="setting_selection_size"
+                                name="selection_size" value="{{ config('algorithm.settings.selection_size', 3) }}"
+                                required value="3" min="2" max="10">
+                            <small class="text-muted">عدد المتنافسين في كل tournament</small>
+                        </div>
+                    </div>
+
                     <hr>
+                    
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" role="switch"
                             id="setting_stop_at_first_valid" name="stop_at_first_valid" value="1"

@@ -12,6 +12,7 @@ use App\Http\Controllers\DataEntry\InstructorSectionController;
 use App\Http\Controllers\DataEntry\InstructorSubjectController;
 use App\Http\Controllers\DataEntry\InstructorSubjectOldController;
 use App\Http\Controllers\DataEntry\InstructorSubjectsController;
+use App\Http\Controllers\DataEntry\MutationTypeController;
 use App\Http\Controllers\DataEntry\PlanController;
 use App\Http\Controllers\DataEntry\PlanExpectedCountController;
 use App\Http\Controllers\DataEntry\PlanSubjectImportController;
@@ -236,6 +237,7 @@ Route::prefix('dashboard')->group(function () {
         // --- Algorithm Base Data Management ---
         Route::resource('crossover-types', CrossoverTypeController::class)->except(['create', 'show', 'edit']);
         Route::resource('selection-types', SelectionTypeController::class)->except(['create', 'show', 'edit']);
+        Route::resource('mutation-types', MutationTypeController::class)->except(['create', 'show', 'edit']);
 
         // TimetableGenerationController
         Route::post('/timetable/generate', [TimetableGenerationController::class, 'start'])->name('timetable.generate.start');
@@ -245,6 +247,10 @@ Route::prefix('dashboard')->group(function () {
         // 2. صفحة عرض تفصيلي لجدول (كروموسوم) معين
         // لاحظ أننا نستخدم {chromosome} الآن لـ Route Model Binding
         Route::get('/timetable-result/{chromosome}', [TimetableResultController::class, 'show'])->name('timetable.result.show');
+        Route::patch('/algorithm-control/timetable/result/set-best/{population}', [TimetableResultController::class, 'setBestChromosome'])
+            ->name('timetable.result.set-best');
+        Route::post('/algorithm-control/timetable/result/save-edits', [TimetableResultController::class,'saveEdits'
+        ])->name('timetable.result.save-edits');
         // --- End Timetable Results Routes ---
 
     });
@@ -263,5 +269,4 @@ Route::prefix('dashboard')->group(function () {
         // Route::get('/export/instructor/{instructorId}', [TimetableViewController::class, 'exportInstructorTimetable'])->name('export.instructor');
         // Route::get('/export/room/{roomId}', [TimetableViewController::class, 'exportRoomTimetable'])->name('export.room');
     });
-
 });

@@ -14,7 +14,7 @@ class CrossoverType extends Model
     protected $primaryKey = 'crossover_id';
 
     // الحقول المسموح بتعبئتها
-    protected $fillable = ['name', 'description', 'is_active'];
+    protected $fillable = ['name', 'slug', 'description', 'is_active'];
 
     public function populations()
     {

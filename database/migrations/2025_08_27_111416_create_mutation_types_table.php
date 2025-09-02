@@ -11,12 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('crossover_types', function (Blueprint $table) {
-            $table->id('crossover_id');
+        Schema::create('mutation_types', function (Blueprint $table) {
+            // $table->id();
+            $table->id('mutation_id');
             $table->string('name')->unique();
             $table->string('slug')->unique();
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
+
             $table->timestamps();
         });
     }
@@ -26,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('crossover_types');
+        Schema::dropIfExists('mutation_types');
     }
 };

@@ -40,6 +40,7 @@ class SelectionTypeController extends Controller
     {
         $validatedData = $request->validate([
             'name' => 'required|string|max:100|unique:selection_types,name',
+            'slug' => 'required|string|max:255|unique:selection_types,slug|alpha_dash',
             'description' => 'nullable|string|max:500',
             'is_active' => 'sometimes|boolean',
         ]);
@@ -80,6 +81,7 @@ class SelectionTypeController extends Controller
         $errorBagName = 'editSelectionModal_' . $selectionType->selection_type_id;
         $validatedData = $request->validate([
             'name' => ['required', 'string', 'max:100', Rule::unique('selection_types')->ignore($selectionType->selection_type_id, 'selection_type_id')],
+            'slug' => 'required|string|max:255|unique:selection_types,slug,' . $selectionType->selection_type_id . ',selection_type_id',
             'description' => 'nullable|string|max:500',
             'is_active' => 'sometimes|boolean',
         ]);

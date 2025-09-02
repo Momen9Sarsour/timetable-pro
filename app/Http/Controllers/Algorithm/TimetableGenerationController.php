@@ -119,37 +119,58 @@ class TimetableGenerationController extends Controller
             'crossover_type_id' => ['required', 'integer', Rule::exists('crossover_types', 'crossover_id')->where('is_active', true)],
             'selection_type_id' => ['required', 'integer', Rule::exists('selection_types', 'selection_type_id')->where('is_active', true)],
             'stop_at_first_valid' => 'nullable|boolean',
+            'theory_credit_to_slots' => 'required|integer|min:1|max:4',
+            'practical_credit_to_slots' => 'required|integer|min:1|max:4',
+            'crossover_rate' => 'required|numeric|min:0|max:1',
+            'mutation_type_id' => ['required', 'integer', Rule::exists('mutation_types', 'mutation_id')->where('is_active', true)],
+            // 'mutation_type_id' => 'required|in:random,smart,swap,inversion,adaptive',
+            'selection_size' => 'required|integer|min:2|max:20',
         ]);
         // تحويل boolean
         $validatedSettings['stop_at_first_valid'] = $request->has('stop_at_first_valid');
 
-        try {
+        // try {
             $populationRun = Population::create([
+                'academic_year' => $validatedSettings['academic_year'],
+                'semester' => $validatedSettings['semester'],
+                'theory_credit_to_slots' => $validatedSettings['theory_credit_to_slots'],
+                'practical_credit_to_slots' => $validatedSettings['practical_credit_to_slots'],
                 'population_size' => $validatedSettings['population_size'],
                 'crossover_id' => $validatedSettings['crossover_type_id'],
                 'selection_id' => $validatedSettings['selection_type_id'],
                 'mutation_rate' => $validatedSettings['mutation_rate'],
                 'generations_count' => $validatedSettings['max_generations'],
+                'crossover_rate' => $validatedSettings['crossover_rate'],
+                'mutation_id' => $validatedSettings['mutation_type_id'],
+                'selection_size' => $validatedSettings['selection_size'],
+                'stop_at_first_valid' => $validatedSettings['stop_at_first_valid'],
                 'status' => 'running',
             ]);
+
+            // dd([
+            //     'populationRun' => $populationRun,
+            //     'request->all()' => $request->all(),
+            // ]);
 
             Log::info("New Population Run created with ID: {$populationRun->population_id}. Dispatching job to queue.");
 
             // $gaService = new GeneticAlgorithmService($validatedSettings, $populationRun);
             // $gaService->run(); // بدء التنفيذ
 
-            GenerateTimetableJob::dispatch($validatedSettings, $populationRun);
+            // GenerateTimetableJob::dispatch($validatedSettings, $populationRun);
+            GenerateTimetableJob::dispatch($validatedSettings, $populationRun->population_id);
+
 
             return redirect()->route('dashboard.index')
                 ->with('success', "Timetable generation started for Year: {$validatedSettings['academic_year']}, Semester: {$validatedSettings['semester']}. Run ID: " . $populationRun->population_id);
             // return redirect()->route('dashboard.index')
             //     ->with('success', 'The timetable generation process has been started in the background. Run ID: ' . $populationRun->population_id);
-        } catch (Exception $e) {
-            Log::error('Failed to dispatch timetable generation job: ' . $e->getMessage());
-            return redirect()->back()
-                ->with('error', 'Could not start the generation process: ' . $e->getMessage())
-                ->withInput();
-        }
+        // } catch (Exception $e) {
+        //     Log::error('Failed to dispatch timetable generation job: ' . $e->getMessage());
+        //     return redirect()->back()
+        //         ->with('error', 'Could not start the generation process: ' . $e->getMessage())
+        //         ->withInput();
+        // }
     }
 
 
