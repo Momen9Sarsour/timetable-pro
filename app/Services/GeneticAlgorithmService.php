@@ -208,52 +208,52 @@ class GeneticAlgorithmService
      * تنشئ بلوكاً واحداً متصلاً للجزء العملي بالحجم الصحيح.
      */
     private function splitPracticalBlocks(Section $section, Instructor $instructor, array &$instructorLoad)
-{
-    $totalSlotsNeeded = $section->planSubject->subject->practical_hours * ($this->settings['practical_credit_to_slots'] ?? 1);
-    if ($totalSlotsNeeded <= 0) return;
+    {
+        $totalSlotsNeeded = $section->planSubject->subject->practical_hours * ($this->settings['practical_credit_to_slots'] ?? 1);
+        if ($totalSlotsNeeded <= 0) return;
 
-    $remainingSlots = $totalSlotsNeeded;
-    $blockCounter = 1;
+        $remainingSlots = $totalSlotsNeeded;
+        $blockCounter = 1;
 
-    // استراتيجية التقسيم للبلوكات العملية (مثل النظري ولكن بأحجام مختلفة)
-    while ($remainingSlots > 0) {
-        // تحديد حجم البلوك حسب العدد المتبقي
-        if ($remainingSlots >= 4) {
-            $slotsForThisBlock = 4; // بلوك كبير من 4 فترات
-        } elseif ($remainingSlots >= 3) {
-            $slotsForThisBlock = 3; // بلوك متوسط من 3 فترات
-        } elseif ($remainingSlots >= 2) {
-            $slotsForThisBlock = 2; // بلوك صغير من فترتين
-        } else {
-            $slotsForThisBlock = 1; // بلوك صغير جداً من فترة واحدة
+        // استراتيجية التقسيم للبلوكات العملية (مثل النظري ولكن بأحجام مختلفة)
+        while ($remainingSlots > 0) {
+            // تحديد حجم البلوك حسب العدد المتبقي
+            if ($remainingSlots >= 4) {
+                $slotsForThisBlock = 4; // بلوك كبير من 4 فترات
+            } elseif ($remainingSlots >= 3) {
+                $slotsForThisBlock = 3; // بلوك متوسط من 3 فترات
+            } elseif ($remainingSlots >= 2) {
+                $slotsForThisBlock = 2; // بلوك صغير من فترتين
+            } else {
+                $slotsForThisBlock = 1; // بلوك صغير جداً من فترة واحدة
+            }
+
+            $uniqueId = "{$section->id}-practical-block{$blockCounter}";
+            $this->lectureBlocksToSchedule->push((object)[
+                'unique_id' => $uniqueId,
+                'section' => $section,
+                'instructor_id' => $instructor->id,
+                'student_group_id' => $this->studentGroupMap[$section->id] ?? [],
+                'block_type' => 'practical',
+                'slots_needed' => $slotsForThisBlock,
+                'block_duration' => $slotsForThisBlock * 50, // مدة البلوك بالدقائق
+            ]);
+
+            // dd([
+            //     'unique_id' => $uniqueId,
+            //     'section' => $section,
+            //     'instructor_id' => $instructor->id,
+            //     'student_group_id' => $this->studentGroupMap[$section->id] ?? [],
+            //     'block_type' => 'practical',
+            //     'slots_needed' => $slotsForThisBlock,
+            //     'block_duration' => $slotsForThisBlock * 50,
+            // ]);
+
+            $instructorLoad[$instructor->id] += $slotsForThisBlock;
+            $remainingSlots -= $slotsForThisBlock;
+            $blockCounter++;
         }
-
-        $uniqueId = "{$section->id}-practical-block{$blockCounter}";
-        $this->lectureBlocksToSchedule->push((object)[
-            'unique_id' => $uniqueId,
-            'section' => $section,
-            'instructor_id' => $instructor->id,
-            'student_group_id' => $this->studentGroupMap[$section->id] ?? [],
-            'block_type' => 'practical',
-            'slots_needed' => $slotsForThisBlock,
-            'block_duration' => $slotsForThisBlock * 50, // مدة البلوك بالدقائق
-        ]);
-
-        // dd([
-        //     'unique_id' => $uniqueId,
-        //     'section' => $section,
-        //     'instructor_id' => $instructor->id,
-        //     'student_group_id' => $this->studentGroupMap[$section->id] ?? [],
-        //     'block_type' => 'practical',
-        //     'slots_needed' => $slotsForThisBlock,
-        //     'block_duration' => $slotsForThisBlock * 50,
-        // ]);
-
-        $instructorLoad[$instructor->id] += $slotsForThisBlock;
-        $remainingSlots -= $slotsForThisBlock;
-        $blockCounter++;
     }
-}
 
     private function getLeastLoadedInstructorForSubject(\App\Models\Subject $subject, array $instructorLoad)
     {
@@ -675,6 +675,7 @@ class GeneticAlgorithmService
         }
         return $parents;
     }
+
     private function createNewGeneration(array $parents, int $nextGenerationNumber, Population $populationRun): Collection
     {
         Log::info("Creating new generation #{$nextGenerationNumber} using Hybrid approach (Optimized)");
@@ -686,11 +687,10 @@ class GeneticAlgorithmService
             return collect();
         }
 
-        // **(التحسين الرئيسي الأول)**: جلب جينات كل الآباء المحتملين مرة واحدة فقط
+        // **(التحسين الرئيسي)**: جلب جينات كل الآباء المحتملين مرة واحدة فقط
         $parentIds = collect($parentPool)->pluck('chromosome_id')->unique();
         $allParentGenes = Gene::whereIn('chromosome_id', $parentIds)->get()->groupBy('chromosome_id');
 
-        // **(التحسين الرئيسي الثاني)**: تحويل الآباء إلى Collection لتسهيل العمليات
         $currentPopulation = collect($parentPool);
 
         // **نحتفظ بنفس المنطق الهجين:** نمر على الآباء بالترتيب
@@ -698,29 +698,27 @@ class GeneticAlgorithmService
             if (count($newPopulation) >= $this->settings['population_size']) break;
 
             // --- اختيار الأب الثاني (سريع جداً الآن) ---
-            // نختار من السكان الحاليين (موجودين في الذاكرة)
             $tournamentSize = $this->settings['selection_size'] ?? 5;
             $participants = $currentPopulation->random(min($tournamentSize, $currentPopulation->count()));
             $parent2 = $participants->sortByDesc('fitness_value')->first();
-            // --- انتهى اختيار الأب الثاني ---
 
             // نحصل على جيناتهم من المجموعة التي جلبناها مسبقاً (سريع جداً)
             $p1Genes = $allParentGenes->get($parent1->chromosome_id, collect());
             $p2Genes = $allParentGenes->get($parent2->chromosome_id, collect());
 
-            if ($p1Genes->isEmpty() || $p2Genes->isEmpty()) continue; // نتجاهل الآباء الذين ليس لديهم جينات
+            if ($p1Genes->isEmpty() || $p2Genes->isEmpty()) continue;
 
-            $childGenes = [];
+            $childGenesCollection = collect();
             // التزاوج
             if (lcg_value() < ($this->settings['crossover_rate'] ?? 0.95)) {
-                $childGenes = $this->performCrossover($p1Genes, $p2Genes);
+                $childGenesCollection = $this->performCrossover($p1Genes, $p2Genes);
             } else {
                 // الابن نسخة من الأب الأفضل
-                $childGenes = ($parent1->fitness_value >= $parent2->fitness_value) ? $p1Genes->all() : $p2Genes->all();
+                $childGenesCollection = ($parent1->fitness_value >= $parent2->fitness_value) ? $p1Genes : $p2Genes;
             }
 
-            // الطفرة
-            $mutatedChildGenes = $this->performMutation($childGenes);
+            // **(هنا الإصلاح)**: نحول الـ Collection إلى array قبل تمريرها
+            $mutatedChildGenes = $this->performMutation($childGenesCollection->all());
 
             // حفظ الابن الجديد
             $newPopulation[] = $this->saveChildChromosome($mutatedChildGenes, $nextGenerationNumber, $populationRun);
@@ -729,33 +727,38 @@ class GeneticAlgorithmService
         return collect($newPopulation);
     }
 
-    private function performCrossover(Chromosome $parent1, Chromosome $parent2): Collection
+    private function performCrossover(Collection $p1Genes, Collection $p2Genes): Collection
     {
         $crossoverSlug = $this->loadedCrossoverTypes->find($this->settings['crossover_type_id'])->slug ?? 'single_point';
 
         // **(جديد)**: استخدام switch لتحديد طريقة التزاوج
         switch ($crossoverSlug) {
             case 'single_point':
-                return $this->singlePointCrossover($parent1, $parent2);
+                return $this->singlePointCrossover($p1Genes, $p2Genes);
                 // أضف الحالات الأخرى هنا في المستقبل
             default:
-                return $this->singlePointCrossover($parent1, $parent2);
+                return $this->singlePointCrossover($p1Genes, $p2Genes);
         }
     }
 
-    private function singlePointCrossover(Chromosome $parent1, Chromosome $parent2): Collection
+    private function singlePointCrossover(Collection $p1Genes, Collection $p2Genes): Collection
     {
-        $p1Genes = $parent1->genes()->get()->keyBy('lecture_unique_id');
-        $p2Genes = $parent2->genes()->get()->keyBy('lecture_unique_id');
+        $p1GenesByKey = $p1Genes->keyBy('lecture_unique_id');
+        $p2GenesByKey = $p2Genes->keyBy('lecture_unique_id');
         $childGenes = collect();
 
         $crossoverPoint = rand(1, $this->lectureBlocksToSchedule->count() - 1);
         $currentIndex = 0;
 
         foreach ($this->lectureBlocksToSchedule as $lectureBlock) {
-            $source = ($currentIndex < $crossoverPoint) ? $p1Genes : $p2Genes;
-            $gene = $source->get($lectureBlock->unique_id) ?? $p2Genes->get($lectureBlock->unique_id) ?? $p1Genes->get($lectureBlock->unique_id);
-            if ($gene) $childGenes->push($gene);
+            $source = ($currentIndex < $crossoverPoint) ? $p1GenesByKey : $p2GenesByKey;
+            // نختار من المصدر الآخر كحل بديل إذا لم يكن الجين موجوداً
+            $fallbackSource = ($currentIndex < $crossoverPoint) ? $p2GenesByKey : $p1GenesByKey;
+
+            $gene = $source->get($lectureBlock->unique_id) ?? $fallbackSource->get($lectureBlock->unique_id);
+            if ($gene) {
+                $childGenes->push($gene);
+            }
             $currentIndex++;
         }
         return $childGenes;
@@ -763,10 +766,9 @@ class GeneticAlgorithmService
 
     private function performMutation(array $genes): array
     {
-        if (lcg_value() < $this->settings['mutation_rate']) {
+        if (lcg_value() < $this->settings['mutation_rate'] && !empty($genes)) {
             $mutationSlug = $this->loadedMutationTypes->find($this->settings['mutation_type_id'])->slug ?? 'smart_swap';
 
-            // **(جديد)**: استخدام switch لتحديد طريقة الطفرة
             switch ($mutationSlug) {
                 case 'smart_swap':
                     return $this->smartSwapMutation($genes);
@@ -775,6 +777,50 @@ class GeneticAlgorithmService
                     return $this->smartSwapMutation($genes);
             }
         }
+        return $genes;
+    }
+    private function smartSwapMutation(array $genes): array
+    {
+        if (empty($genes)) return [];
+
+        // نختار جيناً عشوائياً لتطبيق الطفرة عليه
+        $geneIndexToMutate = array_rand($genes);
+        $geneToMutate = $genes[$geneIndexToMutate];
+
+        // نحصل على معلومات البلوك الأصلي من القائمة المحضرة مسبقاً
+        $lectureBlock = $this->lectureBlocksToSchedule->firstWhere('unique_id', $geneToMutate->lecture_unique_id);
+        if (!$lectureBlock) {
+            return $genes; // لم نجد البلوك، لا نقم بأي تغيير
+        }
+
+        // --- استراتيجية الطفرة الذكية ---
+
+        // 1. نولد خيارات جديدة (قاعة ووقت)
+        $newRoom = $this->getRandomRoomForBlock($lectureBlock);
+        $newTimeslots = $this->findRandomConsecutiveTimeslots($lectureBlock->slots_needed);
+
+        // 2. الأولوية الأولى: محاولة تغيير القاعة فقط
+        $tempGene = clone $geneToMutate;
+        $tempGene->room_id = $newRoom->id;
+        // نفحص إذا كان هذا التغيير البسيط يسبب تعارضاً مع باقي الجينات
+        if (!$this->isGeneConflictingWithRest($tempGene, $genes)) {
+            $genes[$geneIndexToMutate] = $tempGene; // نعتمد التغيير
+            return $genes;
+        }
+
+        // 3. الأولوية الثانية: محاولة تغيير الوقت فقط
+        $tempGene = clone $geneToMutate;
+        $tempGene->timeslot_ids = $newTimeslots;
+        if (!$this->isGeneConflictingWithRest($tempGene, $genes)) {
+            $genes[$geneIndexToMutate] = $tempGene; // نعتمد التغيير
+            return $genes;
+        }
+
+        // 4. الحل الأخير: إذا فشلت المحاولات، نغير الاثنين معاً (السماح بالخطأ)
+        $geneToMutate->room_id = $newRoom->id;
+        $geneToMutate->timeslot_ids = $newTimeslots;
+        $genes[$geneIndexToMutate] = $geneToMutate;
+
         return $genes;
     }
 
@@ -822,59 +868,33 @@ class GeneticAlgorithmService
 
         return $genes;
     }
-    private function smartSwapMutation(array $genes): array
+
+    private function isGeneConflictingWithRest(Gene $targetGene, array $allOtherGenes): bool
     {
-        if (count($genes) < 2) return $genes;
+        // فلترة الجينات الأخرى (نستبعد الجين الذي نقوم بفحصه)
+        $otherGenes = array_filter($allOtherGenes, fn($g) => $g && $g->lecture_unique_id != $targetGene->lecture_unique_id);
 
-        $swapCandidates = [];
+        $studentGroupIds = $targetGene->student_group_ids ?? [];
 
-        foreach ($genes as $idx1 => $gene1) {
-            foreach ($genes as $idx2 => $gene2) {
-                if ($idx1 >= $idx2) continue;
+        // نمر على كل فترة زمنية يشغلها الجين المستهدف
+        foreach ($targetGene->timeslot_ids as $timeslotId) {
+            // نمر على كل الجينات الأخرى في الكروموسوم
+            foreach ($otherGenes as $otherGene) {
+                // نتحقق إذا كان الجين الآخر يشغل نفس الفترة الزمنية
+                if (in_array($timeslotId, $otherGene->timeslot_ids)) {
+                    // تعارض مدرس أو قاعة
+                    if ($otherGene->instructor_id == $targetGene->instructor_id) return true;
+                    if ($otherGene->room_id == $targetGene->room_id) return true;
 
-                // التحقق من التشابه
-                if ($gene1->block_type == $gene2->block_type) {
-                    $conflicts1Before = $this->calculateGeneConflicts($gene1, array_diff_key($genes, [$idx1 => 1]));
-                    $conflicts2Before = $this->calculateGeneConflicts($gene2, array_diff_key($genes, [$idx2 => 1]));
-
-                    // محاكاة التبديل
-                    $temp1 = clone $gene1;
-                    $temp2 = clone $gene2;
-
-                    $tempTimeslots = $temp1->timeslot_ids;
-                    $temp1->timeslot_ids = $temp2->timeslot_ids;
-                    $temp2->timeslot_ids = $tempTimeslots;
-
-                    $conflicts1After = $this->calculateGeneConflicts($temp1, array_diff_key($genes, [$idx1 => 1]));
-                    $conflicts2After = $this->calculateGeneConflicts($temp2, array_diff_key($genes, [$idx2 => 1]));
-
-                    $improvementScore = ($conflicts1Before + $conflicts2Before) - ($conflicts1After + $conflicts2After);
-
-                    if ($improvementScore > 0) {
-                        $swapCandidates[] = [
-                            'idx1' => $idx1,
-                            'idx2' => $idx2,
-                            'improvement' => $improvementScore,
-                            'gene1' => $temp1,
-                            'gene2' => $temp2
-                        ];
-                    }
+                    // تعارض طالب
+                    $otherStudentGroupIds = $otherGene->student_group_ids ?? [];
+                    if (!empty($studentGroupIds) && !empty($otherStudentGroupIds) && count(array_intersect($studentGroupIds, $otherStudentGroupIds)) > 0) return true;
                 }
             }
         }
 
-        if (!empty($swapCandidates)) {
-            usort($swapCandidates, fn($a, $b) => $b['improvement'] <=> $a['improvement']);
-            $bestSwap = $swapCandidates[0];
-
-            $genes[$bestSwap['idx1']] = $bestSwap['gene1'];
-            $genes[$bestSwap['idx2']] = $bestSwap['gene2'];
-        } else {
-            // إذا لم نجد تحسين، نعمل swap عشوائي
-            return $this->swapMutation($genes);
-        }
-
-        return $genes;
+        // إذا لم نجد أي تعارض، نرجع false
+        return false;
     }
     private function calculateGeneConflicts($targetGene, array $otherGenes): int
     {
@@ -906,78 +926,6 @@ class GeneticAlgorithmService
         }
 
         return $conflicts;
-    }
-    private function isGeneConflictingWithRest($targetGene, array $allOtherGenes): bool
-    {
-        // تحويل targetGene لكائن إذا كان مصفوفة
-        if (is_array($targetGene)) {
-            $targetGene = (object) $targetGene;
-        }
-
-        // فلترة الجينات الأخرى - استبعاد الجين المستهدف
-        $otherGenes = array_filter($allOtherGenes, function ($g) use ($targetGene) {
-            if (!$g) return false;
-
-            // تحويل لكائن إذا كان مصفوفة
-            if (is_array($g)) {
-                $g = (object) $g;
-            }
-
-            return $g->lecture_unique_id != $targetGene->lecture_unique_id;
-        });
-
-        // استخراج student group IDs مع التعامل مع JSON
-        $studentGroupIds = $targetGene->student_group_id ?? [];
-        if (is_string($studentGroupIds)) {
-            $studentGroupIds = json_decode($studentGroupIds, true) ?? [];
-        }
-
-        // استخراج timeslot IDs مع التعامل مع JSON
-        $targetTimeslots = $targetGene->timeslot_ids ?? [];
-        if (is_string($targetTimeslots)) {
-            $targetTimeslots = json_decode($targetTimeslots, true) ?? [];
-        }
-
-        foreach ($targetTimeslots as $timeslotId) {
-            foreach ($otherGenes as $otherGene) {
-                // تحويل لكائن إذا كان مصفوفة
-                if (is_array($otherGene)) {
-                    $otherGene = (object) $otherGene;
-                }
-
-                // استخراج timeslots للجين الآخر
-                $otherTimeslots = $otherGene->timeslot_ids ?? [];
-                if (is_string($otherTimeslots)) {
-                    $otherTimeslots = json_decode($otherTimeslots, true) ?? [];
-                }
-
-                if (in_array($timeslotId, $otherTimeslots)) {
-                    // تعارض المدرس
-                    if ($otherGene->instructor_id == $targetGene->instructor_id) {
-                        return true;
-                    }
-
-                    // تعارض القاعة
-                    if ($otherGene->room_id == $targetGene->room_id) {
-                        return true;
-                    }
-
-                    // تعارض الطلاب
-                    $otherStudentGroupIds = $otherGene->student_group_id ?? [];
-                    if (is_string($otherStudentGroupIds)) {
-                        $otherStudentGroupIds = json_decode($otherStudentGroupIds, true) ?? [];
-                    }
-
-                    if (!empty($studentGroupIds) && !empty($otherStudentGroupIds)) {
-                        if (count(array_intersect($studentGroupIds, $otherStudentGroupIds)) > 0) {
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-
-        return false;
     }
 
     private function saveChildChromosome(array $genes, int $generationNumber, Population $populationRun): Chromosome
