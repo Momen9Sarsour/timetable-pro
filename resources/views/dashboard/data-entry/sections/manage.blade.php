@@ -1,448 +1,736 @@
 @extends('dashboard.layout')
 
-@push('styles')
-    <style>
-        .table th,
-        .table td {
-            vertical-align: middle;
-            font-size: 0.85rem;
-            padding: 0.5rem;
-        }
-
-        .modal-dialog-centered {
-            display: flex;
-            align-items: center;
-            min-height: calc(100% - 1rem);
-        }
-
-        @media (min-width: 576px) {
-            .modal-dialog-centered {
-                min-height: calc(100% - 3.5rem);
-            }
-        }
-
-        .card-body .table-responsive {
-            margin-bottom: 0;
-        }
-
-        .card-header h5.mb-0,
-        .card-header h6.mb-0 {
-            font-size: 1rem;
-        }
-    </style>
-@endpush
-
 @section('content')
-    <div class="main-content">
-        <div class="data-entry-container">
-            {{-- 1. عرض معلومات السياق --}}
-            <div class="mb-4 p-3 border rounded bg-light shadow-sm">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <div>
-                        <h4 class="data-entry-header mb-1">Manage Sections for Subject</h4>
-                        <p class="mb-1 text-muted small">
-                            Plan: <strong>{{ optional($planSubject->plan)->plan_no }}</strong>
-                            ({{ optional($planSubject->plan)->plan_name }}) <br>
-                            Subject: <strong>{{ optional($planSubject->subject)->subject_no }} -
-                                {{ optional($planSubject->subject)->subject_name }}</strong>
-                            <span
-                                class="badge bg-secondary fw-normal">{{ optional(optional($planSubject->subject)->subjectCategory)->subject_category_name }}</span>
-                        </p>
+<div class="container-fluid">
+    <!-- Page Header with Context Info -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body p-3 p-md-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3 mb-3">
+                        <div class="flex-grow-1">
+                            <h4 class="page-title mb-2">
+                                <i class="fas fa-users-cog text-primary me-2"></i>
+                                Manage Sections for Subject
+                            </h4>
+                            <div class="subject-info">
+                                <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 mb-2">
+                                    <span class="badge bg-primary bg-opacity-20 text-light">{{ optional($planSubject->plan)->plan_no }}</span>
+                                    <span class="text-muted d-none d-sm-inline">•</span>
+                                    <h6 class="mb-0 text-dark">{{ optional($planSubject->plan)->plan_name }}</h6>
+                                </div>
+                                <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2">
+                                    <span class="badge bg-light text-dark font-monospace">{{ optional($planSubject->subject)->subject_no }}</span>
+                                    <span class="fw-medium">{{ optional($planSubject->subject)->subject_name }}</span>
+                                    <span class="badge bg-secondary bg-opacity-20 text-light">{{ optional(optional($planSubject->subject)->subjectCategory)->subject_category_name }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="{{ route('data-entry.sections.index', $request->query()) }}"
+                           class="btn btn-outline-secondary btn-sm w-100 w-md-auto">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            Back to All Sections
+                        </a>
                     </div>
-                    <a href="{{ route('data-entry.sections.index', $request->query()) }}"
-                        class="btn btn-sm btn-outline-secondary align-self-start">
-                        <i class="fas fa-arrow-left me-1"></i> Back to All Sections
-                    </a>
+
+                    <hr class="my-3">
+
+                    <!-- Statistics Row - Responsive -->
+                    <div class="row g-3">
+                        <div class="col-6 col-md-3">
+                            <div class="text-center">
+                                <div class="text-info fw-bold fs-5">{{ $academicYear }}</div>
+                                <small class="text-muted">Academic Year</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="text-center">
+                                <div class="text-success fw-bold fs-5">
+                                    {{ $semesterOfSections == 1 ? 'First' : ($semesterOfSections == 2 ? 'Second' : 'Summer') }}
+                                </div>
+                                <small class="text-muted">Term</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="text-center">
+                                <div class="text-warning fw-bold fs-5">{{ $branch ?? 'Default' }}</div>
+                                <small class="text-muted">Branch</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="text-center">
+                                @if ($expectedCount)
+                                    <div class="text-primary fw-bold fs-5">{{ $expectedCount->male_count + $expectedCount->female_count }}</div>
+                                    <small class="text-muted">Expected Students</small>
+                                @else
+                                    <div class="text-danger fw-bold fs-5">N/A</div>
+                                    <small class="text-muted">Expected Students</small>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!$expectedCount)
+                        <div class="alert alert-warning d-flex align-items-start mt-3 mb-0" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2 mt-1 flex-shrink-0"></i>
+                            <div>
+                                Expected student count not found.
+                                <a href="{{ route('data-entry.plan-expected-counts.index') }}" class="alert-link fw-medium">Add it here.</a>
+                            </div>
+                        </div>
+                    @endif
                 </div>
-                <hr>
-                <div class="row small">
-                    <div class="col-md-4">
-                        <p class="mb-1"><strong>Academic Year:</strong> {{ $academicYear }}</p>
-                    </div>
-                    <div class="col-md-4">
-                        <p class="mb-1"><strong>Term (Sections):</strong>
-                            {{ $semesterOfSections == 1 ? 'First' : ($semesterOfSections == 2 ? 'Second' : 'Summer') }}</p>
-                    </div>
-                    <div class="col-md-4">
-                        <p class="mb-0"><strong>Branch:</strong> {{ $branch ?? 'Default' }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Messages -->
+    @include('dashboard.data-entry.partials._status_messages')
+
+    <!-- Regenerate Sections Action -->
+    @if ($expectedCount)
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-warning">
+                    <div class="card-body p-3">
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                            <div class="flex-grow-1">
+                                <h6 class="card-title mb-1 text-warning">
+                                    <i class="fas fa-cogs me-2"></i>Regenerate Sections
+                                </h6>
+                                <p class="text-muted small mb-0">This will delete existing sections for this subject and recreate them based on expected counts.</p>
+                            </div>
+                            <form action="{{ route('data-entry.sections.generateForSubject') }}" method="POST" class="w-100 w-md-auto">
+                                @csrf
+                                <input type="hidden" name="plan_subject_id" value="{{ $planSubject->id }}">
+                                <input type="hidden" name="expected_count_id" value="{{ $expectedCount->id }}">
+                                <button type="submit"
+                                        class="btn btn-warning w-100"
+                                        onclick="return confirm('ATTENTION: This will DELETE existing sections for THIS SUBJECT ONLY and REGENERATE them. Manual adjustments will be lost. Are you sure?');">
+                                    <i class="fas fa-sync-alt me-1"></i>Regenerate Sections
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
-                @if ($expectedCount)
-                    <div class="mt-2">
-                        <p class="mb-0"><strong>Total Expected Students for Context:</strong> <span
-                                class="fw-bold fs-5">{{ $expectedCount->male_count + $expectedCount->female_count }}</span>
-                        </p>
-                    </div>
-                @else
-                    <div class="alert alert-warning small mt-2 p-2">Expected student count not found. <a
-                            href="{{ route('data-entry.plan-expected-counts.index') }}" class="alert-link">Add it here.</a>
-                    </div>
-                @endif
             </div>
+        </div>
+    @endif
 
-            @include('dashboard.data-entry.partials._status_messages')
+    @php
+        $subject = $planSubject->subject;
+        if ($subject && $subject->subjectCategory) {
+            $subjectCategoryName = strtolower($subject->subjectCategory->subject_category_name);
+            $theorySections = $currentSections->where('activity_type', 'Theory');
+            $practicalSections = $currentSections->where('activity_type', 'Practical');
+        } else {
+            $subjectCategoryName = '';
+            $theorySections = collect();
+            $practicalSections = collect();
+        }
+    @endphp
 
-            {{-- 2. زر إنشاء/تحديث الشعب لهذه المادة فقط --}}
-            <div class="mb-3 text-end">
-                @if ($expectedCount)
-                    <form action="{{ route('data-entry.sections.generateForSubject') }}" method="POST" class="d-inline">
-                        @csrf
-                        <input type="hidden" name="plan_subject_id" value="{{ $planSubject->id }}">
-                        <input type="hidden" name="expected_count_id" value="{{ $expectedCount->id }}">
-                        <button type="submit" class="btn btn-warning"
-                            onclick="return confirm('ATTENTION: This will DELETE existing sections for THIS SUBJECT ONLY and REGENERATE them. Manual adjustments will be lost. Are you sure?');">
-                            <i class="fas fa-cogs me-1"></i> Regenerate Sections for This Subject
-                        </button>
-                    </form>
-                @endif
-            </div>
-
-            {{-- 3. عرض الشعب الحالية لهذه المادة --}}
-            @php
-                $subject = $planSubject->subject;
-                if ($subject && $subject->subjectCategory) {
-                    $subjectCategoryName = strtolower($subject->subjectCategory->subject_category_name);
-                    $theorySections = $currentSections->where('activity_type', 'Theory');
-                    $practicalSections = $currentSections->where('activity_type', 'Practical');
-                } else {
-                    $subjectCategoryName = '';
-                    $theorySections = collect();
-                    $practicalSections = collect();
-                }
-            @endphp
-
-            {{-- الجزء النظري --}}
-            @if (
-                ($subject->theoretical_hours ?? 0) > 0 &&
-                    Str::contains($subjectCategoryName, ['theory', 'نظري', 'combined', 'مشترك']))
-                <div class="card shadow-sm mb-3">
-                    <div class="card-header d-flex justify-content-between align-items-center"
-                        style="background-color: #e9ecef;">
-                        <h6 class="mb-0 text-dark"><i class="fas fa-chalkboard me-2"></i>Theory Sections</h6>
-                        <button class="btn btn-outline-success btn-sm open-add-section-modal" data-bs-toggle="modal"
-                            data-bs-target="#addSectionModal" data-plan-subject-id="{{ $planSubject->id }}"
-                            data-activity-type="Theory" data-subject-name-modal="{{ $subject->subject_name }} (Theory)"
-                            data-academic-year="{{ $academicYear }}" data-semester="{{ $semesterOfSections }}"
-                            data-branch="{{ $branch ?? '' }}">
-                            <i class="fas fa-plus me-1"></i> Add Theory Section
+    <!-- Theory Sections -->
+    @if (($subject->theoretical_hours ?? 0) > 0 && Str::contains($subjectCategoryName, ['theory', 'نظري', 'combined', 'مشترك']))
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-primary bg-opacity-10 border-0 d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 py-3">
+                        <h6 class="mb-0 text-primary">
+                            <i class="fas fa-chalkboard me-2"></i>Theory Sections
+                            <span class="badge bg-primary bg-opacity-20 text-light ms-2">{{ $theorySections->count() }} sections</span>
+                        </h6>
+                        <button class="btn btn-primary btn-sm w-100 w-md-auto open-add-section-modal"
+                                data-bs-toggle="modal"
+                                data-bs-target="#addSectionModal"
+                                data-plan-subject-id="{{ $planSubject->id }}"
+                                data-activity-type="Theory"
+                                data-subject-name-modal="{{ $subject->subject_name }} (Theory)"
+                                data-academic-year="{{ $academicYear }}"
+                                data-semester="{{ $semesterOfSections }}"
+                                data-branch="{{ $branch ?? '' }}">
+                            <i class="fas fa-plus me-1"></i>Add Theory Section
                         </button>
                     </div>
                     <div class="card-body p-0">
                         @if ($theorySections->isNotEmpty())
-                            {{-- *** جدول الشعب النظرية مدمج هنا *** --}}
-                            <div class="table-responsive">
-                                <table class="table table-sm table-hover mb-0">
+                            <!-- Desktop Table -->
+                            <div class="table-responsive d-none d-md-block">
+                                <table class="table table-hover align-middle mb-0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th>#</th>
-                                            <th>Sec.No.</th>
-                                            <th>Gender</th>
-                                            <th>Branch</th>
-                                            <th>Students</th>
-                                            <th>Actions</th>
+                                            <th class="border-0 text-center" style="width: 50px;">#</th>
+                                            <th class="border-0 text-center">Section No.</th>
+                                            <th class="border-0 text-center">Gender</th>
+                                            <th class="border-0">Branch</th>
+                                            <th class="border-0 text-center">Students</th>
+                                            <th class="border-0 text-center" style="width: 120px;">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach ($theorySections as $index => $section)
-                                            <tr>
-                                                <td>{{ $index + 1 }}</td>
-                                                <td>{{ $section->section_number }}</td>
-                                                <td>{{ $section->section_gender }}</td>
-                                                <td>{{ $section->branch ?? '-' }}</td>
-                                                <td>{{ $section->student_count }}</td>
+                                            <tr class="border-bottom">
+                                                <td class="text-center text-muted">
+                                                    <small>{{ $index + 1 }}</small>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="badge bg-primary bg-opacity-20 text-light fw-bold">{{ $section->section_number }}</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="badge bg-secondary bg-opacity-20 text-light">{{ $section->section_gender }}</span>
+                                                </td>
                                                 <td>
-                                                    <button
-                                                        class="btn btn-sm btn-outline-primary py-0 px-1 me-1 open-edit-section-modal"
-                                                        data-bs-toggle="modal" data-bs-target="#editSectionModal"
-                                                        data-form-action="{{ route('data-entry.sections.update', $section->id) }}"
-                                                        data-section-number="{{ $section->section_number }}"
-                                                        data-student-count="{{ $section->student_count }}"
-                                                        data-section-gender="{{ $section->section_gender }}"
-                                                        data-branch="{{ $section->branch ?? '' }}"
-                                                        data-activity-type="{{ $section->activity_type }}"
-                                                        data-context-info="Sec #{{ $section->section_number }} for {{ optional($planSubject->subject)->subject_no }} (Theory)">Edit</button>
-
-                                                    <button
-                                                        class="btn btn-sm btn-outline-danger py-0 px-1 open-delete-section-modal"
-                                                        data-bs-toggle="modal" data-bs-target="#deleteSectionModal"
-                                                        data-form-action="{{ route('data-entry.sections.destroy', $section->id) }}"
-                                                        data-section-info="Section #{{ $section->section_number }} (Theory) for {{ optional($planSubject->subject)->subject_no }}">Delete</button>
+                                                    <span class="text-muted">{{ $section->branch ?? '-' }}</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="badge bg-warning bg-opacity-20 text-light">{{ $section->student_count }}</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="btn-group btn-group-sm" role="group">
+                                                        <button class="btn btn-outline-primary btn-sm open-edit-section-modal"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#editSectionModal"
+                                                                data-form-action="{{ route('data-entry.sections.update', $section->id) }}"
+                                                                data-section-number="{{ $section->section_number }}"
+                                                                data-student-count="{{ $section->student_count }}"
+                                                                data-section-gender="{{ $section->section_gender }}"
+                                                                data-branch="{{ $section->branch ?? '' }}"
+                                                                data-activity-type="{{ $section->activity_type }}"
+                                                                data-context-info="Sec #{{ $section->section_number }} for {{ optional($planSubject->subject)->subject_no }} (Theory)"
+                                                                title="Edit Section">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <button class="btn btn-outline-danger btn-sm open-delete-section-modal"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#deleteSectionModal"
+                                                                data-form-action="{{ route('data-entry.sections.destroy', $section->id) }}"
+                                                                data-section-info="Section #{{ $section->section_number }} (Theory) for {{ optional($planSubject->subject)->subject_no }}"
+                                                                title="Delete Section">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         @endforeach
                                     </tbody>
                                 </table>
                             </div>
-                            {{-- *** نهاية الجدول المدمج *** --}}
+
+                            <!-- Mobile Cards -->
+                            <div class="d-md-none">
+                                @foreach ($theorySections as $index => $section)
+                                    <div class="card-body border-bottom">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex align-items-center gap-2 mb-1">
+                                                    <span class="badge bg-primary bg-opacity-20 text-light fw-bold">Section {{ $section->section_number }}</span>
+                                                    <span class="badge bg-secondary bg-opacity-20 text-light small">{{ $section->section_gender }}</span>
+                                                </div>
+                                                <div class="text-muted small">
+                                                    Branch: {{ $section->branch ?? 'Default' }}
+                                                </div>
+                                            </div>
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li>
+                                                        <button class="dropdown-item open-edit-section-modal"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#editSectionModal"
+                                                                data-form-action="{{ route('data-entry.sections.update', $section->id) }}"
+                                                                data-section-number="{{ $section->section_number }}"
+                                                                data-student-count="{{ $section->student_count }}"
+                                                                data-section-gender="{{ $section->section_gender }}"
+                                                                data-branch="{{ $section->branch ?? '' }}"
+                                                                data-context-info="Sec #{{ $section->section_number }} for {{ optional($planSubject->subject)->subject_no }} (Theory)">
+                                                            <i class="fas fa-edit me-2"></i>Edit Section
+                                                        </button>
+                                                    </li>
+                                                    <li>
+                                                        <button class="dropdown-item text-danger open-delete-section-modal"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#deleteSectionModal"
+                                                                data-form-action="{{ route('data-entry.sections.destroy', $section->id) }}"
+                                                                data-section-info="Section #{{ $section->section_number }} (Theory) for {{ optional($planSubject->subject)->subject_no }}">
+                                                            <i class="fas fa-trash me-2"></i>Delete Section
+                                                        </button>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="fw-bold text-warning fs-5">{{ $section->student_count }}</div>
+                                            <small class="text-muted">Students</small>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
                         @else
-                            <p class="text-muted text-center p-3 mb-0">No theory sections defined.</p>
+                            <div class="text-center py-5">
+                                <i class="fas fa-chalkboard text-muted opacity-50 mb-3" style="font-size: 3rem;"></i>
+                                <h6 class="text-muted">No Theory Sections</h6>
+                                <p class="text-muted mb-3">No theory sections have been created yet.</p>
+                                <button class="btn btn-primary btn-sm open-add-section-modal"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#addSectionModal"
+                                        data-plan-subject-id="{{ $planSubject->id }}"
+                                        data-activity-type="Theory"
+                                        data-subject-name-modal="{{ $subject->subject_name }} (Theory)"
+                                        data-academic-year="{{ $academicYear }}"
+                                        data-semester="{{ $semesterOfSections }}"
+                                        data-branch="{{ $branch ?? '' }}">
+                                    <i class="fas fa-plus me-1"></i>Add First Theory Section
+                                </button>
+                            </div>
                         @endif
                     </div>
                 </div>
-            @endif
+            </div>
+        </div>
+    @endif
 
-            {{-- الجزء العملي --}}
-            @if (
-                ($subject->practical_hours ?? 0) > 0 &&
-                    Str::contains($subjectCategoryName, ['practical', 'عملي', 'combined', 'مشترك']))
-                @if (
-                    $subjectCategoryName == 'theory' ||
-                        Str::contains($subjectCategoryName, 'نظري') ||
-                        (Str::contains($subjectCategoryName, 'combined') || Str::contains($subjectCategoryName, 'مشترك')))
-                    <div class="card shadow-sm mb-3">
-                        <div class="card-header d-flex justify-content-between align-items-center"
-                            style="background-color: #f8f9fa;">
-                            <h6 class="mb-0 text-dark"><i class="fas fa-flask me-2"></i>Practical Sections</h6>
-                            <button class="btn btn-outline-success btn-sm open-add-section-modal" data-bs-toggle="modal"
-                                data-bs-target="#addSectionModal" data-plan-subject-id="{{ $planSubject->id }}"
+    <!-- Practical Sections -->
+    @if (($subject->practical_hours ?? 0) > 0 && Str::contains($subjectCategoryName, ['practical', 'عملي', 'combined', 'مشترك']))
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-success bg-opacity-10 border-0 d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 py-3">
+                        <h6 class="mb-0 text-success">
+                            <i class="fas fa-flask me-2"></i>Practical Sections
+                            <span class="badge bg-success bg-opacity-20 text-light ms-2">{{ $practicalSections->count() }} sections</span>
+                        </h6>
+                        <button class="btn btn-success btn-sm w-100 w-md-auto open-add-section-modal"
+                                data-bs-toggle="modal"
+                                data-bs-target="#addSectionModal"
+                                data-plan-subject-id="{{ $planSubject->id }}"
                                 data-activity-type="Practical"
                                 data-subject-name-modal="{{ $subject->subject_name }} (Practical)"
-                                data-academic-year="{{ $academicYear }}" data-semester="{{ $semesterOfSections }}"
+                                data-academic-year="{{ $academicYear }}"
+                                data-semester="{{ $semesterOfSections }}"
                                 data-branch="{{ $branch ?? '' }}">
-                                <i class="fas fa-plus me-1"></i> Add Practical Section
-                            </button>
-                        </div>
-                        <div class="card-body p-0">
-                            @if ($practicalSections->isNotEmpty())
-                                {{-- *** جدول الشعب العملية مدمج هنا *** --}}
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-hover mb-0">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>#</th>
-                                                <th>Sec.No.</th>
-                                                <th>Gender</th>
-                                                <th>Branch</th>
-                                                <th>Students</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach ($practicalSections as $index => $section)
-                                                <tr>
-                                                    <td>{{ $index + 1 }}</td>
-                                                    <td>{{ $section->section_number }}</td>
-                                                    <td>{{ $section->section_gender }}</td>
-                                                    <td>{{ $section->branch ?? '-' }}</td>
-                                                    <td>{{ $section->student_count }}</td>
-                                                    <td>
-                                                        <button
-                                                            class="btn btn-sm btn-outline-primary ... open-edit-section-modal"
-                                                            data-bs-toggle="modal" data-bs-target="#editSectionModal"
-                                                            {{-- **ID المودال العام** --}}
-                                                            data-form-action="{{ route('data-entry.sections.update', $section->id) }}"
-                                                            data-section-number="{{ $section->section_number }}"
-                                                            data-student-count="{{ $section->student_count }}"
-                                                            data-section-gender="{{ $section->section_gender }}"
-                                                            data-branch="{{ $section->branch ?? '' }}"
-                                                            data-context-info="Sec #{{ $section->section_number }} for {{ optional($planSubject->subject)->subject_no }} ({{ $section->activity_type }})">Edit</button>
-                                                        {{-- <button class="btn btn-sm btn-outline-primary py-0 px-1 me-1 open-edit-section-modal"
-                                                            data-bs-toggle="modal" data-bs-target="#editSectionModal"
-                                                            data-form-action="{{ route('data-entry.sections.update', $section->id) }}"
-                                                            data-section-number="{{ $section->section_number }}"
-                                                            data-student-count="{{ $section->student_count }}"
-                                                            data-section-gender="{{ $section->section_gender }}"
-                                                            data-branch="{{ $section->branch ?? '' }}"
-                                                            data-activity-type="{{ $section->activity_type }}"
-                                                            data-context-info="Sec #{{$section->section_number}} for {{ $subject->subject_no }} (Practical)">Edit</button> --}}
-
-                                                        <button
-                                                            class="btn btn-sm btn-outline-danger py-0 px-1 open-delete-section-modal"
-                                                            data-bs-toggle="modal" data-bs-target="#deleteSectionModal"
-                                                            data-form-action="{{ route('data-entry.sections.destroy', $section->id) }}"
-                                                            data-section-info="Section #{{ $section->section_number }} (Practical) for {{ $subject->subject_no }}">Delete</button>
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                                {{-- *** نهاية الجدول المدمج *** --}}
-                            @else
-                                <p class="text-muted text-center p-3 mb-0">No practical sections defined.</p>
-                            @endif
-                        </div>
+                            <i class="fas fa-plus me-1"></i>Add Practical Section
+                        </button>
                     </div>
-                @endif
-            @endif
+                    <div class="card-body p-0">
+                        @if ($practicalSections->isNotEmpty())
+                            <!-- Desktop Table -->
+                            <div class="table-responsive d-none d-md-block">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="border-0 text-center" style="width: 50px;">#</th>
+                                            <th class="border-0 text-center">Section No.</th>
+                                            <th class="border-0 text-center">Gender</th>
+                                            <th class="border-0">Branch</th>
+                                            <th class="border-0 text-center">Students</th>
+                                            <th class="border-0 text-center" style="width: 120px;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($practicalSections as $index => $section)
+                                            <tr class="border-bottom">
+                                                <td class="text-center text-muted">
+                                                    <small>{{ $index + 1 }}</small>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="badge bg-success bg-opacity-20 text-light fw-bold">{{ $section->section_number }}</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="badge bg-secondary bg-opacity-20 text-light">{{ $section->section_gender }}</span>
+                                                </td>
+                                                <td>
+                                                    <span class="text-muted">{{ $section->branch ?? '-' }}</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="badge bg-warning bg-opacity-20 text-light">{{ $section->student_count }}</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="btn-group btn-group-sm" role="group">
+                                                        <button class="btn btn-outline-primary btn-sm open-edit-section-modal"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#editSectionModal"
+                                                                data-form-action="{{ route('data-entry.sections.update', $section->id) }}"
+                                                                data-section-number="{{ $section->section_number }}"
+                                                                data-student-count="{{ $section->student_count }}"
+                                                                data-section-gender="{{ $section->section_gender }}"
+                                                                data-branch="{{ $section->branch ?? '' }}"
+                                                                data-activity-type="{{ $section->activity_type }}"
+                                                                data-context-info="Sec #{{ $section->section_number }} for {{ optional($planSubject->subject)->subject_no }} (Practical)"
+                                                                title="Edit Section">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <button class="btn btn-outline-danger btn-sm open-delete-section-modal"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#deleteSectionModal"
+                                                                data-form-action="{{ route('data-entry.sections.destroy', $section->id) }}"
+                                                                data-section-info="Section #{{ $section->section_number }} (Practical) for {{ optional($planSubject->subject)->subject_no }}"
+                                                                title="Delete Section">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
 
-            {{-- تضمين ملف المودالات الموحد (ملف واحد للمودالات) --}}
-            @include('dashboard.data-entry.sections.partials._sections_modals')
-
+                            <!-- Mobile Cards -->
+                            <div class="d-md-none">
+                                @foreach ($practicalSections as $index => $section)
+                                    <div class="card-body border-bottom">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex align-items-center gap-2 mb-1">
+                                                    <span class="badge bg-success bg-opacity-20 text-light fw-bold">Section {{ $section->section_number }}</span>
+                                                    <span class="badge bg-secondary bg-opacity-20 text-light small">{{ $section->section_gender }}</span>
+                                                </div>
+                                                <div class="text-muted small">
+                                                    Branch: {{ $section->branch ?? 'Default' }}
+                                                </div>
+                                            </div>
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li>
+                                                        <button class="dropdown-item open-edit-section-modal"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#editSectionModal"
+                                                                data-form-action="{{ route('data-entry.sections.update', $section->id) }}"
+                                                                data-section-number="{{ $section->section_number }}"
+                                                                data-student-count="{{ $section->student_count }}"
+                                                                data-section-gender="{{ $section->section_gender }}"
+                                                                data-branch="{{ $section->branch ?? '' }}"
+                                                                data-context-info="Sec #{{ $section->section_number }} for {{ optional($planSubject->subject)->subject_no }} (Practical)">
+                                                            <i class="fas fa-edit me-2"></i>Edit Section
+                                                        </button>
+                                                    </li>
+                                                    <li>
+                                                        <button class="dropdown-item text-danger open-delete-section-modal"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#deleteSectionModal"
+                                                                data-form-action="{{ route('data-entry.sections.destroy', $section->id) }}"
+                                                                data-section-info="Section #{{ $section->section_number }} (Practical) for {{ optional($planSubject->subject)->subject_no }}">
+                                                            <i class="fas fa-trash me-2"></i>Delete Section
+                                                        </button>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="fw-bold text-warning fs-5">{{ $section->student_count }}</div>
+                                            <small class="text-muted">Students</small>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="text-center py-5">
+                                <i class="fas fa-flask text-muted opacity-50 mb-3" style="font-size: 3rem;"></i>
+                                <h6 class="text-muted">No Practical Sections</h6>
+                                <p class="text-muted mb-3">No practical sections have been created yet.</p>
+                                <button class="btn btn-success btn-sm open-add-section-modal"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#addSectionModal"
+                                        data-plan-subject-id="{{ $planSubject->id }}"
+                                        data-activity-type="Practical"
+                                        data-subject-name-modal="{{ $subject->subject_name }} (Practical)"
+                                        data-academic-year="{{ $academicYear }}"
+                                        data-semester="{{ $semesterOfSections }}"
+                                        data-branch="{{ $branch ?? '' }}">
+                                    <i class="fas fa-plus me-1"></i>Add First Practical Section
+                                </button>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
-@endsection
+    @endif
 
-@push('scripts')
-    {{-- نفس كود JavaScript من الردود السابقة للتعامل مع المودالات الثلاثة الموحدة --}}
-    {{-- مع التأكيد على استهداف الـ IDs الصحيحة للمودالات والفورمات --}}
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            console.log('Manage Sections Page: Scripts Ready.');
+    <!-- Include Modals -->
+    @include('dashboard.data-entry.sections.partials._sections_modals')
+</div>
 
-            const addModal = $('#addSectionModal'); // ID مودال الإضافة من الـ partial
-            const editModal = $('#editSectionModal'); // ID مودال التعديل من الـ partial
-            const deleteModal = $('#deleteSectionModal'); // ID مودال الحذف من الـ partial
+<style>
+/* Subject info styling */
+.subject-info {
+    background: rgba(255, 255, 255, 0.7);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(59, 130, 246, 0.1);
+}
 
-            // --- Add Modal ---
-            $(document).on('click', '.open-add-section-modal', function() {
-                const button = $(this);
-                addModal.find('.modal-title').text('Add ' + button.data('activity-type') +
-                    ' Section for: ' + button.data('subject-name-modal'));
-                addModal.find('form').attr('action', "{{ route('data-entry.sections.store') }}");
+/* Card enhancements */
+.card {
+    transition: all 0.15s ease;
+}
 
-                addModal.find('input[name="plan_subject_id"]').val(button.data('plan-subject-id'));
-                addModal.find('input[name="activity_type"]').val(button.data('activity-type'));
-                addModal.find('input[name="academic_year"]').val(button.data('academic-year'));
-                addModal.find('input[name="semester"]').val(button.data('semester'));
-                addModal.find('input[name="branch"]').val(button.data('branch') || '');
-                addModal.find('#add_branch_display').val(button.data('branch') || 'Default');
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
 
+/* Badge improvements */
+.badge {
+    font-weight: 500;
+}
 
-                addModal.find('#add_section_number_input').val('1'); // استخدام ID الحقل من المودال
-                addModal.find('#add_student_count_input').val('0'); // استخدام ID الحقل من المودال
-                addModal.find('#add_section_gender_select').val('Mixed'); // استخدام ID الحقل من المودال
-                addModal.find('.is-invalid').removeClass('is-invalid');
-                addModal.find('.invalid-feedback').text('');
-                addModal.find('.alert-danger.validation-errors').remove();
-                // تأكد من أن Bootstrap Modal مهيأ بشكل صحيح قبل استدعاء show
-                var modalInstance = bootstrap.Modal.getInstance(addModal[0]);
-                if (!modalInstance) {
-                    modalInstance = new bootstrap.Modal(addModal[0]);
-                }
-                modalInstance.show();
-            });
+/* Button group enhancements */
+.btn-group .btn {
+    transition: all 0.15s ease;
+}
 
-            // --- Edit Modal ---
-            // $(document).on('click', '.open-edit-section-modal', function() {
-            //     const button = $(this);
-            //     editModal.find('.modal-title').text('Edit Section (' + button.data('context-info') + ')');
-            //     editModal.find('form').attr('action', button.data('form-action'));
-            //     editModal.find('#edit_context_info_display span').text(button.data('context-info')); // استخدام ID الـ span
+.btn-group .btn:hover {
+    transform: translateY(-1px);
+}
 
-            //     editModal.find('#edit_section_number_input').val(button.data('section-number'));
-            //     editModal.find('#edit_student_count_input').val(button.data('student-count'));
-            //     editModal.find('#edit_section_gender_select').val(button.data('section-gender'));
-            //     editModal.find('#edit_branch_display_input').val(button.data('branch') || 'Default');
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .subject-info {
+        padding: 0.75rem;
+    }
 
+    .page-title {
+        font-size: 1.25rem;
+    }
 
-            //     editModal.find('.is-invalid').removeClass('is-invalid');
-            //     editModal.find('.invalid-feedback').text('');
-            //     editModal.find('.alert-danger.validation-errors').remove();
-            //     var modalInstance = bootstrap.Modal.getInstance(editModal[0]);
-            //     if (!modalInstance) { modalInstance = new bootstrap.Modal(editModal[0]); }
-            //     modalInstance.show();
-            // });
-            // --- Edit Modal ---
-            // --- Edit Modal ---
-            $(document).on('click', '.open-edit-section-modal', function() {
-                const button = $(this);
-                const editModal = $('#editSectionModal');
+    .card-header {
+        padding: 1rem !important;
+    }
 
-                // تعبئة بيانات النموذج
-                editModal.find('.modal-title').text('Edit Section (' + button.data('context-info') + ')');
-                editModal.find('form').attr('action', button.data('form-action'));
-                editModal.find('#edit_context_info_text span').text(button.data('context-info'));
+    .card-body {
+        padding: 1rem !important;
+    }
 
-                // تعبئة الحقول من data attributes
-                editModal.find('#edit_section_number').val(button.data('section-number'));
-                editModal.find('#edit_student_count').val(button.data('student-count'));
-                editModal.find('#edit_section_gender').val(button.data('section-gender'));
-                editModal.find('#edit_branch_display').val(button.data('branch') || 'Default');
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
 
-                // مسح الأخطاء السابقة
-                editModal.find('.is-invalid').removeClass('is-invalid');
-                editModal.find('.invalid-feedback').text('');
-                editModal.find('.validation-errors').remove();
+    /* Mobile specific adjustments */
+    .subject-info .d-flex {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
 
-                editModal.modal('show');
-            });
+    .subject-info .badge {
+        font-size: 0.75rem;
+    }
 
-            // إعادة فتح المودال عند وجود أخطاء
-            @if (session('editSectionId') && ($errors->hasBag('editSectionModal_' . session('editSectionId')) || $errors->any()))
-                $(document).ready(function() {
-                    const editModal = $('#editSectionModal');
-                    const sectionId = "{{ session('editSectionId') }}";
+    /* Statistics row mobile layout */
+    .statistics-row .col-6 {
+        margin-bottom: 1rem;
+    }
+}
 
-                    // الحصول على زر التعديل المناسب
-                    const editButton = $(`.open-edit-section-modal[data-form-action*="/${sectionId}"]`);
+@media (max-width: 576px) {
+    .card-header {
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+        align-items: flex-start !important;
+    }
 
-                    if (editButton.length) {
-                        // تعبئة البيانات من الزر
-                        editModal.find('.modal-title').text('Edit Section (' + editButton.data(
-                            'context-info') + ')');
-                        editModal.find('form').attr('action', editButton.data('form-action'));
-                        editModal.find('#edit_context_info_text span').text(editButton.data(
-                        'context-info'));
+    .card-header .btn {
+        width: 100% !important;
+    }
 
-                        // تعبئة الحقول من old() أو من البيانات الأصلية
-                        editModal.find('#edit_section_number').val(
-                            "{{ old('section_number', session('sectionForModal')->section_number ?? '') }}"
-                            );
-                        editModal.find('#edit_student_count').val(
-                            "{{ old('student_count', session('sectionForModal')->student_count ?? '') }}"
-                            );
-                        editModal.find('#edit_section_gender').val(
-                            "{{ old('section_gender', session('sectionForModal')->section_gender ?? '') }}"
-                            );
-                        editModal.find('#edit_branch_display').val(editButton.data('branch') || 'Default');
+    .card-body.border-bottom {
+        padding: 0.75rem !important;
+    }
 
-                        editModal.modal('show');
-                    }
-                });
-            @endif
+    .dropdown-menu {
+        min-width: 150px;
+    }
 
-            // --- Delete Modal ---
-            $(document).on('click', '.open-delete-section-modal', function() {
-                const button = $(this);
-                deleteModal.find('#delete_section_info_text').text(button.data(
-                    'section-info')); // استخدام ID الـ strong
-                deleteModal.find('form').attr('action', button.data('form-action'));
-                var modalInstance = bootstrap.Modal.getInstance(deleteModal[0]);
-                if (!modalInstance) {
-                    modalInstance = new bootstrap.Modal(deleteModal[0]);
-                }
-                modalInstance.show();
-            });
+    .dropdown-item {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+    }
 
-            // لإعادة فتح المودال عند وجود أخطاء validation
-            @if ($errors->any())
-                @if ($errors->hasBag('addSectionModal'))
-                    console.log("Reopening Add Modal due to validation errors (Bag: addSectionModal).");
-                    var addModalInstance = bootstrap.Modal.getInstance(document.getElementById('addSectionModal'));
-                    if (!addModalInstance) {
-                        addModalInstance = new bootstrap.Modal(document.getElementById('addSectionModal'));
-                    }
-                    addModalInstance.show();
-                @endif
-                {{-- هذا الجزء يحتاج لتحديد دقيق لمودال التعديل إذا كان هناك أخطاء --}}
-                @php
-                    $editErrorBagName = null;
-                    foreach ($errors->getBags() as $bagNameKey => $bagErrors) {
-                        if (Str::startsWith($bagNameKey, 'editSectionModal_')) {
-                            // اسم الـ error bag من الكنترولر
-                            $editErrorBagName = $bagNameKey;
-                            break;
-                        }
-                    }
-                @endphp
-                @if ($editErrorBagName)
-                    console.warn(
-                        "Validation errors on update modal. ErrorBag: {{ $editErrorBagName }}. Reopening generic edit modal."
-                    );
-                    var editModalInstance = bootstrap.Modal.getInstance(document.getElementById(
-                        'editSectionModal'));
-                    if (!editModalInstance) {
-                        editModalInstance = new bootstrap.Modal(document.getElementById('editSectionModal'));
-                    }
-                    editModalInstance.show();
-                    // قد تحتاج لإعادة ملء حقول مودال التعديل بالـ old() input هنا
-                    $('#editSectionModal').find('#edit_section_number_input').val("{{ old('section_number') }}");
-                    $('#editSectionModal').find('#edit_student_count_input').val("{{ old('student_count') }}");
-                    // ...
-                @endif
-            @endif
+    /* Page title adjustments */
+    .page-title {
+        font-size: 1.1rem;
+    }
+
+    .page-title i {
+        font-size: 1rem;
+    }
+
+    /* Form responsive */
+    .w-100.w-md-auto {
+        width: 100% !important;
+    }
+
+    /* Alert responsive */
+    .alert {
+        font-size: 0.875rem;
+    }
+
+    .alert i {
+        font-size: 0.875rem;
+    }
+}
+
+/* Dark mode support */
+body.dark-mode .subject-info {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Empty state styling */
+.empty-state i {
+    opacity: 0.3;
+}
+
+/* Enhanced button styling */
+.btn {
+    transition: all 0.15s ease;
+}
+
+.btn:hover:not([disabled]) {
+    transform: translateY(-1px);
+}
+
+/* Utility classes for responsive width */
+@media (min-width: 768px) {
+    .w-md-auto {
+        width: auto !important;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Section Management Page: Scripts Ready.');
+
+    const addModal = document.getElementById('addSectionModal');
+    const editModal = document.getElementById('editSectionModal');
+    const deleteModal = document.getElementById('deleteSectionModal');
+
+    // Add Modal Handler
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.open-add-section-modal')) {
+            const button = e.target.closest('.open-add-section-modal');
+
+            addModal.querySelector('.modal-title').textContent = 'Add ' + button.dataset.activityType + ' Section for: ' + button.dataset.subjectNameModal;
+            addModal.querySelector('form').action = "{{ route('data-entry.sections.store') }}";
+
+            // Fill hidden fields
+            addModal.querySelector('input[name="plan_subject_id"]').value = button.dataset.planSubjectId;
+            addModal.querySelector('input[name="activity_type"]').value = button.dataset.activityType;
+            addModal.querySelector('input[name="academic_year"]').value = button.dataset.academicYear;
+            addModal.querySelector('input[name="semester"]').value = button.dataset.semester;
+            addModal.querySelector('input[name="branch"]').value = button.dataset.branch || '';
+
+            // Reset form fields
+            addModal.querySelector('#add_section_number').value = '1';
+            addModal.querySelector('#add_student_count').value = '0';
+            addModal.querySelector('#add_section_gender').value = 'Mixed';
+            addModal.querySelector('#add_branch_display').value = button.dataset.branch || 'Default';
+
+            // Clear validation errors
+            addModal.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            addModal.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+            addModal.querySelectorAll('.validation-errors').forEach(el => el.remove());
+        }
+    });
+
+    // Edit Modal Handler
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.open-edit-section-modal')) {
+            const button = e.target.closest('.open-edit-section-modal');
+
+            editModal.querySelector('.modal-title').textContent = 'Edit Section (' + button.dataset.contextInfo + ')';
+            editModal.querySelector('form').action = button.dataset.formAction;
+            editModal.querySelector('#edit_context_info_text span').textContent = button.dataset.contextInfo;
+
+            // Fill form fields
+            editModal.querySelector('#edit_section_number').value = button.dataset.sectionNumber;
+            editModal.querySelector('#edit_student_count').value = button.dataset.studentCount;
+            editModal.querySelector('#edit_section_gender').value = button.dataset.sectionGender;
+            editModal.querySelector('#edit_branch_display').value = button.dataset.branch || 'Default';
+
+            // Clear validation errors
+            editModal.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            editModal.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+            editModal.querySelectorAll('.validation-errors').forEach(el => el.remove());
+        }
+    });
+
+    // Delete Modal Handler
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.open-delete-section-modal')) {
+            const button = e.target.closest('.open-delete-section-modal');
+
+            deleteModal.querySelector('#delete_section_info_text').textContent = button.dataset.sectionInfo;
+            deleteModal.querySelector('form').action = button.dataset.formAction;
+        }
+    });
+
+    // Reopen modals on validation errors
+    @if ($errors->hasBag('addSectionModal'))
+        console.log("Reopening Add Modal due to validation errors.");
+        const addModalInstance = new bootstrap.Modal(addModal);
+        addModalInstance.show();
+    @endif
+
+    @if (session('editSectionId') && ($errors->hasBag('editSectionModal_' . session('editSectionId')) || $errors->any()))
+        console.log("Reopening Edit Modal due to validation errors.");
+        const editModalInstance = new bootstrap.Modal(editModal);
+        editModalInstance.show();
+
+        // Restore form data
+        const sectionId = "{{ session('editSectionId') }}";
+        const editButton = document.querySelector(`.open-edit-section-modal[data-form-action*="/${sectionId}"]`);
+
+        if (editButton) {
+            editModal.querySelector('.modal-title').textContent = 'Edit Section (' + editButton.dataset.contextInfo + ')';
+            editModal.querySelector('form').action = editButton.dataset.formAction;
+            editModal.querySelector('#edit_context_info_text span').textContent = editButton.dataset.contextInfo;
+
+            editModal.querySelector('#edit_section_number').value = "{{ old('section_number', session('sectionForModal')->section_number ?? '') }}";
+            editModal.querySelector('#edit_student_count').value = "{{ old('student_count', session('sectionForModal')->student_count ?? '') }}";
+            editModal.querySelector('#edit_section_gender').value = "{{ old('section_gender', session('sectionForModal')->section_gender ?? '') }}";
+            editModal.querySelector('#edit_branch_display').value = editButton.dataset.branch || 'Default';
+        }
+    @endif
+
+    // Enhanced responsive behavior
+    function handleResponsiveChanges() {
+        const isMobile = window.innerWidth < 768;
+
+        // Adjust modal behavior for mobile
+        document.querySelectorAll('.modal-dialog').forEach(modal => {
+            if (isMobile) {
+                modal.style.margin = '0.5rem';
+                modal.style.maxWidth = 'calc(100% - 1rem)';
+            } else {
+                modal.style.margin = '';
+                modal.style.maxWidth = '';
+            }
         });
-    </script>
-@endpush
+    }
+
+    // Run on load and resize
+    handleResponsiveChanges();
+    window.addEventListener('resize', handleResponsiveChanges);
+
+    // Auto-hide alerts
+    setTimeout(() => {
+        document.querySelectorAll('.alert:not(.alert-permanent)').forEach(alert => {
+            if (bootstrap.Alert) {
+                const alertInstance = bootstrap.Alert.getOrCreateInstance(alert);
+                alertInstance.close();
+            }
+        });
+    }, 5000);
+
+    console.log('✅ Section Management initialized successfully with full responsive support');
+});
+</script>
+@endsection

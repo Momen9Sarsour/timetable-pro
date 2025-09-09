@@ -349,10 +349,11 @@ class GeneticAlgorithmService
             $room = $this->getRandomRoomForBlock($lectureBlock);
 
             // نبحث عن وقت مثالي
-            $foundSlots = $this->findOptimalSlotForBlock($lectureBlock, $room->id, $resourceUsageMap);
+            // $foundSlots = $this->findOptimalSlotForBlock($lectureBlock, $room->id, $resourceUsageMap);
+            $foundSlots = $this->findRandomSlotForBlock($lectureBlock);
 
             // نحدّث خريطة الموارد المستخدمة فوراً
-            $this->updateResourceMap($foundSlots, $lectureBlock->instructor_id, $room->id, $lectureBlock->student_group_id, $resourceUsageMap);
+            // $this->updateResourceMap($foundSlots, $lectureBlock->instructor_id, $room->id, $lectureBlock->student_group_id, $resourceUsageMap);
 
             $genesToInsert[] = [
                 'chromosome_id' => $chromosome->chromosome_id,
@@ -371,35 +372,82 @@ class GeneticAlgorithmService
             Gene::insert($genesToInsert);
         }
     }
-
-    private function findOptimalSlotForBlock(\stdClass $lectureBlock, int $roomId, array &$usageMap): array
+    // الدالة الجديدة للاختيار العشوائي الكامل في الجيل الأول
+    private function findRandomSlotForBlock(\stdClass $lectureBlock): array
     {
-        $maxAttempts = 100; // عدد المحاولات لإيجاد مكان
-        $lastResortSlots = []; // لتخزين حل بديل
+        $slotsNeeded = $lectureBlock->slots_needed;
 
-        for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
-            // نختار فترة بداية عشوائية
-            $startSlotId = $this->timeslots->random()->id;
+        // إذا كان محتاج فترة واحدة فقط، اختر عشوائي
+        if ($slotsNeeded <= 1) {
+            return [$this->timeslots->random()->id];
+        }
 
-            // نتحقق إذا كان يمكن تكوين بلوك كامل من هذه النقطة
-            if (isset($this->consecutiveTimeslotsMap[$startSlotId]) && (count($this->consecutiveTimeslotsMap[$startSlotId]) + 1) >= $lectureBlock->slots_needed) {
-                $trialSlots = array_merge([$startSlotId], array_slice($this->consecutiveTimeslotsMap[$startSlotId], 0, $lectureBlock->slots_needed - 1));
+        // للفترات المتعددة، ابحث عن فترات متتالية عشوائياً
+        $possibleStartSlots = $this->timeslots->filter(function ($slot) use ($slotsNeeded) {
+            // تأكد أن هذا الـ slot يمكن أن يكون بداية لعدد الفترات المطلوبة
+            return isset($this->consecutiveTimeslotsMap[$slot->id]) &&
+                (count($this->consecutiveTimeslotsMap[$slot->id]) + 1) >= $slotsNeeded;
+        });
 
-                // نخزن أول محاولة كحل أخير في حالة الفشل
-                if ($attempt == 0) $lastResortSlots = $trialSlots;
+        if ($possibleStartSlots->isEmpty()) {
+            // إذا لم نجد فترات متتالية كافية، اختر فترات منفصلة عشوائياً
+            return $this->timeslots->random($slotsNeeded)->pluck('id')->toArray();
+        }
 
-                // نفحص التعارضات
-                $isConflict = $this->checkConflictsForSlots($trialSlots, $lectureBlock->instructor_id, $roomId, $lectureBlock->student_group_id, $usageMap);
+        // اختر نقطة بداية عشوائية من الفترات الممكنة
+        $startSlot = $possibleStartSlots->random();
 
-                if (!$isConflict) {
-                    return $trialSlots; // وجدنا مكاناً مثالياً!
-                }
+        // بناء مصفوفة الفترات المتتالية
+        $selectedSlots = [$startSlot->id];
+
+        // إضافة الفترات التالية حسب العدد المطلوب
+        for ($i = 0; $i < ($slotsNeeded - 1); $i++) {
+            if (isset($this->consecutiveTimeslotsMap[$startSlot->id][$i])) {
+                $selectedSlots[] = $this->consecutiveTimeslotsMap[$startSlot->id][$i];
             }
         }
 
-        // إذا فشلت كل المحاولات، نرجع أول مكان جربناه (السماح بالخطأ)
-        return !empty($lastResortSlots) ? $lastResortSlots : $this->findRandomConsecutiveTimeslots($lectureBlock->slots_needed);
+        // تأكد أن العدد صحيح
+        if (count($selectedSlots) < $slotsNeeded) {
+            // إذا لم نحصل على العدد الكافي، أضف فترات عشوائية إضافية
+            $additionalSlots = $this->timeslots->whereNotIn('id', $selectedSlots)
+                ->random($slotsNeeded - count($selectedSlots))
+                ->pluck('id')
+                ->toArray();
+            $selectedSlots = array_merge($selectedSlots, $additionalSlots);
+        }
+
+        return array_slice($selectedSlots, 0, $slotsNeeded);
     }
+
+    // private function findOptimalSlotForBlock(\stdClass $lectureBlock, int $roomId, array &$usageMap): array
+    // {
+    //     $maxAttempts = 100; // عدد المحاولات لإيجاد مكان
+    //     $lastResortSlots = []; // لتخزين حل بديل
+
+    //     for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
+    //         // نختار فترة بداية عشوائية
+    //         $startSlotId = $this->timeslots->random()->id;
+
+    //         // نتحقق إذا كان يمكن تكوين بلوك كامل من هذه النقطة
+    //         if (isset($this->consecutiveTimeslotsMap[$startSlotId]) && (count($this->consecutiveTimeslotsMap[$startSlotId]) + 1) >= $lectureBlock->slots_needed) {
+    //             $trialSlots = array_merge([$startSlotId], array_slice($this->consecutiveTimeslotsMap[$startSlotId], 0, $lectureBlock->slots_needed - 1));
+
+    //             // نخزن أول محاولة كحل أخير في حالة الفشل
+    //             if ($attempt == 0) $lastResortSlots = $trialSlots;
+
+    //             // نفحص التعارضات
+    //             $isConflict = $this->checkConflictsForSlots($trialSlots, $lectureBlock->instructor_id, $roomId, $lectureBlock->student_group_id, $usageMap);
+
+    //             if (!$isConflict) {
+    //                 return $trialSlots; // وجدنا مكاناً مثالياً!
+    //             }
+    //         }
+    //     }
+
+    //     // إذا فشلت كل المحاولات، نرجع أول مكان جربناه (السماح بالخطأ)
+    //     return !empty($lastResortSlots) ? $lastResortSlots : $this->findRandomConsecutiveTimeslots($lectureBlock->slots_needed);
+    // }
 
     private function checkConflictsForSlots(array $slotIds, int $instructorId, int $roomId, array $studentGroupIds, array $usageMap): bool
     {

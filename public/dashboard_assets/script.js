@@ -1,271 +1,267 @@
-// index.blade.php
+// ============================================
+// نظام إدارة الجداول الدراسية - JavaScript مبسط
+// كلية فلسطين التقنية
+// ============================================
 
-document.addEventListener("DOMContentLoaded", function () {
-    // Dark mode toggle
-    const darkModeToggle = document.querySelector(".dark-mode-toggle");
-    darkModeToggle.addEventListener("click", function () {
-        document.body.classList.toggle("dark-mode");
+document.addEventListener('DOMContentLoaded', function() {
 
-        // Update icon
-        const icon = this.querySelector("i");
-        if (document.body.classList.contains("dark-mode")) {
-            icon.classList.remove("fa-moon");
-            icon.classList.add("fa-sun");
-            this.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
-        } else {
-            icon.classList.remove("fa-sun");
-            icon.classList.add("fa-moon");
-            this.innerHTML = '<i class="fas fa-moon"></i> Dark Mode';
-        }
-    });
+    // ============= المتغيرات الأساسية =============
+    const body = document.body;
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.querySelector('.sidebar-toggle');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const themeToggleBtns = document.querySelectorAll('.theme-toggle-btn');
+    const backToTopBtn = document.getElementById('backToTop');
 
-    // Sidebar toggle
-    const sidebarToggle = document.querySelector(".sidebar-toggle");
-    const sidebar = document.querySelector(".sidebar");
+    // ============= نظام الثيم =============
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    if (savedTheme === 'dark') {
+        body.classList.add('dark-mode');
+        updateThemeIcons();
+    }
 
-    sidebarToggle.addEventListener("click", function () {
-        sidebar.classList.toggle("active");
-    });
-
-    // Close sidebar when clicking outside on mobile
-    document.addEventListener("click", function (e) {
-        if (
-            window.innerWidth < 992 &&
-            !e.target.closest(".sidebar") &&
-            !e.target.closest(".sidebar-toggle")
-        ) {
-            sidebar.classList.remove("active");
-        }
-    });
-
-    // Help button
-    const helpBtn = document.querySelector(".help-btn");
-    helpBtn.addEventListener("click", function () {
-        alert("Help center would open here");
-    });
-
-    // Auto close sidebar when resizing to larger screen
-    window.addEventListener("resize", function () {
-        if (window.innerWidth >= 992) {
-            sidebar.classList.remove("active");
-        }
-    });
-});
-
-document.addEventListener("DOMContentLoaded", function () {
-    const submenuItems = document.querySelectorAll(
-        ".sidebar-menu li.has-submenu > a"
-    );
-
-    submenuItems.forEach((item) => {
-        item.addEventListener("click", function (event) {
-            event.preventDefault(); // منع الانتقال للرابط '#'
-            const parentLi = this.parentElement;
-            parentLi.classList.toggle("open"); // تبديل كلاس open
+    themeToggleBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            body.classList.toggle('dark-mode');
+            const isDarkMode = body.classList.contains('dark-mode');
+            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+            updateThemeIcons();
         });
     });
 
-    // Optional: Keep submenu open if a child link is active
-    const activeSubmenuLink = document.querySelector(
-        ".sidebar-menu .submenu li.active"
-    );
-    if (activeSubmenuLink) {
-        const parentSubmenu = activeSubmenuLink.closest("li.has-submenu");
-        if (parentSubmenu) {
-            parentSubmenu.classList.add("open");
-        }
+    function updateThemeIcons() {
+        const isDarkMode = body.classList.contains('dark-mode');
+        themeToggleBtns.forEach(btn => {
+            const icon = btn.querySelector('.theme-icon');
+            if (icon) {
+                icon.className = isDarkMode ? 'fas fa-sun theme-icon' : 'fas fa-moon theme-icon';
+            }
+        });
     }
-    // --- الكود الخاص بـ Mobile Sidebar Toggle (إذا كان موجوداً) ---
-    const sidebarToggle = document.querySelector(".sidebar-toggle");
-    const sidebar = document.querySelector(".sidebar");
-    const mainContent = document.querySelector(".main-content"); // افترض أن لديك هذا العنصر
 
+    // ============= القائمة الجانبية =============
     if (sidebarToggle && sidebar) {
-        sidebarToggle.addEventListener("click", () => {
-            sidebar.classList.toggle("active"); // افترض أن لديك كلاس active للتحكم بالظهور
-            if (mainContent) {
-                mainContent.classList.toggle("shifted"); // افترض أن لديك كلاس لتحريك المحتوى
-            }
+        sidebarToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleSidebar();
         });
     }
-    // --- نهاية كود Mobile Sidebar Toggle ---
-});
 
-// *********************************************************
-// data-entry.blade.php
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', function() {
+            closeSidebar();
+        });
+    }
 
-document.addEventListener("DOMContentLoaded", function () {
-    // Dark mode toggle
-    const darkModeToggle = document.querySelector(".dark-mode-toggle");
-    darkModeToggle.addEventListener("click", function () {
-        document.body.classList.toggle("dark-mode");
+    document.addEventListener('click', function(e) {
+        if (window.innerWidth <= 1024) {
+            if (sidebar && !sidebar.contains(e.target) &&
+                sidebarToggle && !sidebarToggle.contains(e.target)) {
+                closeSidebar();
+            }
+        }
+    });
 
-        // Update icon
-        const icon = this.querySelector("i");
-        if (document.body.classList.contains("dark-mode")) {
-            icon.classList.remove("fa-moon");
-            icon.classList.add("fa-sun");
-            this.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+    function toggleSidebar() {
+        if (!sidebar) return;
+        sidebar.classList.toggle('active');
+        if (sidebarOverlay) {
+            sidebarOverlay.classList.toggle('active');
+        }
+        if (sidebar.classList.contains('active')) {
+            body.style.overflow = 'hidden';
         } else {
-            icon.classList.remove("fa-sun");
-            icon.classList.add("fa-moon");
-            this.innerHTML = '<i class="fas fa-moon"></i> Dark Mode';
+            body.style.overflow = '';
+        }
+    }
+
+    function closeSidebar() {
+        if (!sidebar) return;
+        sidebar.classList.remove('active');
+        if (sidebarOverlay) {
+            sidebarOverlay.classList.remove('active');
+        }
+        body.style.overflow = '';
+    }
+
+    // ============= القوائم المنسدلة =============
+    const dropdownToggles = document.querySelectorAll('.sidebar .dropdown-toggle');
+    dropdownToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            const parent = this.parentElement;
+
+            if (!e.ctrlKey) {
+                dropdownToggles.forEach(otherToggle => {
+                    if (otherToggle !== this) {
+                        otherToggle.parentElement.classList.remove('active');
+                    }
+                });
+            }
+            parent.classList.toggle('active');
+        });
+    });
+
+    // الحفاظ على القوائم المفتوحة للصفحة النشطة
+    const activeSubmenuItems = document.querySelectorAll('.submenu li.active');
+    activeSubmenuItems.forEach(item => {
+        const parentSubmenu = item.closest('.submenu');
+        if (parentSubmenu) {
+            parentSubmenu.classList.add('show');
+            const navItem = parentSubmenu.closest('.nav-item');
+            if (navItem) {
+                navItem.classList.add('active');
+            }
         }
     });
 
-    // Mobile sidebar toggle
-    const sidebarToggle = document.querySelector(".sidebar-toggle");
-    const sidebar = document.querySelector(".sidebar");
+    // ============= زر العودة للأعلى =============
+    if (backToTopBtn) {
+        window.addEventListener('scroll', function() {
+            if (window.pageYOffset > 300) {
+                backToTopBtn.classList.add('show');
+            } else {
+                backToTopBtn.classList.remove('show');
+            }
+        });
 
-    sidebarToggle.addEventListener("click", function () {
-        sidebar.classList.toggle("active");
-    });
-
-    // Close sidebar when clicking outside on mobile
-    document.addEventListener("click", function (e) {
-        if (
-            window.innerWidth < 992 &&
-            !e.target.closest(".sidebar") &&
-            !e.target.closest(".sidebar-toggle")
-        ) {
-            sidebar.classList.remove("active");
-        }
-    });
-
-    // Auto close sidebar when resizing to larger screen
-    window.addEventListener("resize", function () {
-        if (window.innerWidth >= 992) {
-            sidebar.classList.remove("active");
-        }
-    });
-
-    // Help button
-    const helpBtn = document.querySelector(".help-btn");
-    helpBtn.addEventListener("click", function () {
-        alert("Help center would open here");
-    });
-
-    // Form reset functionality
-    function resetForm(formId) {
-        const form = document.querySelector(`#${formId}`);
-        if (form) {
-            // Reset all input fields
-            const inputs = form.querySelectorAll("input, select, textarea");
-            inputs.forEach((input) => {
-                if (
-                    input.type === "text" ||
-                    input.type === "email" ||
-                    input.type === "number" ||
-                    input.tagName === "TEXTAREA"
-                ) {
-                    input.value = "";
-                } else if (input.type === "checkbox") {
-                    input.checked = false;
-                } else if (input.tagName === "SELECT") {
-                    input.selectedIndex = 0;
-                }
+        backToTopBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
             });
-
-            // Hide status messages
-            const successMsg = document.querySelector(
-                `#${formId}SuccessMessage`
-            );
-            const errorMsg = document.querySelector(`#${formId}ErrorMessage`);
-            if (successMsg) successMsg.style.display = "none";
-            if (errorMsg) errorMsg.style.display = "none";
-        }
-    }
-
-    // Initialize reset buttons
-    document.getElementById("resetBtn").addEventListener("click", function () {
-        resetForm("courses");
-    });
-
-    document
-        .getElementById("resetClassroomBtn")
-        .addEventListener("click", function () {
-            resetForm("classroom");
-        });
-
-    document
-        .getElementById("resetFacultyBtn")
-        .addEventListener("click", function () {
-            resetForm("faculty");
-        });
-
-    // Form submission handlers
-    document.getElementById("saveBtn").addEventListener("click", function () {
-        // Validate form
-        const courseName = document.getElementById("courseName").value;
-        const college = document.getElementById("college").value;
-
-        if (!courseName || !college) {
-            document.getElementById("errorMessage").style.display = "block";
-            document.getElementById("successMessage").style.display = "none";
-        } else {
-            document.getElementById("successMessage").style.display = "block";
-            document.getElementById("errorMessage").style.display = "none";
-        }
-    });
-
-    document
-        .getElementById("saveClassroomBtn")
-        .addEventListener("click", function () {
-            // Validate form
-            const roomNumber = document.getElementById("roomNumber").value;
-            const building = document.getElementById("building").value;
-
-            if (!roomNumber || !building) {
-                document.getElementById("classroomErrorMessage").style.display =
-                    "block";
-                document.getElementById(
-                    "classroomSuccessMessage"
-                ).style.display = "none";
-            } else {
-                document.getElementById(
-                    "classroomSuccessMessage"
-                ).style.display = "block";
-                document.getElementById("classroomErrorMessage").style.display =
-                    "none";
-            }
-        });
-
-    document
-        .getElementById("saveFacultyBtn")
-        .addEventListener("click", function () {
-            // Validate form
-            const firstName = document.getElementById("firstName").value;
-            const lastName = document.getElementById("lastName").value;
-            const facultyDepartment =
-                document.getElementById("facultyDepartment").value;
-
-            if (!firstName || !lastName || !facultyDepartment) {
-                document.getElementById("facultyErrorMessage").style.display =
-                    "block";
-                document.getElementById("facultySuccessMessage").style.display =
-                    "none";
-            } else {
-                document.getElementById("facultySuccessMessage").style.display =
-                    "block";
-                document.getElementById("facultyErrorMessage").style.display =
-                    "none";
-            }
-        });
-
-    // File upload interaction
-    const uploadArea = document.getElementById("uploadArea");
-    const uploadBtn = document.getElementById("uploadBtn");
-
-    if (uploadArea && uploadBtn) {
-        uploadArea.addEventListener("click", function (e) {
-            if (e.target !== uploadBtn) {
-                // Trigger file selection
-                alert("File upload dialog would open here");
-            }
-        });
-
-        uploadBtn.addEventListener("click", function () {
-            alert("File would be uploaded here");
         });
     }
+
+    // ============= AOS Animation =============
+    if (typeof AOS !== 'undefined') {
+        AOS.init({
+            duration: 300,
+            once: true,
+            offset: 30,
+            delay: 50
+        });
+    }
+
+    // ============= Bootstrap Components =============
+    // Tooltips
+    try {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    } catch (error) {
+        console.warn('Tooltips failed to initialize');
+    }
+
+    // ============= معالجة النماذج (مبسط) =============
+    // Form validation
+    const forms = document.querySelectorAll('.needs-validation');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        });
+    });
+
+    // Loading state للنماذج (بدون تعطيل الإرسال)
+    document.addEventListener('submit', function(e) {
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+
+        if (submitBtn && !submitBtn.hasAttribute('data-bs-toggle')) {
+            const originalText = submitBtn.innerHTML;
+
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+            submitBtn.disabled = true;
+
+            // إعادة الزر بعد ثانيتين للأمان
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 2000);
+        }
+    });
+
+    // ============= إخفاء التنبيهات تلقائياً =============
+    setTimeout(() => {
+        const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
+        alerts.forEach(alert => {
+            try {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
+                    const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                    bsAlert.close();
+                }
+            } catch (error) {
+                alert.style.display = 'none';
+            }
+        });
+    }, 4000);
+
+    // ============= Responsive =============
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            if (window.innerWidth > 1024) {
+                closeSidebar();
+            }
+        }, 100);
+    });
+
+    // ============= دوال مساعدة =============
+    window.showToast = function(message, type = 'info') {
+        const toastContainer = document.getElementById('toastContainer') || createToastContainer();
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+
+        toastContainer.appendChild(toast);
+
+        try {
+            if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+                toast.addEventListener('hidden.bs.toast', () => toast.remove());
+            }
+        } catch (error) {
+            setTimeout(() => toast.remove(), 3000);
+        }
+    };
+
+    function createToastContainer() {
+        const container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        container.style.zIndex = '1060';
+        document.body.appendChild(container);
+        return container;
+    }
+
+    console.log('✅ Timetable Pro initialized successfully');
+    console.log('✅ All modal and form issues resolved');
 });
+
+// ============= حل مشكلة المودال نهائياً =============
+// تنظيف بسيط وفعال
+document.addEventListener('DOMContentLoaded', function() {
+    // إزالة أي backdrop عالق
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+
+    console.log('✅ Modal cleanup completed - Bootstrap will handle everything else');
+});
+
+// لا نتدخل في Bootstrap Modal - نتركه يعمل بشكل طبيعي

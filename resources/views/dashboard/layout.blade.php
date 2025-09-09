@@ -5,379 +5,359 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'TimeTable Pro')</title>
+    <meta name="description" content="Timetable Management System - Palestine Technical College">
+    <meta name="keywords" content="timetable, schedule, palestine technical college, education">
+    <meta name="author" content="Palestine Technical College">
+
+    <title>@yield('title', 'Timetable Pro | Palestine Technical College')</title>
+
+    <!-- Bootstrap 5.3 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- AOS Animation Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ asset('dashboard_assets/style.css') }}">
-    {{-- Push Styles Stack --}}
-    <style>
-        /* السايدبار مع التمرير */
-        .sidebar {
-            position: fixed;
-            left: 0;
-            bottom: 0;
-            width: 250px;
-            background: #fff;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-            overflow-y: auto;
-            z-index: 999;
-        }
 
-        ::-webkit-scrollbar {
-            width: 4px;
-            height: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 4px;
-        }
-    </style>
     @stack('styles')
-
 </head>
 
 <body>
-    <!-- Mobile Sidebar Toggle -->
-    <button class="sidebar-toggle btn btn-primary">
+    <!-- زر فتح القائمة الجانبية للموبايل -->
+    <button class="sidebar-toggle btn btn-primary shadow-lg" aria-label="Toggle Sidebar">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Header -->
-    <div class="header">
-        <div class="logo">TimeTable Pro</div>
+    <!-- الهيدر الرئيسي -->
+    <header class="main-header">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center h-100 px-3">
+                <!-- اللوجو - أقصى اليسار -->
+                <div class="logo-section">
+                    <div class="logo">
+                        <i class="fas fa-calendar-alt logo-icon"></i>
+                        <span class="logo-text">Timetable Pro</span>
+                    </div>
+                </div>
 
-        <div class="search-bar">
-            <div class="input-group">
-                <input type="text" class="form-control" placeholder="Search courses, instructors...">
-                <button class="btn btn-outline-secondary" type="button">
-                    <i class="fas fa-search"></i>
-                </button>
+                <!-- شريط البحث - في المنتصف -->
+                <div class="search-section flex-grow-1 mx-4">
+                    <div class="search-wrapper position-relative">
+                        <input type="text" class="form-control search-input" placeholder="Search courses, instructors, rooms...">
+                        <button class="search-btn position-absolute end-0 top-50 translate-middle-y border-0 bg-transparent" type="button">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- أزرار التحكم - أقصى اليمين -->
+                <div class="header-controls d-flex align-items-center gap-2">
+                    <!-- زر تبديل الثيم -->
+                    <button class="theme-toggle-btn btn btn-outline-secondary btn-sm" aria-label="Toggle Theme">
+                        <i class="fas fa-moon theme-icon"></i>
+                    </button>
+
+                    <!-- الإشعارات -->
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-bell"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">3</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li class="dropdown-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Notifications</h6>
+                                <span class="badge bg-primary">3 New</span>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-check text-success me-2"></i>Schedule Generated</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Room Conflict</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-envelope text-info me-2"></i>New Message</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-center" href="#">View All</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- قائمة المستخدم -->
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div class="user-avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <span class="user-name d-none d-md-inline">John Doe</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li class="dropdown-header">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="user-avatar-large bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                        <i class="fas fa-user-circle"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">John Doe</h6>
+                                        <small class="text-muted">Administrator</small>
+                                    </div>
+                                </div>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>My Profile</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-envelope me-2"></i>Messages <span class="badge bg-danger ms-auto">5</span></a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
+    </header>
 
-        <div class="header-controls">
-            <div class="dropdown">
-                <button class="notification-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-bell"></i>
-                    <span class="notification-badge">3</span>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li>
-                        <h6 class="dropdown-header">Notifications</h6>
+    <!-- القائمة الجانبية -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-content">
+            <!-- قائمة التنقل الرئيسية -->
+            <nav class="sidebar-nav">
+                <ul class="nav-list">
+                    <!-- لوحة التحكم -->
+                    <li class="nav-item {{ request()->routeIs('dashboard.*') ? 'active' : '' }}">
+                        <a href="{{ route('dashboard.index') }}" class="nav-link">
+                            <i class="fas fa-tachometer-alt nav-icon"></i>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
                     </li>
-                    <li><a class="dropdown-item" href="#">New schedule generated</a></li>
-                    <li><a class="dropdown-item" href="#">Room conflict detected</a></li>
-                    <li><a class="dropdown-item" href="#">New message from admin</a></li>
-                    <li>
-                        <hr class="dropdown-divider">
+
+                    <!-- البرامج الأكاديمية -->
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-graduation-cap nav-icon"></i>
+                            <span class="nav-text">Academic Programs</span>
+                        </a>
                     </li>
-                    <li><a class="dropdown-item" href="#">View all notifications</a></li>
+
+                    <!-- إدارة البيانات -->
+                    @php
+                        $isActiveMenu = request()->routeIs('data-entry.*');
+                    @endphp
+                    <li class="nav-item has-dropdown {{ $isActiveMenu ? 'active' : '' }}">
+                        <a href="#dataManagement" class="nav-link dropdown-toggle" data-bs-toggle="collapse"
+                           aria-expanded="{{ $isActiveMenu ? 'true' : 'false' }}">
+                            <i class="fas fa-database nav-icon"></i>
+                            <span class="nav-text">Data Management</span>
+                            <i class="fas fa-chevron-down dropdown-icon"></i>
+                        </a>
+                        <div class="collapse submenu {{ $isActiveMenu ? 'show' : '' }}" id="dataManagement">
+                            <ul class="submenu-list">
+                                <li class="{{ request()->routeIs('data-entry.departments.*') ? 'active' : '' }}">
+                                    <a href="{{ route('data-entry.departments.index') }}">
+                                        <i class="fas fa-building"></i> Departments
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('data-entry.roles.*') ? 'active' : '' }}">
+                                    <a href="{{ route('data-entry.roles.index') }}">
+                                        <i class="fas fa-user-shield"></i> Roles
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('data-entry.users.*') ? 'active' : '' }}">
+                                    <a href="{{ route('data-entry.users.index') }}">
+                                        <i class="fas fa-users-cog"></i> Users
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('data-entry.room-types.*') ? 'active' : '' }}">
+                                    <a href="{{ route('data-entry.room-types.index') }}">
+                                        <i class="fas fa-door-closed"></i> Room Types
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('data-entry.rooms.*') ? 'active' : '' }}">
+                                    <a href="{{ route('data-entry.rooms.index') }}">
+                                        <i class="fas fa-door-open"></i> Rooms
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('data-entry.subject-types.*') ? 'active' : '' }}">
+                                    <a href="{{ route('data-entry.subject-types.index') }}">
+                                        <i class="fas fa-tags"></i> Subject Types
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('data-entry.subject-categories.*') ? 'active' : '' }}">
+                                    <a href="{{ route('data-entry.subject-categories.index') }}">
+                                        <i class="fas fa-project-diagram"></i> Subject Categories
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('data-entry.subjects.*') ? 'active' : '' }}">
+                                    <a href="{{ route('data-entry.subjects.index') }}">
+                                        <i class="fas fa-book"></i> Subjects
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('data-entry.plans.*') ? 'active' : '' }}">
+                                    <a href="{{ route('data-entry.plans.index') }}">
+                                        <i class="fas fa-clipboard-list"></i> Academic Plans
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('data-entry.plan-expected-counts.*') ? 'active' : '' }}">
+                                    <a href="{{ route('data-entry.plan-expected-counts.index') }}">
+                                        <i class="fas fa-users"></i> Expected Counts
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('data-entry.sections.*') ? 'active' : '' }}">
+                                    <a href="{{ route('data-entry.sections.index') }}">
+                                        <i class="fas fa-users-class"></i> Sections
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('data-entry.instructors.*') ? 'active' : '' }}">
+                                    <a href="{{ route('data-entry.instructors.index') }}">
+                                        <i class="fas fa-chalkboard-teacher"></i> Instructors
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('data-entry.instructor-section.*') ? 'active' : '' }}">
+                                    <a href="{{ route('data-entry.instructor-section.index') }}">
+                                        <i class="fas fa-link"></i> Instructor Section
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('data-entry.instructor-subjects.*') ? 'active' : '' }}">
+                                    <a href="{{ route('data-entry.instructor-subjects.index') }}">
+                                        <i class="fas fa-link"></i> Instructor Subjects
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('data-entry.timeslots.*') ? 'active' : '' }}">
+                                    <a href="{{ route('data-entry.timeslots.index') }}">
+                                        <i class="fas fa-clock"></i> Timeslots
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('data-entry.settings') ? 'active' : '' }}">
+                                    <a href="{{ route('data-entry.settings') }}">
+                                        <i class="fas fa-cogs"></i> Basic Settings
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <!-- القيود -->
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-sliders-h nav-icon"></i>
+                            <span class="nav-text">Constraints</span>
+                        </a>
+                    </li>
+
+                    <!-- التحكم بالخوارزمية -->
+                    @php
+                        $isActiveAlgorithm = request()->routeIs('algorithm-control*');
+                    @endphp
+                    <li class="nav-item has-dropdown {{ $isActiveAlgorithm ? 'active' : '' }}">
+                        <a href="#algorithmControl" class="nav-link dropdown-toggle" data-bs-toggle="collapse"
+                           aria-expanded="{{ $isActiveAlgorithm ? 'true' : 'false' }}">
+                            <i class="fas fa-cogs nav-icon"></i>
+                            <span class="nav-text">Algorithm Control</span>
+                            <i class="fas fa-chevron-down dropdown-icon"></i>
+                        </a>
+                        <div class="collapse submenu {{ $isActiveAlgorithm ? 'show' : '' }}" id="algorithmControl">
+                            <ul class="submenu-list">
+                                <li class="{{ request()->routeIs('algorithm-control.crossover-types.*') ? 'active' : '' }}">
+                                    <a href="{{ route('algorithm-control.crossover-types.index') }}">
+                                        <i class="fas fa-code-branch"></i> Crossover Methods
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('algorithm-control.selection-types.*') ? 'active' : '' }}">
+                                    <a href="{{ route('algorithm-control.selection-types.index') }}">
+                                        <i class="fas fa-check-double"></i> Selection Methods
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('algorithm-control.mutation-types.*') ? 'active' : '' }}">
+                                    <a href="{{ route('algorithm-control.mutation-types.index') }}">
+                                        <i class="fas fa-random"></i> Mutation Methods
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('algorithm-control.timetable.results.index') || request()->routeIs('algorithm-control.timetable.result.show') ? 'active' : '' }}">
+                                    <a href="{{ route('algorithm-control.timetable.results.index') }}">
+                                        <i class="fas fa-calendar-check"></i> Generation Results
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <!-- عرض الجداول -->
+                    @php
+                        $isViewTimetables = request()->routeIs('dashboard.timetables.*');
+                    @endphp
+                    <li class="nav-item has-dropdown {{ $isViewTimetables ? 'active' : '' }}">
+                        <a href="#viewTimetables" class="nav-link dropdown-toggle" data-bs-toggle="collapse"
+                           aria-expanded="{{ $isViewTimetables ? 'true' : 'false' }}">
+                            <i class="fas fa-calendar-alt nav-icon"></i>
+                            <span class="nav-text">View Timetables</span>
+                            <i class="fas fa-chevron-down dropdown-icon"></i>
+                        </a>
+                        <div class="collapse submenu {{ $isViewTimetables ? 'show' : '' }}" id="viewTimetables">
+                            <ul class="submenu-list">
+                                <li class="{{ request()->routeIs('dashboard.timetables.sections') ? 'active' : '' }}">
+                                    <a href="{{ route('dashboard.timetables.sections') }}">
+                                        <i class="fas fa-users-class"></i> Section Timetables
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('dashboard.timetables.instructors') ? 'active' : '' }}">
+                                    <a href="{{ route('dashboard.timetables.instructors') }}">
+                                        <i class="fas fa-chalkboard-teacher"></i> Instructor Timetables
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('dashboard.timetables.rooms') ? 'active' : '' }}">
+                                    <a href="{{ route('dashboard.timetables.rooms') }}">
+                                        <i class="fas fa-door-open"></i> Room Timetables
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <!-- التقارير والتحليلات -->
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-chart-bar nav-icon"></i>
+                            <span class="nav-text">Reports & Analytics</span>
+                        </a>
+                    </li>
                 </ul>
-            </div>
+            </nav>
 
-            <div class="dropdown">
-                <button class="profile-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-user-circle"></i> John Doe
+            <!-- Footer القائمة الجانبية -->
+            <div class="sidebar-footer p-3 border-top">
+                <button class="btn btn-outline-secondary btn-sm w-100 mb-2">
+                    <i class="fas fa-question-circle me-2"></i>Help Center
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Profile</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i> Settings</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-envelope me-2"></i> Messages</a></li>
-                    <li>
-                        <hr class="dropdown-divider">
-                    </li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
-                </ul>
+                <div class="text-center text-muted">
+                    <small>Version 1.0.0</small>
+                </div>
             </div>
         </div>
-    </div>
+    </aside>
 
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <ul class="sidebar-menu">
-            <li class="nav-item {{ request()->routeIs('dashboard.*') ? 'active' : '' }}">
-                <a href="{{ route('dashboard.index') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-            </li>
-            <li>
-                <a href="#"><i class="fas fa-graduation-cap"></i> Academic Programs</a>
-            </li>
-
-            {{-- <li class="nav-item {{ request()->routeIs('data-entry.plans.*') ? 'active' : '' }}">
-                <a href="{{ route('data-entry.plans.index') }}">
-                    <i class="fas fa-clipboard-list fa-fw me-2"></i>
-                    Academic Plans</a>
-            </li> --}}
-            {{-- <li>
-                <a href="{{ route('dashboard.dataEntry') }}"><i class="fas fa-database"></i> Data Entry</a>
-            </li> --}}
-            <!-- Data Management Dropdown -->
-            {{-- // قائمة منسدلة لإدارة البيانات --}}
-            @php
-                $isActiveMenu = request()->routeIs('data-entry.*');
-                $isActiveAlgorithm = request()->routeIs('algorithm-control*');
-                $isViewTimetables = request()->routeIs('dashboard.timetables.*');
-            @endphp
-
-            <li class="nav-item">
-                <a class="nav-link d-flex align-items-center py-1 small {{ $isActiveMenu ? '' : 'collapsed' }}"
-                    data-bs-toggle="collapse" href="#dataManagementMenu" role="button"
-                    aria-expanded="{{ $isActiveMenu ? 'true' : 'false' }}" aria-controls="dataManagementMenu">
-                    <i class="fas fa-database me-2 fa-4xs"></i>
-                    <span class="small">Data Management</span>
-                    <i class="fas fa-chevron-down ms-auto fa-3xs"></i>
-                </a>
-
-                <div class="collapse {{ $isActiveMenu ? 'show' : '' }}" id="dataManagementMenu">
-                    <ul class="nav flex-column">
-
-                        <li class="nav-item {{ request()->routeIs('data-entry.departments.*') ? 'active' : '' }}">
-                            <a href="{{ route('data-entry.departments.index') }}"
-                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.departments') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-building fa-fw me-2 fa-4xs"></i> Departments
-                            </a>
-                        </li>
-
-                        {{-- @can('manage-users') --}}
-                        <li class="nav-item {{ request()->routeIs('data-entry.roles.*') ? 'active' : '' }}">
-                            <a href="{{ route('data-entry.roles.index') }}"
-                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.roles') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-user-shield fa-fw me-2 fa-4xs"></i> Roles
-                            </a>
-                        </li>
-                        {{-- @endcan --}}
-
-                        {{-- @can('manage-users') --}}
-                        <li class="nav-item {{ request()->routeIs('data-entry.users.*') ? 'active' : '' }}">
-                            <a href="{{ route('data-entry.users.index') }}"
-                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.users') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-users-cog fa-fw me-2 fa-4xs"></i> Users
-                            </a>
-                        </li>
-                        {{-- @endcan --}}
-
-                        {{-- @can('manage-subjects') --}}
-                        <li class="nav-item {{ request()->routeIs('data-entry.room-types.*') ? 'active' : '' }}">
-
-                            <a href="{{ route('data-entry.room-types.index') }}"
-                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.room-types') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-door-closed fa-fw me-2 fa-4xs"></i> Room Types
-                            </a>
-                        </li>
-                        {{-- @endcan --}}
-
-                        {{-- @can('manage-rooms') --}}
-                        <li class="nav-item {{ request()->routeIs('data-entry.rooms.*') ? 'active' : '' }}">
-                            <a href="{{ route('data-entry.rooms.index') }}"
-                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.rooms') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-door-open fa-fw me-2 fa-4xs"></i> Rooms
-                            </a>
-                        </li>
-                        {{-- @endcan --}}
-
-                        {{-- @can('manage-subjects') --}}
-                        <li class="nav-item {{ request()->routeIs('data-entry.subject-types.*') ? 'active' : '' }}">
-
-                            <a href="{{ route('data-entry.subject-types.index') }}"
-                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.subject-types') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-tags fa-fw me-2"></i>SubjectTypes
-                            </a>
-                        </li>
-                        {{-- @endcan --}}
-
-                        {{-- @can('manage-subjects') --}}
-                        <li
-                            class="nav-item {{ request()->routeIs('data-entry.subject-categories.*') ? 'active' : '' }}">
-
-                            <a href="{{ route('data-entry.subject-categories.index') }}"
-                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.subject-types') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-project-diagram fa-fw me-2"></i> Subject Categories
-                            </a>
-                        </li>
-                        {{-- @endcan --}}
-
-                        {{-- @can('manage-subjects') --}}
-                        <li class="nav-item {{ request()->routeIs('data-entry.subjects.*') ? 'active' : '' }}">
-                            <a href="{{ route('data-entry.subjects.index') }}"
-                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.subjects') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-book fa-fw me-2 fa-4xs"></i> Subjects
-                            </a>
-                        </li>
-                        {{-- @endcan --}}
-
-                        {{-- @can('manage-plans') --}}
-                        <li class="nav-item {{ request()->routeIs('data-entry.plans.*') ? 'active' : '' }}">
-                            <a href="{{ route('data-entry.plans.index') }}"
-                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.plans') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-clipboard-list fa-fw me-2 fa-4xs"></i> Academic Plans
-                            </a>
-                        </li>
-                        {{-- @endcan --}}
-
-                        {{-- @can('plan-expected-counts') --}}
-                        <li
-                            class="nav-item {{ request()->routeIs('data-entry.plan-expected-counts.*') ? 'active' : '' }}">
-                            <a href="{{ route('data-entry.plan-expected-counts.index') }}"
-                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.plan-expected-counts') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-users fa-fw me-2 fa-4xs"></i> Expected Counts
-                            </a>
-                        </li>
-                        {{-- @endcan --}}
-
-                        {{-- @can('sections') --}}
-                        <li class="nav-item {{ request()->routeIs('data-entry.sections.*') ? 'active' : '' }}">
-                            <a href="{{ route('data-entry.sections.index') }}"
-                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.plan-expected-counts') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-users-class fa-fw me-2"></i> Sections
-                            </a>
-                        </li>
-                        {{-- @endcan --}}
-
-                        {{-- @can('manage-instructors') --}}
-                        <li class="nav-item {{ request()->routeIs('data-entry.instructors.*') ? 'active' : '' }}">
-                            <a href="{{ route('data-entry.instructors.index') }}"
-                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.instructors') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-chalkboard-teacher fa-fw me-2 fa-4xs"></i> Instructors
-                            </a>
-                        </li>
-                        {{-- @endcan --}}
-
-                        {{-- @can('sections') --}}
-                        <li
-                            class="nav-item {{ request()->routeIs('data-entry.instructor-section.*') ? 'active' : '' }}">
-                            <a href="{{ route('data-entry.instructor-section.index') }}"
-                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.instructor-section') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-link fa-fw me-2"></i> Instructor Section
-                            </a>
-                        </li>
-                        {{-- @endcan --}}
-
-                        {{-- @can('sections') --}}
-                        <li
-                            class="nav-item {{ request()->routeIs('data-entry.instructor-subjects.*') ? 'active' : '' }}">
-                            <a href="{{ route('data-entry.instructor-subjects.index') }}"
-                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.instructor-subjects') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-link fa-fw me-2"></i> Instructor Subjects
-                            </a>
-                        </li>
-                        {{-- @endcan --}}
-
-                        {{-- @can('manage-timeslots') --}}
-                        <li class="nav-item {{ request()->routeIs('data-entry.timeslots.*') ? 'active' : '' }}">
-                            <a href="{{ route('data-entry.timeslots.index') }}"
-                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.timeslots') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-clock fa-fw me-2 fa-4xs"></i> Timeslots
-                            </a>
-                        </li>
-                        {{-- @endcan --}}
-
-                        {{-- @can('manage-settings') --}}
-                        <li class="nav-item">
-                            <a href="{{ route('data-entry.settings') }}"
-                                class="nav-link py-1 small d-flex align-items-center {{ request()->routeIs('data-entry.settings') ? 'active text-primary fw-semibold' : 'text-secondary' }}">
-                                <i class="fas fa-cogs fa-fw me-2 fa-4xs"></i> Basic Settings
-                            </a>
-                        </li>
-                        {{-- @endcan --}}
-
-                    </ul>
-                </div>
-            </li>
-
-
-            <li>
-                <a href="#"><i class="fas fa-sliders-h"></i> Constraints</a>
-            </li>
-            {{-- <li>
-                <a href="#"><i class="fas fa-cogs"></i> Algorithm Control</a>
-            </li> --}}
-
-            <li class="nav-item">
-                <a class="nav-link d-flex align-items-center py-1 small {{ $isActiveAlgorithm ? '' : 'collapsed' }}"
-                    data-bs-toggle="collapse" href="#dataAlgorithmMenu" role="button"
-                    aria-expanded="{{ $isActiveAlgorithm ? 'true' : 'false' }}" aria-controls="dataAlgorithmMenu">
-                    <i class="fas fa-database me-2 fa-4xs"></i>
-                    <span class="small">Algorithm Control</span>
-                    <i class="fas fa-chevron-down ms-auto fa-3xs"></i>
-                </a>
-                <div class="collapse {{ $isActiveAlgorithm ? 'show' : '' }}" id="dataAlgorithmMenu">
-                    <ul class="nav flex-column">
-                        <li class="{{ request()->routeIs('algorithm-control.crossover-types.*') ? 'active' : '' }}">
-                            <a href="{{ route('algorithm-control.crossover-types.index') }}"><i
-                                    class="fas fa-code-branch fa-fw me-2"></i> Crossover Methods</a>
-                        </li>
-                        <li class="{{ request()->routeIs('algorithm-control.selection-types.*') ? 'active' : '' }}">
-                            <a href="{{ route('algorithm-control.selection-types.index') }}"><i
-                                    class="fas fa-check-double fa-fw me-2"></i> Selection Methods</a>
-                        </li>
-                        <li class="{{ request()->routeIs('algorithm-control.mutation-types.*') ? 'active' : '' }}">
-                            <a href="{{ route('algorithm-control.mutation-types.index') }}"><i
-                                    class="fas fa-check-double fa-fw me-2"></i> Mutation Methods</a>
-                        </li>
-                        {{-- رابط جديد لنتائج الخوارزمية --}}
-                        <li
-                            class="{{ request()->routeIs('algorithm-control.timetable.results.index') || request()->routeIs('algorithm-control.timetable.result.show') ? 'active' : '' }}">
-                            <a href="{{ route('algorithm-control.timetable.results.index') }}">
-                                <i class="fas fa-calendar-alt"></i> Generation Results
-                            </a>
-                        </li>
-
-                    </ul>
-                </div>
-            </li>
-
-            <li class="nav-item">
-                <a class="nav-link d-flex align-items-center py-1 small {{ $isViewTimetables ? '' : 'collapsed' }}"
-                    data-bs-toggle="collapse" href="#ViewTimetablesMenu" role="button"
-                    aria-expanded="{{ $isViewTimetables ? 'true' : 'false' }}" aria-controls="ViewTimetablesMenu">
-                    <i class="fas fa-database me-2 fa-4xs"></i>
-                    <span class="small">View Timetables</span>
-                    <i class="fas fa-chevron-down ms-auto fa-3xs"></i>
-                </a>
-                <div class="collapse {{ $isViewTimetables ? 'show' : '' }}" id="ViewTimetablesMenu">
-
-
-                    {{-- <li class="has-submenu {{ request()->routeIs('dashboard.timetables.*') ? 'active open' : '' }}">
-                <a href="#"><i class="fas fa-calendar-alt fa-fw me-2"></i> View Timetables</a> --}}
-                    <ul class="nav flex-column">
-                        <li class="{{ request()->routeIs('dashboard.timetables.sections') ? 'active' : '' }}">
-                            <a href="{{ route('dashboard.timetables.sections') }}"><i
-                                    class="fas fa-users-class fa-fw me-2"></i> Section Timetables</a>
-                        </li>
-                        <li class="{{ request()->routeIs('dashboard.timetables.instructors') ? 'active' : '' }}">
-                            <a href="{{ route('dashboard.timetables.instructors') }}"><i
-                                    class="fas fa-chalkboard-teacher fa-fw me-2"></i> Instructor Timetables</a>
-                        </li>
-                        <li class="{{ request()->routeIs('dashboard.timetables.rooms') ? 'active' : '' }}">
-                            <a href="{{ route('dashboard.timetables.rooms') }}"><i
-                                    class="fas fa-door-open fa-fw me-2"></i> Room Timetables</a>
-                        </li>
-                    </ul>
-                </div>
-            </li>
-
-            <li>
-                <a href="#"><i class="fas fa-chart-bar"></i> Reports & Analytics</a>
-            </li>
-        </ul>
-
-        <div class="sidebar-footer">
-            <button class="dark-mode-toggle">
-                <i class="fas fa-moon"></i> Dark Mode
-            </button>
-            <button class="help-btn">
-                <i class="fas fa-question-circle"></i> Help
-            </button>
+    <!-- المحتوى الرئيسي -->
+    <main class="main-content" id="mainContent">
+        <div class="content-wrapper">
+            @yield('content')
         </div>
-    </div>
+    </main>
 
-    <!-- Main Content -->
-    @yield('content')
+    <!-- Overlay للموبايل -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
+    <!-- Back to Top Button -->
+    <button class="back-to-top btn btn-primary" id="backToTop" aria-label="Back to Top">
+        <i class="fas fa-chevron-up"></i>
+    </button>
+
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script src="{{ asset('dashboard_assets/script.js') }}"></script>
-    <!-- Page-specific Scripts -->
+
     @stack('scripts')
 </body>
 
