@@ -407,7 +407,7 @@
                                 Semester <span class="text-danger">*</span>
                             </label>
                             <select class="form-select @error('semester') is-invalid @enderror" id="semester" name="semester" required>
-                                <option value="" disabled selected>Select a semester...</option>
+                                {{-- <option value="" disabled selected>Select a semester...</option> --}}
                                 <option value="1" {{ old('semester') == 1 ? 'selected' : '' }}>First Semester</option>
                                 <option value="2" {{ old('semester') == 2 ? 'selected' : '' }}>Second Semester</option>
                                 <option value="3" {{ old('semester') == 3 ? 'selected' : '' }}>Summer Semester</option>
@@ -431,7 +431,7 @@
                                 required min="10" step="10">
                             <div class="form-text">Number of schedules per generation</div>
                         </div>
-                        {{-- <div class=""> --}}
+                        {{-- <div class="col-md-4"> --}}
                             <label hidden for="setting_max_generations" class="form-label fw-medium">Max Generations</label>
                             <input hidden type="number" class="form-control" id="setting_max_generations"
                                 name="max_generations" value="{{ config('algorithm.settings.max_generations', 10) }}"
@@ -439,9 +439,9 @@
                             {{-- <div class="form-text">When to stop if no solution found</div> --}}
                         {{-- </div> --}}
                         <div class="col-md-4">
-                            <label for="setting_elitism" class="form-label fw-medium">Elitism </label>
-                            <input type="number" class="form-control" id="setting_elitism"
-                                name="elitism" value="{{ config('algorithm.settings.elitism', 5) }}"
+                            <label for="setting_elitism_chromosomes" class="form-label fw-medium">Elitism_chromosomes </label>
+                            <input type="number" class="form-control" id="setting_elitism_chromosomes"
+                                name="elitism_chromosomes" value="{{ config('algorithm.settings.elitism_chromosomes', 5) }}"
                                 required min="1" step="1">
                             <div class="form-text">When to stop if no solution found</div>
                         </div>

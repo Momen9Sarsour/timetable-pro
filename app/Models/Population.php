@@ -23,7 +23,8 @@ class Population extends Model
         'crossover_id',
         'selection_id',
         'mutation_rate',
-        'generations_count',
+        'max_generations',
+        'elite_chromosome_ids',
         'crossover_rate',
         'mutation_id',
         'selection_size',
@@ -32,6 +33,10 @@ class Population extends Model
         'start_time',
         'end_time',
         'best_chromosome_id',
+    ];
+
+    protected $casts = [
+        'elite_chromosome_ids' => 'array'
     ];
 
     /**
@@ -71,7 +76,7 @@ class Population extends Model
     }
 
     public function mutationType()
-{
-    return $this->belongsTo(MutationType::class, 'mutation_id', 'mutation_id');
-}
+    {
+        return $this->belongsTo(MutationType::class, 'mutation_id', 'mutation_id');
+    }
 }
