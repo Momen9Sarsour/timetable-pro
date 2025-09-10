@@ -25,6 +25,7 @@ return new class extends Migration
             $table->foreignId('selection_id')->nullable()->constrained('selection_types', 'selection_type_id')->onDelete('set null');
             $table->decimal('mutation_rate', 5, 4); // (e.g., 0.0100)
             $table->unsignedInteger('max_generations')->default(10);
+            $table->string('elitism_count')->nullable();
             $table->json('elite_chromosome_ids')->nullable();
 
             $table->decimal('crossover_rate', 5, 4)->default(0.95);

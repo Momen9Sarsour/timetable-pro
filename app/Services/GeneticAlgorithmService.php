@@ -2,7 +2,6 @@
 
 ///////////////////////////////////// الكود الجديد بالتوزيع الجديد يعمري //////////////////////////////////////////////
 
-
 namespace App\Services;
 
 use App\Models\Population;
@@ -52,7 +51,7 @@ class GeneticAlgorithmService
     }
 
     /**
-     * الدالة الرئيسية (run)
+     * الدالة الرئيسية (run) - معدلة لتشمل آلية الصفوة
      */
     public function run()
     {
@@ -63,6 +62,10 @@ class GeneticAlgorithmService
             $currentGenerationNumber = 1;
             $currentPopulation = $this->createInitialPopulation($currentGenerationNumber, $this->populationRun);
             $this->evaluateFitness($currentPopulation);
+
+            // حفظ صفوة الجيل الأول
+            $this->updateEliteChromosomes($currentPopulation, $currentGenerationNumber);
+
             Log::info("Generation #{$currentGenerationNumber} fitness evaluated.");
 
             $maxGenerations = $this->settings['max_generations'];
@@ -78,6 +81,9 @@ class GeneticAlgorithmService
                 $currentGenerationNumber++;
                 $currentPopulation = $this->createNewGeneration($parents, $currentGenerationNumber, $this->populationRun);
                 $this->evaluateFitness($currentPopulation);
+                // تحديث صفوة الجيل الجديد
+                $this->updateEliteChromosomes($currentPopulation, $currentGenerationNumber);
+
                 Log::info("Generation #{$currentGenerationNumber} fitness evaluated.");
             }
 
@@ -93,6 +99,65 @@ class GeneticAlgorithmService
             $this->populationRun->update(['status' => 'failed']);
             throw $e;
         }
+    }
+
+    /**
+     * دالة جديدة لتحديث الصفوة مع التاريخ
+     */
+    // private function updateEliteChromosomes(Collection $population, int $generationNumber)
+    // {
+    //     $elitismCount = $this->settings['elitism_count_chromosomes'] ?? 5;
+
+    //     // اختيار أفضل الكروموسومات
+    //     $currentEliteIds = $population->sortByDesc('fitness_value')
+    //         ->take($elitismCount)
+    //         ->pluck('chromosome_id')
+    //         ->toArray();
+
+    //     // جلب التاريخ الحالي للصفوة
+    //     $currentEliteHistory = $this->populationRun->elite_chromosome_ids ?? [];
+
+    //     // إضافة الجيل الجديد للتاريخ
+    //     $currentEliteHistory[] = $currentEliteIds;
+
+    //     // تحديث البيانات في قاعدة البيانات
+    //     $this->populationRun->update([
+    //         'elite_chromosome_ids' => $currentEliteHistory,
+    //     ]);
+    //     dd([
+    //         'currentEliteHistory' => $currentEliteHistory,
+    //         'populationRun' => $this->populationRun
+    //     ]);
+
+    //     Log::info("Elite chromosomes updated for Generation #{$generationNumber}: " . implode(', ', $currentEliteIds));
+    // }
+    private function updateEliteChromosomes(Collection $population, int $generationNumber)
+    {
+        $elitismCount = $this->settings['elitism_count_chromosomes'] ?? 5;
+
+        // اختيار أفضل الكروموسومات
+        $currentEliteIds = $population->sortByDesc('fitness_value')
+            ->take($elitismCount)
+            ->pluck('chromosome_id')
+            ->toArray();
+
+        // جلب التاريخ الحالي للصفوة
+        $currentEliteHistory = $this->populationRun->elite_chromosome_ids ?? [];
+
+        // إضافة الجيل الجديد للتاريخ
+        $currentEliteHistory[] = $currentEliteIds;
+
+        // تحديث البيانات في قاعدة البيانات
+        $this->populationRun->update([
+            'elite_chromosome_ids' => $currentEliteHistory
+        ]);
+        // dd([
+        //     'currentEliteHistory' => $currentEliteHistory,
+        //     'populationRun' => $this->populationRun
+        // ]);
+
+        Log::info("Elite chromosomes updated for Generation #{$generationNumber}: " . implode(', ', $currentEliteIds));
+        Log::info("Elite history now contains " . count($currentEliteHistory) . " generations");
     }
 
     //======================================================================
@@ -373,6 +438,53 @@ class GeneticAlgorithmService
         }
     }
     // الدالة الجديدة للاختيار العشوائي الكامل في الجيل الأول
+    // private function findRandomSlotForBlock(\stdClass $lectureBlock): array
+    // {
+    //     $slotsNeeded = $lectureBlock->slots_needed;
+
+    //     // إذا كان محتاج فترة واحدة فقط، اختر عشوائي
+    //     if ($slotsNeeded <= 1) {
+    //         return [$this->timeslots->random()->id];
+    //     }
+
+    //     // للفترات المتعددة، ابحث عن فترات متتالية عشوائياً
+    //     $possibleStartSlots = $this->timeslots->filter(function ($slot) use ($slotsNeeded) {
+    //         // تأكد أن هذا الـ slot يمكن أن يكون بداية لعدد الفترات المطلوبة
+    //         return isset($this->consecutiveTimeslotsMap[$slot->id]) &&
+    //             (count($this->consecutiveTimeslotsMap[$slot->id]) + 1) >= $slotsNeeded;
+    //     });
+
+    //     if ($possibleStartSlots->isEmpty()) {
+    //         // إذا لم نجد فترات متتالية كافية، اختر فترات منفصلة عشوائياً
+    //         return $this->timeslots->random($slotsNeeded)->pluck('id')->toArray();
+    //     }
+
+    //     // اختر نقطة بداية عشوائية من الفترات الممكنة
+    //     $startSlot = $possibleStartSlots->random();
+
+    //     // بناء مصفوفة الفترات المتتالية
+    //     $selectedSlots = [$startSlot->id];
+
+    //     // إضافة الفترات التالية حسب العدد المطلوب
+    //     for ($i = 0; $i < ($slotsNeeded - 1); $i++) {
+    //         if (isset($this->consecutiveTimeslotsMap[$startSlot->id][$i])) {
+    //             $selectedSlots[] = $this->consecutiveTimeslotsMap[$startSlot->id][$i];
+    //         }
+    //     }
+
+    //     // تأكد أن العدد صحيح
+    //     if (count($selectedSlots) < $slotsNeeded) {
+    //         // إذا لم نحصل على العدد الكافي، أضف فترات عشوائية إضافية
+    //         $additionalSlots = $this->timeslots->whereNotIn('id', $selectedSlots)
+    //             ->random($slotsNeeded - count($selectedSlots))
+    //             ->pluck('id')
+    //             ->toArray();
+    //         $selectedSlots = array_merge($selectedSlots, $additionalSlots);
+    //     }
+
+    //     return array_slice($selectedSlots, 0, $slotsNeeded);
+    // }
+    // الدالة الجديدة للاختيار العشوائي الكامل في الجيل الأول
     private function findRandomSlotForBlock(\stdClass $lectureBlock): array
     {
         $slotsNeeded = $lectureBlock->slots_needed;
@@ -419,35 +531,6 @@ class GeneticAlgorithmService
 
         return array_slice($selectedSlots, 0, $slotsNeeded);
     }
-
-    // private function findOptimalSlotForBlock(\stdClass $lectureBlock, int $roomId, array &$usageMap): array
-    // {
-    //     $maxAttempts = 100; // عدد المحاولات لإيجاد مكان
-    //     $lastResortSlots = []; // لتخزين حل بديل
-
-    //     for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
-    //         // نختار فترة بداية عشوائية
-    //         $startSlotId = $this->timeslots->random()->id;
-
-    //         // نتحقق إذا كان يمكن تكوين بلوك كامل من هذه النقطة
-    //         if (isset($this->consecutiveTimeslotsMap[$startSlotId]) && (count($this->consecutiveTimeslotsMap[$startSlotId]) + 1) >= $lectureBlock->slots_needed) {
-    //             $trialSlots = array_merge([$startSlotId], array_slice($this->consecutiveTimeslotsMap[$startSlotId], 0, $lectureBlock->slots_needed - 1));
-
-    //             // نخزن أول محاولة كحل أخير في حالة الفشل
-    //             if ($attempt == 0) $lastResortSlots = $trialSlots;
-
-    //             // نفحص التعارضات
-    //             $isConflict = $this->checkConflictsForSlots($trialSlots, $lectureBlock->instructor_id, $roomId, $lectureBlock->student_group_id, $usageMap);
-
-    //             if (!$isConflict) {
-    //                 return $trialSlots; // وجدنا مكاناً مثالياً!
-    //             }
-    //         }
-    //     }
-
-    //     // إذا فشلت كل المحاولات، نرجع أول مكان جربناه (السماح بالخطأ)
-    //     return !empty($lastResortSlots) ? $lastResortSlots : $this->findRandomConsecutiveTimeslots($lectureBlock->slots_needed);
-    // }
 
     private function checkConflictsForSlots(array $slotIds, int $instructorId, int $roomId, array $studentGroupIds, array $usageMap): bool
     {
@@ -726,7 +809,7 @@ class GeneticAlgorithmService
 
     private function createNewGeneration(array $parents, int $nextGenerationNumber, Population $populationRun): Collection
     {
-        Log::info("Creating new generation #{$nextGenerationNumber} using Hybrid approach (Optimized)");
+        Log::info("Creating new generation #{$nextGenerationNumber} using Elitism + Hybrid approach");
         $newPopulation = [];
         $parentPool = array_filter($parents);
 
@@ -735,15 +818,28 @@ class GeneticAlgorithmService
             return collect();
         }
 
+        $currentPopulation = collect($parentPool);
+        $elitismCount = $this->settings['elitism_count_chromosomes'] ?? 5;
+
+        // **الخطوة الأولى: نسخ الصفوة للجيل الجديد**
+        $eliteChromosomes = $this->copyEliteChromosomes($currentPopulation, $elitismCount, $nextGenerationNumber, $populationRun);
+
+        // **الخطوة الثانية: إنتاج باقي الكروموسومات الجديدة**
+        $remainingSlots = $this->settings['population_size'] - count($eliteChromosomes);
+
+        if ($remainingSlots <= 0) {
+            Log::info("Elite chromosomes filled the entire population");
+            return collect($eliteChromosomes);
+        }
+
         // **(التحسين الرئيسي)**: جلب جينات كل الآباء المحتملين مرة واحدة فقط
-        $parentIds = collect($parentPool)->pluck('chromosome_id')->unique();
+        $parentIds = $currentPopulation->pluck('chromosome_id')->unique();
         $allParentGenes = Gene::whereIn('chromosome_id', $parentIds)->get()->groupBy('chromosome_id');
 
-        $currentPopulation = collect($parentPool);
-
         // **نحتفظ بنفس المنطق الهجين:** نمر على الآباء بالترتيب
+        $addedChildren = 0;
         foreach ($currentPopulation as $parent1) {
-            if (count($newPopulation) >= $this->settings['population_size']) break;
+            if ($addedChildren >= $remainingSlots) break;
 
             // --- اختيار الأب الثاني (سريع جداً الآن) ---
             $tournamentSize = $this->settings['selection_size'] ?? 5;
@@ -770,9 +866,73 @@ class GeneticAlgorithmService
 
             // حفظ الابن الجديد
             $newPopulation[] = $this->saveChildChromosome($mutatedChildGenes, $nextGenerationNumber, $populationRun);
+            $addedChildren++;
         }
 
-        return collect($newPopulation);
+        // دمج الصفوة مع الكروموسومات الجديدة
+        $finalPopulation = array_merge($eliteChromosomes, $newPopulation);
+
+        Log::info("Generation {$nextGenerationNumber} created with " . count($finalPopulation) . " chromosomes (including " . count($eliteChromosomes) . " elites)");
+
+        return collect($finalPopulation);
+    }
+
+    /**
+     * دالة جديدة لنسخ الكروموسومات الصفوة
+     */
+    private function copyEliteChromosomes(Collection $population, int $elitismCount, int $newGenerationNumber, Population $populationRun): array
+    {
+        $copiedElites = [];
+
+        // اختيار أفضل الكروموسومات
+        $eliteChromosomes = $population->sortByDesc('fitness_value')->take($elitismCount);
+
+        foreach ($eliteChromosomes as $eliteChromosome) {
+            // إنشاء نسخة جديدة من الكروموسوم للجيل الجديد
+            $newEliteChromosome = Chromosome::create([
+                'population_id' => $populationRun->population_id,
+                'penalty_value' => $eliteChromosome->penalty_value,
+                'generation_number' => $newGenerationNumber,
+                'fitness_value' => $eliteChromosome->fitness_value,
+                // نسخ كل قيم penalties الفردية
+                'student_conflict_penalty' => $eliteChromosome->student_conflict_penalty ?? 0,
+                'teacher_conflict_penalty' => $eliteChromosome->teacher_conflict_penalty ?? 0,
+                'room_conflict_penalty' => $eliteChromosome->room_conflict_penalty ?? 0,
+                'capacity_conflict_penalty' => $eliteChromosome->capacity_conflict_penalty ?? 0,
+                'room_type_conflict_penalty' => $eliteChromosome->room_type_conflict_penalty ?? 0,
+                'teacher_eligibility_conflict_penalty' => $eliteChromosome->teacher_eligibility_conflict_penalty ?? 0,
+            ]);
+
+            // نسخ جميع الجينات
+            $originalGenes = Gene::where('chromosome_id', $eliteChromosome->chromosome_id)->get();
+            $genesToInsert = [];
+
+            foreach ($originalGenes as $gene) {
+                $genesToInsert[] = [
+                    'chromosome_id' => $newEliteChromosome->chromosome_id,
+                    'lecture_unique_id' => $gene->lecture_unique_id,
+                    'section_id' => $gene->section_id,
+                    'instructor_id' => $gene->instructor_id,
+                    'room_id' => $gene->room_id,
+                    // 'timeslot_ids' => $gene->timeslot_ids,
+                    // 'student_group_id' => $gene->student_group_id,
+                    'timeslot_ids' => is_string($gene['timeslot_ids']) ? $gene['timeslot_ids'] : json_encode($gene['timeslot_ids']),
+                    'student_group_id' => is_string($gene['student_group_id']) ? $gene['student_group_id'] : json_encode($gene['student_group_id']),
+                    'block_type' => $gene->block_type,
+                    'block_duration' => $gene->block_duration,
+                ];
+            }
+
+            if (!empty($genesToInsert)) {
+                Gene::insert($genesToInsert);
+            }
+
+            $copiedElites[] = $newEliteChromosome;
+        }
+
+        Log::info("Copied " . count($copiedElites) . " elite chromosomes to generation {$newGenerationNumber}");
+
+        return $copiedElites;
     }
 
     private function performCrossover(Collection $p1Genes, Collection $p2Genes): Collection
@@ -805,13 +965,53 @@ class GeneticAlgorithmService
 
             $gene = $source->get($lectureBlock->unique_id) ?? $fallbackSource->get($lectureBlock->unique_id);
             if ($gene) {
-                $childGenes->push($gene);
+                // **التحسين الجديد: التغيير العشوائي**
+                $modifiedGene = $this->applyRandomCrossoverChange(clone $gene, $lectureBlock);
+                $childGenes->push($modifiedGene);
             }
             $currentIndex++;
         }
         return $childGenes;
     }
 
+    /**
+     * دالة جديدة لتطبيق تغيير عشوائي أثناء التزاوج
+     */
+    private function applyRandomCrossoverChange($gene, $lectureBlock)
+    {
+        // 30% احتمال عدم التغيير (الحفاظ على الجين كما هو)
+        if (lcg_value() < 0.3) {
+            return $gene;
+        }
+
+        // اختيار نوع التغيير عشوائياً
+        $changeType = rand(1, 3);
+
+        switch ($changeType) {
+            case 1: // تغيير القاعة فقط
+                $newRoom = $this->getRandomRoomForBlock($lectureBlock);
+                $gene->room_id = $newRoom->id;
+                break;
+
+            case 2: // تغيير الوقت فقط
+                $newTimeslots = $this->findRandomConsecutiveTimeslots($lectureBlock->slots_needed);
+                $gene->timeslot_ids = $newTimeslots;
+                break;
+
+            case 3: // تغيير القاعة والوقت معاً
+                $newRoom = $this->getRandomRoomForBlock($lectureBlock);
+                $newTimeslots = $this->findRandomConsecutiveTimeslots($lectureBlock->slots_needed);
+                $gene->room_id = $newRoom->id;
+                $gene->timeslot_ids = $newTimeslots;
+                break;
+        }
+
+        return $gene;
+    }
+
+    /**
+     * دالة performMutation معدلة للطفرة الذكية
+     */
     private function performMutation(array $genes): array
     {
         if (lcg_value() < $this->settings['mutation_rate'] && !empty($genes)) {
@@ -831,9 +1031,47 @@ class GeneticAlgorithmService
     {
         if (empty($genes)) return [];
 
-        // نختار جيناً عشوائياً لتطبيق الطفرة عليه
-        $geneIndexToMutate = array_rand($genes);
-        $geneToMutate = $genes[$geneIndexToMutate];
+        // **الخطوة الأولى: حساب conflicts لكل جين**
+        $geneConflictScores = [];
+
+        foreach ($genes as $index => $gene) {
+            if (!$gene) {
+                $geneConflictScores[$index] = 0;
+                continue;
+            }
+
+            $conflicts = 0;
+
+            // حساب التعارضات مع باقي الجينات
+            $otherGenes = array_filter($genes, fn($g, $i) => $g && $i !== $index, ARRAY_FILTER_USE_BOTH);
+            $conflicts += $this->calculateGeneConflicts($gene, $otherGenes);
+
+            // إضافة penalties إضافية للمشاكل الهيكلية
+            $conflicts += $this->calculateStructuralPenalties($gene);
+
+            $geneConflictScores[$index] = $conflicts;
+        }
+
+        // **الخطوة الثانية: اختيار الجين الأكثر تعارضاً للطفرة**
+        $targetGeneIndex = null;
+        if (!empty($geneConflictScores)) {
+            // 70% احتمال اختيار الأسوأ، 30% اختيار من الأسوأ 3
+            if (lcg_value() < 0.7) {
+                $targetGeneIndex = array_keys($geneConflictScores, max($geneConflictScores))[0];
+            } else {
+                // اختيار من أسوأ 3 جينات
+                arsort($geneConflictScores);
+                $topWorst = array_slice($geneConflictScores, 0, 3, true);
+                $targetGeneIndex = array_rand($topWorst);
+            }
+        }
+
+        if ($targetGeneIndex === null) {
+            // إذا لم نجد جينات مشكلة، نطبق طفرة عشوائية
+            $targetGeneIndex = array_rand($genes);
+        }
+
+        $geneToMutate = $genes[$targetGeneIndex];
 
         // نحصل على معلومات البلوك الأصلي من القائمة المحضرة مسبقاً
         $lectureBlock = $this->lectureBlocksToSchedule->firstWhere('unique_id', $geneToMutate->lecture_unique_id);
@@ -841,35 +1079,149 @@ class GeneticAlgorithmService
             return $genes; // لم نجد البلوك، لا نقم بأي تغيير
         }
 
-        // --- استراتيجية الطفرة الذكية ---
+        // **استراتيجية الطفرة الذكية المحسنة**
+        $currentConflicts = $this->calculateGeneConflicts($geneToMutate, array_filter($genes, fn($g, $i) => $g && $i !== $targetGeneIndex, ARRAY_FILTER_USE_BOTH));
 
-        // 1. نولد خيارات جديدة (قاعة ووقت)
-        $newRoom = $this->getRandomRoomForBlock($lectureBlock);
-        $newTimeslots = $this->findRandomConsecutiveTimeslots($lectureBlock->slots_needed);
-
-        // 2. الأولوية الأولى: محاولة تغيير القاعة فقط
-        $tempGene = clone $geneToMutate;
-        $tempGene->room_id = $newRoom->id;
-        // نفحص إذا كان هذا التغيير البسيط يسبب تعارضاً مع باقي الجينات
-        if (!$this->isGeneConflictingWithRest($tempGene, $genes)) {
-            $genes[$geneIndexToMutate] = $tempGene; // نعتمد التغيير
+        // 1. محاولة تحسين القاعة فقط
+        if ($this->tryImproveRoom($geneToMutate, $lectureBlock, $genes, $targetGeneIndex, $currentConflicts)) {
+            $genes[$targetGeneIndex] = $geneToMutate;
             return $genes;
         }
 
-        // 3. الأولوية الثانية: محاولة تغيير الوقت فقط
-        $tempGene = clone $geneToMutate;
-        $tempGene->timeslot_ids = $newTimeslots;
-        if (!$this->isGeneConflictingWithRest($tempGene, $genes)) {
-            $genes[$geneIndexToMutate] = $tempGene; // نعتمد التغيير
+        // 2. محاولة تحسين الوقت فقط
+        if ($this->tryImproveTimeslot($geneToMutate, $lectureBlock, $genes, $targetGeneIndex, $currentConflicts)) {
+            $genes[$targetGeneIndex] = $geneToMutate;
+            return $genes;
+        }
+
+        // 3. محاولة تحسين كليهما
+        if ($this->tryImproveBoth($geneToMutate, $lectureBlock, $genes, $targetGeneIndex, $currentConflicts)) {
+            $genes[$targetGeneIndex] = $geneToMutate;
             return $genes;
         }
 
         // 4. الحل الأخير: إذا فشلت المحاولات، نغير الاثنين معاً (السماح بالخطأ)
-        $geneToMutate->room_id = $newRoom->id;
-        $geneToMutate->timeslot_ids = $newTimeslots;
-        $genes[$geneIndexToMutate] = $geneToMutate;
+        $changeType = rand(1, 3);
+        switch ($changeType) {
+            case 1:
+                $newRoom = $this->getRandomRoomForBlock($lectureBlock);
+                $geneToMutate->room_id = $newRoom->id;
+                break;
+            case 2:
+                $newTimeslots = $this->findRandomConsecutiveTimeslots($lectureBlock->slots_needed);
+                $geneToMutate->timeslot_ids = $newTimeslots;
+                break;
+            case 3:
+                $newRoom = $this->getRandomRoomForBlock($lectureBlock);
+                $newTimeslots = $this->findRandomConsecutiveTimeslots($lectureBlock->slots_needed);
+                $geneToMutate->room_id = $newRoom->id;
+                $geneToMutate->timeslot_ids = $newTimeslots;
+                break;
+        }
 
+        $genes[$targetGeneIndex] = $geneToMutate;
         return $genes;
+    }
+
+    /**
+     * دالة جديدة لمحاولة تحسين القاعة فقط
+     */
+    private function tryImproveRoom($geneToMutate, $lectureBlock, array $genes, int $geneIndex, int $currentConflicts): bool
+    {
+        $roomCandidates = ($lectureBlock->block_type === 'practical') ? $this->practicalRooms : $this->theoryRooms;
+        $attempts = min(5, $roomCandidates->count());
+
+        for ($i = 0; $i < $attempts; $i++) {
+            $newRoom = $roomCandidates->random();
+            $tempGene = clone $geneToMutate;
+            $tempGene->room_id = $newRoom->id;
+
+            $newConflicts = $this->calculateGeneConflicts($tempGene, array_filter($genes, fn($g, $i) => $g && $i !== $geneIndex, ARRAY_FILTER_USE_BOTH));
+
+            if ($newConflicts < $currentConflicts) {
+                $geneToMutate->room_id = $newRoom->id;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * دالة جديدة لمحاولة تحسين الوقت فقط
+     */
+    private function tryImproveTimeslot($geneToMutate, $lectureBlock, array $genes, int $geneIndex, int $currentConflicts): bool
+    {
+        $attempts = 5;
+
+        for ($i = 0; $i < $attempts; $i++) {
+            $newTimeslots = $this->findRandomConsecutiveTimeslots($lectureBlock->slots_needed);
+            $tempGene = clone $geneToMutate;
+            $tempGene->timeslot_ids = $newTimeslots;
+
+            $newConflicts = $this->calculateGeneConflicts($tempGene, array_filter($genes, fn($g, $i) => $g && $i !== $geneIndex, ARRAY_FILTER_USE_BOTH));
+
+            if ($newConflicts < $currentConflicts) {
+                $geneToMutate->timeslot_ids = $newTimeslots;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * دالة جديدة لمحاولة تحسين القاعة والوقت معاً
+     */
+    private function tryImproveBoth($geneToMutate, $lectureBlock, array $genes, int $geneIndex, int $currentConflicts): bool
+    {
+        $roomCandidates = ($lectureBlock->block_type === 'practical') ? $this->practicalRooms : $this->theoryRooms;
+        $attempts = 3;
+
+        for ($i = 0; $i < $attempts; $i++) {
+            $newRoom = $roomCandidates->random();
+            $newTimeslots = $this->findRandomConsecutiveTimeslots($lectureBlock->slots_needed);
+
+            $tempGene = clone $geneToMutate;
+            $tempGene->room_id = $newRoom->id;
+            $tempGene->timeslot_ids = $newTimeslots;
+
+            $newConflicts = $this->calculateGeneConflicts($tempGene, array_filter($genes, fn($g, $i) => $g && $i !== $geneIndex, ARRAY_FILTER_USE_BOTH));
+
+            if ($newConflicts < $currentConflicts) {
+                $geneToMutate->room_id = $newRoom->id;
+                $geneToMutate->timeslot_ids = $newTimeslots;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * دالة جديدة لحساب penalties هيكلية
+     */
+    private function calculateStructuralPenalties($gene): int
+    {
+        $penalties = 0;
+
+        // penalty إذا كانت القاعة صغيرة
+        if ($gene->section && $gene->room && $gene->section->student_count > $gene->room->room_size) {
+            $penalties += 1;
+        }
+
+        // penalty إذا كان نوع القاعة غير مناسب
+        $isPracticalBlock = Str::contains($gene->lecture_unique_id, 'practical');
+        $isPracticalRoom = $gene->room && Str::contains(strtolower(optional($gene->room->roomType)->room_type_name), ['lab', 'مختبر']);
+
+        if ($isPracticalBlock && !$isPracticalRoom) {
+            $penalties += 1;
+        }
+        if (!$isPracticalBlock && $isPracticalRoom) {
+            $penalties += 1;
+        }
+
+        return $penalties;
     }
 
     private function swapMutation(array $genes): array

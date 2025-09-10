@@ -24,7 +24,8 @@ class Population extends Model
         'selection_id',
         'mutation_rate',
         'max_generations',
-        'elite_chromosome_ids',
+        'elitism_count', // عدد الكروموسومات الصفوة (رقم)
+        'elite_chromosome_ids', // IDs الصفوة الحالية (مصفوفة)
         'crossover_rate',
         'mutation_id',
         'selection_size',
@@ -36,7 +37,7 @@ class Population extends Model
     ];
 
     protected $casts = [
-        'elite_chromosome_ids' => 'array'
+        'elite_chromosome_ids' => 'array',
     ];
 
     /**
