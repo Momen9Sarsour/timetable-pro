@@ -68,7 +68,8 @@ class GeneticAlgorithmService
 
             Log::info("Generation #{$currentGenerationNumber} fitness evaluated.");
 
-            $maxGenerations = $this->settings['max_generations'];
+            // $maxGenerations = $this->settings['max_generations'];
+            $maxGenerations = 200;
             while ($currentGenerationNumber < $maxGenerations) {
                 $bestInGen = $currentPopulation->sortByDesc('fitness_value')->first();
                 // نستخدم fitness_value هنا بدلاً من penalty_value
@@ -104,36 +105,10 @@ class GeneticAlgorithmService
     /**
      * دالة جديدة لتحديث الصفوة مع التاريخ
      */
-    // private function updateEliteChromosomes(Collection $population, int $generationNumber)
-    // {
-    //     $elitismCount = $this->settings['elitism_count_chromosomes'] ?? 5;
-
-    //     // اختيار أفضل الكروموسومات
-    //     $currentEliteIds = $population->sortByDesc('fitness_value')
-    //         ->take($elitismCount)
-    //         ->pluck('chromosome_id')
-    //         ->toArray();
-
-    //     // جلب التاريخ الحالي للصفوة
-    //     $currentEliteHistory = $this->populationRun->elite_chromosome_ids ?? [];
-
-    //     // إضافة الجيل الجديد للتاريخ
-    //     $currentEliteHistory[] = $currentEliteIds;
-
-    //     // تحديث البيانات في قاعدة البيانات
-    //     $this->populationRun->update([
-    //         'elite_chromosome_ids' => $currentEliteHistory,
-    //     ]);
-    //     dd([
-    //         'currentEliteHistory' => $currentEliteHistory,
-    //         'populationRun' => $this->populationRun
-    //     ]);
-
-    //     Log::info("Elite chromosomes updated for Generation #{$generationNumber}: " . implode(', ', $currentEliteIds));
-    // }
     private function updateEliteChromosomes(Collection $population, int $generationNumber)
     {
-        $elitismCount = $this->settings['elitism_count_chromosomes'] ?? 5;
+        // $elitismCount = $this->settings['elitism_count_chromosomes'] ?? 5;
+        $elitismCount = $this->populationRun->elitism_count ?? 5;
 
         // اختيار أفضل الكروموسومات
         $currentEliteIds = $population->sortByDesc('fitness_value')
@@ -420,6 +395,13 @@ class GeneticAlgorithmService
             // نحدّث خريطة الموارد المستخدمة فوراً
             // $this->updateResourceMap($foundSlots, $lectureBlock->instructor_id, $room->id, $lectureBlock->student_group_id, $resourceUsageMap);
 
+            // **فحص للتأكد من صحة العدد - مرجع للجيل الأول**
+            if (count($foundSlots) != $lectureBlock->slots_needed) {
+                Log::warning("Block {$lectureBlock->unique_id} needs {$lectureBlock->slots_needed} slots but got " . count($foundSlots) . " slots: " . json_encode($foundSlots));
+            } else {
+                Log::info("Block {$lectureBlock->unique_id} successfully got {$lectureBlock->slots_needed} slots: " . json_encode($foundSlots));
+            }
+
             $genesToInsert[] = [
                 'chromosome_id' => $chromosome->chromosome_id,
                 'lecture_unique_id' => $lectureBlock->unique_id,
@@ -437,53 +419,6 @@ class GeneticAlgorithmService
             Gene::insert($genesToInsert);
         }
     }
-    // الدالة الجديدة للاختيار العشوائي الكامل في الجيل الأول
-    // private function findRandomSlotForBlock(\stdClass $lectureBlock): array
-    // {
-    //     $slotsNeeded = $lectureBlock->slots_needed;
-
-    //     // إذا كان محتاج فترة واحدة فقط، اختر عشوائي
-    //     if ($slotsNeeded <= 1) {
-    //         return [$this->timeslots->random()->id];
-    //     }
-
-    //     // للفترات المتعددة، ابحث عن فترات متتالية عشوائياً
-    //     $possibleStartSlots = $this->timeslots->filter(function ($slot) use ($slotsNeeded) {
-    //         // تأكد أن هذا الـ slot يمكن أن يكون بداية لعدد الفترات المطلوبة
-    //         return isset($this->consecutiveTimeslotsMap[$slot->id]) &&
-    //             (count($this->consecutiveTimeslotsMap[$slot->id]) + 1) >= $slotsNeeded;
-    //     });
-
-    //     if ($possibleStartSlots->isEmpty()) {
-    //         // إذا لم نجد فترات متتالية كافية، اختر فترات منفصلة عشوائياً
-    //         return $this->timeslots->random($slotsNeeded)->pluck('id')->toArray();
-    //     }
-
-    //     // اختر نقطة بداية عشوائية من الفترات الممكنة
-    //     $startSlot = $possibleStartSlots->random();
-
-    //     // بناء مصفوفة الفترات المتتالية
-    //     $selectedSlots = [$startSlot->id];
-
-    //     // إضافة الفترات التالية حسب العدد المطلوب
-    //     for ($i = 0; $i < ($slotsNeeded - 1); $i++) {
-    //         if (isset($this->consecutiveTimeslotsMap[$startSlot->id][$i])) {
-    //             $selectedSlots[] = $this->consecutiveTimeslotsMap[$startSlot->id][$i];
-    //         }
-    //     }
-
-    //     // تأكد أن العدد صحيح
-    //     if (count($selectedSlots) < $slotsNeeded) {
-    //         // إذا لم نحصل على العدد الكافي، أضف فترات عشوائية إضافية
-    //         $additionalSlots = $this->timeslots->whereNotIn('id', $selectedSlots)
-    //             ->random($slotsNeeded - count($selectedSlots))
-    //             ->pluck('id')
-    //             ->toArray();
-    //         $selectedSlots = array_merge($selectedSlots, $additionalSlots);
-    //     }
-
-    //     return array_slice($selectedSlots, 0, $slotsNeeded);
-    // }
     // الدالة الجديدة للاختيار العشوائي الكامل في الجيل الأول
     private function findRandomSlotForBlock(\stdClass $lectureBlock): array
     {
@@ -581,8 +516,41 @@ class GeneticAlgorithmService
         if ($slotsNeeded <= 0) return [];
         if ($slotsNeeded == 1) return [$this->timeslots->random()->id];
 
-        $possibleSlots = $this->getPossibleStartSlots($slotsNeeded);
-        return $possibleSlots->isNotEmpty() ? $possibleSlots->random() : [$this->timeslots->random()->id];
+        // **نفس منطق findRandomSlotForBlock بالضبط**
+        $possibleStartSlots = $this->timeslots->filter(function ($slot) use ($slotsNeeded) {
+            return isset($this->consecutiveTimeslotsMap[$slot->id]) &&
+                (count($this->consecutiveTimeslotsMap[$slot->id]) + 1) >= $slotsNeeded;
+        });
+
+        if ($possibleStartSlots->isEmpty()) {
+            // إذا لم نجد فترات متتالية كافية، اختر فترات منفصلة عشوائياً
+            return $this->timeslots->random($slotsNeeded)->pluck('id')->toArray();
+        }
+
+        // اختر نقطة بداية عشوائية من الفترات الممكنة
+        $startSlot = $possibleStartSlots->random();
+
+        // بناء مصفوفة الفترات المتتالية
+        $selectedSlots = [$startSlot->id];
+
+        // إضافة الفترات التالية حسب العدد المطلوب
+        for ($i = 0; $i < ($slotsNeeded - 1); $i++) {
+            if (isset($this->consecutiveTimeslotsMap[$startSlot->id][$i])) {
+                $selectedSlots[] = $this->consecutiveTimeslotsMap[$startSlot->id][$i];
+            }
+        }
+
+        // تأكد أن العدد صحيح
+        if (count($selectedSlots) < $slotsNeeded) {
+            // إذا لم نحصل على العدد الكافي، أضف فترات عشوائية إضافية
+            $additionalSlots = $this->timeslots->whereNotIn('id', $selectedSlots)
+                ->random($slotsNeeded - count($selectedSlots))
+                ->pluck('id')
+                ->toArray();
+            $selectedSlots = array_merge($selectedSlots, $additionalSlots);
+        }
+
+        return array_slice($selectedSlots, 0, $slotsNeeded);
     }
     private function countConflictsForSlots(array $slotIds, ?int $instructorId, ?int $roomId, ?array $studentGroupIds): int
     {
@@ -819,7 +787,8 @@ class GeneticAlgorithmService
         }
 
         $currentPopulation = collect($parentPool);
-        $elitismCount = $this->settings['elitism_count_chromosomes'] ?? 5;
+        // $elitismCount = $this->settings['elitism_count_chromosomes'] ?? 5;
+        $elitismCount = $this->populationRun->elitism_count ?? 5;
 
         // **الخطوة الأولى: نسخ الصفوة للجيل الجديد**
         $eliteChromosomes = $this->copyEliteChromosomes($currentPopulation, $elitismCount, $nextGenerationNumber, $populationRun);

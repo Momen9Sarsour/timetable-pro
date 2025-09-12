@@ -470,7 +470,7 @@
                             <div class="form-text">Number of schedules per generation</div>
                         </div>
                         <input hidden type="number" class="form-control" id="setting_max_generations"
-                            name="max_generations" value="{{ config('algorithm.settings.max_generations', 10) }}"
+                            name="max_generations" value="{{ config('algorithm.settings.max_generations', 200) }}"
                             required min="10" step="10">
                         <div class="col-md-4">
                             <label for="setting_elitism_count_chromosomes" class="form-label fw-medium">Elitism count chromosomes </label>
