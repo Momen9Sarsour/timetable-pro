@@ -36,18 +36,18 @@ class ContinueEvolutionJob implements ShouldQueue
      */
     public function handle(): void
     {
-        Log::info("Continue Evolution Job starting for New Population ID: {$this->newPopulationId}, Parent ID: {$this->parentPopulationId}");
+        // Log::info("Continue Evolution Job starting for New Population ID: {$this->newPopulationId}, Parent ID: {$this->parentPopulationId}");
 
         $newPopulation = Population::find($this->newPopulationId);
         $parentPopulation = Population::find($this->parentPopulationId);
 
         if (!$newPopulation) {
-            Log::error("New Population with ID: {$this->newPopulationId} not found in the database.");
+            // Log::error("New Population with ID: {$this->newPopulationId} not found in the database.");
             return;
         }
 
         if (!$parentPopulation) {
-            Log::error("Parent Population with ID: {$this->parentPopulationId} not found in the database.");
+            // Log::error("Parent Population with ID: {$this->parentPopulationId} not found in the database.");
             $newPopulation->update(['status' => 'failed', 'end_time' => now()]);
             return;
         }
@@ -57,11 +57,11 @@ class ContinueEvolutionJob implements ShouldQueue
             $continueService = new ContinueEvolutionService($this->settings, $newPopulation, $parentPopulation);
             $continueService->continueFromParent();
 
-            Log::info("Evolution continued successfully for Population ID: {$this->newPopulationId}");
-            
+            // Log::info("Evolution continued successfully for Population ID: {$this->newPopulationId}");
+
         } catch (Throwable $e) {
-            Log::error("ContinueEvolutionJob failed for Population ID: {$this->newPopulationId}. Error: " . $e->getMessage());
-            
+            // Log::error("ContinueEvolutionJob failed for Population ID: {$this->newPopulationId}. Error: " . $e->getMessage());
+
             // تحديث حالة Population إلى failed
             $newPopulation->update([
                 'status' => 'failed',

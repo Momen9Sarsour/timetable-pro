@@ -47,7 +47,7 @@ class InitialPopulationService
     {
         $this->settings = $settings;
         $this->populationRun = $populationRun;
-        Log::info("Initial Population Service initialized for Run ID: {$this->populationRun->population_id}");
+        // Log::info("Initial Population Service initialized for Run ID: {$this->populationRun->population_id}");
     }
 
     /**
@@ -66,20 +66,20 @@ class InitialPopulationService
             // حفظ صفوة الجيل الأول
             $this->updateEliteChromosomes($currentPopulation, $currentGenerationNumber);
 
-            Log::info("Initial Generation #{$currentGenerationNumber} fitness evaluated.");
+            // Log::info("Initial Generation #{$currentGenerationNumber} fitness evaluated.");
 
             // تحديد أفضل كروموسوم
             $finalBest = Chromosome::where('population_id', $this->populationRun->population_id)->orderBy('penalty_value', 'asc')->first();
-            
+
             $this->populationRun->update([
                 'status' => 'completed',
                 'end_time' => now(),
                 'best_chromosome_id' => $finalBest ? $finalBest->chromosome_id : null
             ]);
-            
-            Log::info("Initial Population Generation completed successfully for Run ID: {$this->populationRun->population_id}");
+
+            // Log::info("Initial Population Generation completed successfully for Run ID: {$this->populationRun->population_id}");
         } catch (Exception $e) {
-            Log::error("Initial Population Generation failed: " . $e->getMessage() . " at " . $e->getFile() . ":" . $e->getLine() . "\n" . $e->getTraceAsString());
+            // Log::error("Initial Population Generation failed: " . $e->getMessage() . " at " . $e->getFile() . ":" . $e->getLine() . "\n" . $e->getTraceAsString());
             $this->populationRun->update(['status' => 'failed']);
             throw $e;
         }
@@ -110,8 +110,8 @@ class InitialPopulationService
             'elite_chromosome_ids' => $currentEliteHistory
         ]);
 
-        Log::info("Elite chromosomes updated for Generation #{$generationNumber}: " . implode(', ', $currentEliteIds));
-        Log::info("Elite history now contains " . count($currentEliteHistory) . " generations");
+        // Log::info("Elite chromosomes updated for Generation #{$generationNumber}: " . implode(', ', $currentEliteIds));
+        // Log::info("Elite history now contains " . count($currentEliteHistory) . " generations");
     }
 
     //======================================================================
@@ -120,7 +120,7 @@ class InitialPopulationService
 
     private function loadAndPrepareData()
     {
-        Log::info("Loading data for context -> Year: {$this->settings['academic_year']}, Semester: {$this->settings['semester']}");
+        // Log::info("Loading data for context -> Year: {$this->settings['academic_year']}, Semester: {$this->settings['semester']}");
 
         // جلب كل البيانات اللازمة من قاعدة البيانات مرة واحدة
         $sections = Section::with(['planSubject.subject', 'instructors'])
@@ -151,7 +151,7 @@ class InitialPopulationService
             throw new Exception("No lecture blocks to schedule were found after processing credit hours.");
         }
 
-        Log::info("Data loaded and precomputed: " . $this->lectureBlocksToSchedule->count() . " lecture blocks will be scheduled.");
+        // Log::info("Data loaded and precomputed: " . $this->lectureBlocksToSchedule->count() . " lecture blocks will be scheduled.");
     }
 
     /**
@@ -328,7 +328,7 @@ class InitialPopulationService
 
     private function createInitialPopulation(int $generationNumber, Population $populationRun): Collection
     {
-        Log::info("Creating intelligent initial population (Generation #{$generationNumber})");
+        // Log::info("Creating intelligent initial population (Generation #{$generationNumber})");
         $createdChromosomes = collect();
         for ($i = 0; $i < $this->settings['population_size']; $i++) {
             $chromosome = Chromosome::create([
@@ -361,9 +361,9 @@ class InitialPopulationService
 
             // **فحص للتأكد من صحة العدد - مرجع للجيل الأول**
             if (count($foundSlots) != $lectureBlock->slots_needed) {
-                Log::warning("Block {$lectureBlock->unique_id} needs {$lectureBlock->slots_needed} slots but got " . count($foundSlots) . " slots: " . json_encode($foundSlots));
+                // Log::warning("Block {$lectureBlock->unique_id} needs {$lectureBlock->slots_needed} slots but got " . count($foundSlots) . " slots: " . json_encode($foundSlots));
             } else {
-                Log::info("Block {$lectureBlock->unique_id} successfully got {$lectureBlock->slots_needed} slots: " . json_encode($foundSlots));
+                // Log::info("Block {$lectureBlock->unique_id} successfully got {$lectureBlock->slots_needed} slots: " . json_encode($foundSlots));
             }
 
             $genesToInsert[] = [

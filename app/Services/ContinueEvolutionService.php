@@ -49,7 +49,7 @@ class ContinueEvolutionService
         $this->settings = $settings;
         $this->populationRun = $populationRun;
         $this->parentPopulation = $parentPopulation;
-        Log::info("Continue Evolution Service initialized for Run ID: {$this->populationRun->population_id}, Parent ID: {$this->parentPopulation->population_id}");
+        // Log::info("Continue Evolution Service initialized for Run ID: {$this->populationRun->population_id}, Parent ID: {$this->parentPopulation->population_id}");
     }
 
     /**
@@ -68,7 +68,7 @@ class ContinueEvolutionService
             // حفظ صفوة الجيل الأول (المنسوخ من الأب)
             $this->updateEliteChromosomes($currentPopulation, $currentGenerationNumber);
 
-            Log::info("Starting evolution from Parent Population. Generation #{$currentGenerationNumber} copied and evaluated.");
+            // Log::info("Starting evolution from Parent Population. Generation #{$currentGenerationNumber} copied and evaluated.");
 
             // $maxGenerations = $this->settings['max_generations'];
             $maxGenerations = 200;
@@ -76,7 +76,7 @@ class ContinueEvolutionService
                 $bestInGen = $currentPopulation->sortByDesc('fitness_value')->first();
                 // نستخدم fitness_value هنا بدلاً من penalty_value
                 if ($bestInGen && $bestInGen->penalty_value == 0 && ($this->settings['stop_at_first_valid'] ?? false)) {
-                    Log::info("Optimal solution found in Generation #{$currentGenerationNumber}. Stopping.");
+                    // Log::info("Optimal solution found in Generation #{$currentGenerationNumber}. Stopping.");
                     break;
                 }
 
@@ -87,7 +87,7 @@ class ContinueEvolutionService
                 // تحديث صفوة الجيل الجديد
                 $this->updateEliteChromosomes($currentPopulation, $currentGenerationNumber);
 
-                Log::info("Generation #{$currentGenerationNumber} fitness evaluated.");
+                // Log::info("Generation #{$currentGenerationNumber} fitness evaluated.");
             }
 
             $finalBest = Chromosome::where('population_id', $this->populationRun->population_id)->orderBy('penalty_value', 'asc')->first();
@@ -96,9 +96,9 @@ class ContinueEvolutionService
                 'end_time' => now(),
                 'best_chromosome_id' => $finalBest ? $finalBest->chromosome_id : null
             ]);
-            Log::info("Continue Evolution Run ID: {$this->populationRun->population_id} completed successfully.");
+            // Log::info("Continue Evolution Run ID: {$this->populationRun->population_id} completed successfully.");
         } catch (Exception $e) {
-            Log::error("Continue Evolution Run failed: " . $e->getMessage() . " at " . $e->getFile() . ":" . $e->getLine() . "\n" . $e->getTraceAsString());
+            // Log::error("Continue Evolution Run failed: " . $e->getMessage() . " at " . $e->getFile() . ":" . $e->getLine() . "\n" . $e->getTraceAsString());
             $this->populationRun->update(['status' => 'failed']);
             throw $e;
         }
@@ -109,7 +109,7 @@ class ContinueEvolutionService
      */
     private function copyParentChromosomes(int $generationNumber): Collection
     {
-        Log::info("Copying chromosomes from parent population #{$this->parentPopulation->population_id}");
+        // Log::info("Copying chromosomes from parent population #{$this->parentPopulation->population_id}");
 
         // جلب كروموسومات الأب
         $parentChromosomes = $this->parentPopulation->chromosomes()->with('genes')->get();
@@ -159,7 +159,7 @@ class ContinueEvolutionService
             $copiedChromosomes->push($newChromosome);
         }
 
-        Log::info("Copied " . $copiedChromosomes->count() . " chromosomes from parent population");
+        // Log::info("Copied " . $copiedChromosomes->count() . " chromosomes from parent population");
         return $copiedChromosomes;
     }
 
@@ -188,8 +188,8 @@ class ContinueEvolutionService
             'elite_chromosome_ids' => $currentEliteHistory
         ]);
 
-        Log::info("Elite chromosomes updated for Generation #{$generationNumber}: " . implode(', ', $currentEliteIds));
-        Log::info("Elite history now contains " . count($currentEliteHistory) . " generations");
+        // Log::info("Elite chromosomes updated for Generation #{$generationNumber}: " . implode(', ', $currentEliteIds));
+        // Log::info("Elite history now contains " . count($currentEliteHistory) . " generations");
     }
 
     //======================================================================
@@ -198,7 +198,7 @@ class ContinueEvolutionService
 
     private function loadAndPrepareData()
     {
-        Log::info("Loading data for context -> Year: {$this->settings['academic_year']}, Semester: {$this->settings['semester']}");
+        // Log::info("Loading data for context -> Year: {$this->settings['academic_year']}, Semester: {$this->settings['semester']}");
 
         // جلب كل البيانات اللازمة من قاعدة البيانات مرة واحدة
         $sections = Section::with(['planSubject.subject', 'instructors'])
@@ -229,7 +229,7 @@ class ContinueEvolutionService
             throw new Exception("No lecture blocks to schedule were found after processing credit hours.");
         }
 
-        Log::info("Data loaded and precomputed: " . $this->lectureBlocksToSchedule->count() . " lecture blocks will be scheduled.");
+        // Log::info("Data loaded and precomputed: " . $this->lectureBlocksToSchedule->count() . " lecture blocks will be scheduled.");
     }
 
     /**
@@ -430,12 +430,12 @@ class ContinueEvolutionService
 
     private function createNewGeneration(array $parents, int $nextGenerationNumber, Population $populationRun): Collection
     {
-        Log::info("Creating new generation #{$nextGenerationNumber} using Elitism + Hybrid approach");
+        // Log::info("Creating new generation #{$nextGenerationNumber} using Elitism + Hybrid approach");
         $newPopulation = [];
         $parentPool = array_filter($parents);
 
         if (empty($parentPool)) {
-            Log::warning("Parent pool is empty for generation {$nextGenerationNumber}. Cannot create new generation.");
+            // Log::warning("Parent pool is empty for generation {$nextGenerationNumber}. Cannot create new generation.");
             return collect();
         }
 
@@ -449,7 +449,7 @@ class ContinueEvolutionService
         $remainingSlots = $this->settings['population_size'] - count($eliteChromosomes);
 
         if ($remainingSlots <= 0) {
-            Log::info("Elite chromosomes filled the entire population");
+            // Log::info("Elite chromosomes filled the entire population");
             return collect($eliteChromosomes);
         }
 
@@ -493,7 +493,7 @@ class ContinueEvolutionService
         // دمج الصفوة مع الكروموسومات الجديدة
         $finalPopulation = array_merge($eliteChromosomes, $newPopulation);
 
-        Log::info("Generation {$nextGenerationNumber} created with " . count($finalPopulation) . " chromosomes (including " . count($eliteChromosomes) . " elites)");
+        // Log::info("Generation {$nextGenerationNumber} created with " . count($finalPopulation) . " chromosomes (including " . count($eliteChromosomes) . " elites)");
 
         return collect($finalPopulation);
     }
@@ -543,7 +543,7 @@ class ContinueEvolutionService
             $copiedElites[] = $newEliteChromosome;
         }
 
-        Log::info("Copied " . count($copiedElites) . " elite chromosomes to generation {$newGenerationNumber}");
+        // Log::info("Copied " . count($copiedElites) . " elite chromosomes to generation {$newGenerationNumber}");
         return $copiedElites;
     }
 
