@@ -238,9 +238,17 @@ Route::prefix('dashboard')->group(function () {
         Route::resource('crossover-types', CrossoverTypeController::class)->except(['create', 'show', 'edit']);
         Route::resource('selection-types', SelectionTypeController::class)->except(['create', 'show', 'edit']);
         Route::resource('mutation-types', MutationTypeController::class)->except(['create', 'show', 'edit']);
+        
 
         // TimetableGenerationController
         Route::post('/timetable/generate', [TimetableGenerationController::class, 'start'])->name('timetable.generate.start');
+    
+        Route::get('/populations', [TimetableGenerationController::class, 'populationIndex'])->name('populations.index');
+        Route::post('/populations/generate-initial', [TimetableGenerationController::class, 'generateInitial'])->name('populations.generate-initial');
+        Route::post('/populations/continue/{population}', [TimetableGenerationController::class, 'continueEvolution'])->name('populations.continue');
+        Route::delete('/populations/{population}', [TimetableGenerationController::class, 'destroyPopulation'])->name('populations.destroy');
+        Route::get('/populations/{population}/details', [TimetableGenerationController::class, 'showPopulationDetails'])->name('populations.details');
+
         // 1. صفحة عرض قائمة عمليات التشغيل وأفضل الحلول
         Route::get('/timetable-results', [TimetableResultController::class, 'index'])->name('timetable.results.index');
 

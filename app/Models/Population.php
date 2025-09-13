@@ -15,6 +15,7 @@ class Population extends Model
 
     // الحقول المسموح بتعبئتها
     protected $fillable = [
+        'parent_id',
         'academic_year',
         'semester',
         'theory_credit_to_slots',
@@ -79,5 +80,37 @@ class Population extends Model
     public function mutationType()
     {
         return $this->belongsTo(MutationType::class, 'mutation_id', 'mutation_id');
+    }
+
+    /**
+     * علاقة: Population الأب (إذا كان هذا Population مشتق من آخر)
+     */
+    public function parent()
+    {
+        return $this->belongsTo(Population::class, 'parent_id', 'population_id');
+    }
+
+    /**
+     * علاقة: Population الأطفال (الأجيال المشتقة من هذا Population)
+     */
+    public function children()
+    {
+        return $this->hasMany(Population::class, 'parent_id', 'population_id');
+    }
+
+    /**
+     * تحقق إذا كان هذا Population هو الجيل الأول (ليس له أب)
+     */
+    public function isInitialGeneration()
+    {
+        return is_null($this->parent_id);
+    }
+
+    /**
+     * تحقق إذا كان هذا Population له أطفال (أجيال مشتقة)
+     */
+    public function hasChildren()
+    {
+        return $this->children()->exists();
     }
 }

@@ -275,6 +275,11 @@
                                         <i class="fas fa-random"></i> Mutation Methods
                                     </a>
                                 </li>
+                                <li class="{{ request()->routeIs('algorithm-control.populations.*') ? 'active' : '' }}">
+                                    <a href="{{ route('algorithm-control.populations.index') }}">
+                                        <i class="fas fa-dna"></i> Population Management
+                                    </a>
+                                </li>
                                 <li class="{{ request()->routeIs('algorithm-control.timetable.results.index') || request()->routeIs('algorithm-control.timetable.result.show') ? 'active' : '' }}">
                                     <a href="{{ route('algorithm-control.timetable.results.index') }}">
                                         <i class="fas fa-calendar-check"></i> Generation Results

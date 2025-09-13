@@ -44,28 +44,32 @@
                                 <!-- Run Details - Desktop -->
                                 <div class="d-none d-md-block">
                                     <div class="row g-3 mt-1">
-                                        <div class="col-md-6 col-lg-3">
+                                        <div class="col-md-6 col-lg-2">
                                             <small class="text-muted d-block">Run ID</small>
                                             <span class="fw-medium">#{{ $latestSuccessfulRun->population_id }}</span>
                                         </div>
-                                        <div class="col-md-6 col-lg-3">
-                                            <small class="text-muted d-block">Completed</small>
-                                            <span class="fw-medium">{{ \Carbon\Carbon::parse($latestSuccessfulRun->end_time)->format('M d, Y h:i A') }}</span>
+                                        <div class="col-md-6 col-lg-2">
+                                            <small class="text-muted d-block">started</small>
+                                            <span class="fw-medium">{{ \Carbon\Carbon::parse($latestSuccessfulRun->start_time)->format('M d, h:i A') }}</span>
                                         </div>
-                                        <div class="col-md-6 col-lg-3">
+                                        <div class="col-md-6 col-lg-2">
+                                            <small class="text-muted d-block">Completed</small>
+                                            <span class="fw-medium">{{ \Carbon\Carbon::parse($latestSuccessfulRun->end_time)->format('M d, h:i A') }}</span>
+                                        </div>
+                                        <div class="col-md-6 col-lg-2">
                                             <small class="text-muted d-block">Population Size</small>
                                             <span class="fw-medium">{{ $latestSuccessfulRun->population_size }}</span>
                                         </div>
-                                        <div class="col-md-6 col-lg-3">
+                                        <div class="col-md-6 col-lg-2">
                                             <small class="text-muted d-block">Generations</small>
-                                            <span class="fw-medium">{{ $latestSuccessfulRun->generations_count }}</span>
+                                            <span class="fw-medium">{{ $latestSuccessfulRun->max_generations }}</span>
                                         </div>
-                                    </div>
-                                    <div class="row g-3 mt-1">
-                                        <div class="col-md-6 col-lg-3">
-                                            <small class="text-muted d-block">Mutation Rate</small>
-                                            <span class="fw-medium">{{ $latestSuccessfulRun->mutation_rate * 100 }}%</span>
-                                        </div>
+                                        {{-- <div class="row g-3 mt-1"> --}}
+                                            <div class="col-md-6 col-lg-2">
+                                                <small class="text-muted d-block">Mutation Rate</small>
+                                                <span class="fw-medium">{{ $latestSuccessfulRun->mutation_rate * 100 }}%</span>
+                                            </div>
+                                        {{-- </div> --}}
                                     </div>
                                 </div>
 

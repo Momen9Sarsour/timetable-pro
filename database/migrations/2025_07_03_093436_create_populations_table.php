@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('populations', function (Blueprint $table) {
             // $table->id();
             $table->id('population_id'); // اسم الحقل PK
+            $table->unsignedBigInteger('parent_id')->nullable();
+            $table->foreign('parent_id')->references('population_id')->on('populations')->onDelete('cascade');
 
             $table->year('academic_year')->default(2025);
             $table->unsignedTinyInteger('semester')->default(1);

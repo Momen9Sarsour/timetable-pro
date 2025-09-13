@@ -14,7 +14,7 @@
     --success-color: #22c55e;
 
     /* أبعاد العناصر */
-    --sidebar-width: 260px;
+    --sidebar-width: 220px;
     --header-height: 70px;
 
     /* ألوان الثيم الفاتح */
@@ -34,7 +34,7 @@
     --dark-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
 
     /* سرعة الانتقالات - سريع */
-    --transition-speed: 0.15s;
+    --transition-speed: 0.05s;
 }
 
 /* ============= الستايلات العامة ============= */
@@ -218,7 +218,7 @@ body.dark-mode .sidebar {
     text-decoration: none;
     transition: all var(--transition-speed);
     position: relative;
-    font-size: 0.875rem;
+    font-size: 0.675rem;
 }
 
 body.dark-mode .nav-link {
@@ -256,7 +256,7 @@ body.dark-mode .nav-item.active .nav-link {
 }
 
 .nav-icon {
-    font-size: 1rem;
+    font-size: 0.8rem;
     width: 20px;
     text-align: center;
     flex-shrink: 0;
@@ -302,7 +302,7 @@ body.dark-mode .submenu {
     padding: 0.5rem 1.5rem 0.5rem 3rem;
     color: var(--light-text-secondary);
     text-decoration: none;
-    font-size: 0.8125rem;
+    font-size: 0.6125rem;
     transition: all var(--transition-speed);
 }
 
