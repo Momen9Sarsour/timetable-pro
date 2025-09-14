@@ -151,7 +151,7 @@
                                                             title="Continue Evolution">
                                                         <i class="fas fa-play"></i>
                                                     </button>
-                                                    <a href="{{ route('algorithm-control.populations.details', $population->population_id) }}" 
+                                                    <a href="{{ route('algorithm-control.populations.details', $population->population_id) }}"
                                                        class="btn btn-outline-info btn-sm"
                                                        title="View Details">
                                                         <i class="fas fa-eye"></i>
@@ -193,7 +193,7 @@
                                                 </div>
                                                 <div class="small mb-2">
                                                     <div><strong>Year:</strong> {{ $population->academic_year }} | <strong>Semester:</strong> {{ $population->semester }}</div>
-                                                    <div><strong>Size:</strong> {{ $population->population_size }} | <strong>Status:</strong> 
+                                                    <div><strong>Size:</strong> {{ $population->population_size }} | <strong>Status:</strong>
                                                         @switch($population->status)
                                                             @case('running')
                                                                 <span class="text-warning">Running</span>
@@ -342,7 +342,7 @@
                             <div class="form-text">Number of schedules per generation</div>
                         </div>
                         <input type="hidden" class="form-control" id="max_generations"
-                            name="max_generations" value="{{ config('algorithm.settings.max_generations', 200) }}"
+                            name="max_generations" value="{{ config('algorithm.settings.max_generations', 10) }}"
                             required min="10" step="10">
                         <div class="col-md-4">
                             <label for="elitism_count_chromosomes" class="form-label fw-medium">Elite Count</label>
@@ -505,7 +505,7 @@
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <label for="continue_academic_year_{{ $population->population_id }}" class="form-label fw-medium">Academic Year</label>
-                                <input type="number" class="form-control" id="continue_academic_year_{{ $population->population_id }}" 
+                                <input type="number" class="form-control" id="continue_academic_year_{{ $population->population_id }}"
                                        name="academic_year" value="{{ $population->academic_year }}" required>
                             </div>
                             <div class="col-md-6">

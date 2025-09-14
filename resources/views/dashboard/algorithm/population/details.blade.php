@@ -76,7 +76,7 @@
                                 <i class="fas fa-info-circle me-1"></i>Status
                             </h6>
                             <div class="small">
-                                <div><strong>Status:</strong> 
+                                <div><strong>Status:</strong>
                                     @switch($population->status)
                                         @case('running')
                                             <span class="text-warning">Running</span>
@@ -120,6 +120,7 @@
                                     <div class="text-muted">No best chromosome yet</div>
                                 @endif
                                 <div><strong>Total Chromosomes:</strong> {{ $chromosomes->total() }}</div>
+                                <div><strong>Total generations:</strong> {{ $population->max_generations }}</div>
                             </div>
                         </div>
                     </div>
@@ -205,7 +206,7 @@
                                                     {{ number_format($chromosome->fitness_value, 4) }}
                                                 </div>
                                                 <div class="progress mt-1" style="height: 4px;">
-                                                    <div class="progress-bar {{ $chromosome->fitness_value > 0.8 ? 'bg-success' : ($chromosome->fitness_value > 0.5 ? 'bg-warning' : 'bg-danger') }}" 
+                                                    <div class="progress-bar {{ $chromosome->fitness_value > 0.8 ? 'bg-success' : ($chromosome->fitness_value > 0.5 ? 'bg-warning' : 'bg-danger') }}"
                                                          style="width: {{ $chromosome->fitness_value * 100 }}%"></div>
                                                 </div>
                                             </td>
@@ -276,7 +277,7 @@
                                                     <div><strong>Generation:</strong> {{ $chromosome->generation_number }} | <strong>Genes:</strong> {{ $chromosome->genes->count() }}</div>
                                                 </div>
                                                 <div class="progress mb-2" style="height: 6px;">
-                                                    <div class="progress-bar {{ $chromosome->fitness_value > 0.8 ? 'bg-success' : ($chromosome->fitness_value > 0.5 ? 'bg-warning' : 'bg-danger') }}" 
+                                                    <div class="progress-bar {{ $chromosome->fitness_value > 0.8 ? 'bg-success' : ($chromosome->fitness_value > 0.5 ? 'bg-warning' : 'bg-danger') }}"
                                                          style="width: {{ $chromosome->fitness_value * 100 }}%"></div>
                                                 </div>
                                             </div>
@@ -482,11 +483,11 @@
     .card-body {
         padding: 0.75rem;
     }
-    
+
     .badge {
         font-size: 0.7rem;
     }
-    
+
     .small {
         font-size: 0.8rem;
     }
