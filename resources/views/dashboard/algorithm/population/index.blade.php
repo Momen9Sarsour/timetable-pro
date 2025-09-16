@@ -341,7 +341,7 @@
                                 required min="10" step="10">
                             <div class="form-text">Number of schedules per generation</div>
                         </div>
-                        <input type="hidden" class="form-control" id="max_generations"
+                        <input type="number" class="form-control" id="max_generations"
                             name="max_generations" value="{{ config('algorithm.settings.max_generations', 10) }}"
                             required min="10" step="10">
                         <div class="col-md-4">
@@ -524,7 +524,7 @@
                                 <label class="form-label fw-medium">Population Size</label>
                                 <input type="number" class="form-control" name="population_size" value="{{ $population->population_size }}" required min="10">
                             </div>
-                            <input type="hidden" name="max_generations" value="{{ $population->max_generations }}">
+                            <input type="number" name="max_generations" value="{{ $population->max_generations }}">
                             <div class="col-md-4">
                                 <label class="form-label fw-medium">Elite Count</label>
                                 <input type="number" class="form-control" name="elitism_count_chromosomes" value="{{ $population->elitism_count }}" required min="1">
