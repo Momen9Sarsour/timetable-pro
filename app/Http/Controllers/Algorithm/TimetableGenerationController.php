@@ -49,7 +49,7 @@ class TimetableGenerationController extends Controller
         // تحويل boolean
         $validatedSettings['stop_at_first_valid'] = $request->has('stop_at_first_valid');
 
-        // try {
+        try {
         $populationRun = Population::create([
             'academic_year' => $validatedSettings['academic_year'],
             'semester' => $validatedSettings['semester'],
@@ -74,7 +74,7 @@ class TimetableGenerationController extends Controller
         //     'request->all()' => $request->all(),
         // ]);
 
-        // Log::info("New Population Run created with ID: {$populationRun->population_id}. Dispatching job to queue.");
+        Log::info("New Population Run created with ID: {$populationRun->population_id}. Dispatching job to queue.");
 
         // $gaService = new GeneticAlgorithmService($validatedSettings, $populationRun);
         // $gaService->run(); // بدء التنفيذ
@@ -85,14 +85,14 @@ class TimetableGenerationController extends Controller
 
         return redirect()->route('dashboard.index')
             ->with('success', "Timetable generation started for Year: {$validatedSettings['academic_year']}, Semester: {$validatedSettings['semester']}. Run ID: " . $populationRun->population_id);
-        // return redirect()->route('dashboard.index')
-        //     ->with('success', 'The timetable generation process has been started in the background. Run ID: ' . $populationRun->population_id);
-        // } catch (Exception $e) {
-        //     Log::error('Failed to dispatch timetable generation job: ' . $e->getMessage());
-        //     return redirect()->back()
-        //         ->with('error', 'Could not start the generation process: ' . $e->getMessage())
-        //         ->withInput();
-        // }
+        return redirect()->route('dashboard.index')
+            ->with('success', 'The timetable generation process has been started in the background. Run ID: ' . $populationRun->population_id);
+        } catch (Exception $e) {
+            Log::error('Failed to dispatch timetable generation job: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Could not start the generation process: ' . $e->getMessage())
+                ->withInput();
+        }
     }
 
     /**
@@ -152,7 +152,7 @@ class TimetableGenerationController extends Controller
                 'status' => 'running',
             ]);
 
-            // Log::info("Initial Population created with ID: {$populationRun->population_id}");
+            Log::info("Initial Population created with ID: {$populationRun->population_id}");
             // TODO: هنا سنستدعي Service جديد لإنشاء الجيل الأول فقط
 
             GenerateInitialPopulationJob::dispatch($validatedSettings, $populationRun->population_id);
@@ -161,7 +161,7 @@ class TimetableGenerationController extends Controller
             return redirect()->route('algorithm-control.populations.index')
                 ->with('success', "Initial population created successfully! ID: {$populationRun->population_id}");
         } catch (Exception $e) {
-            // Log::error('Failed to create initial population: ' . $e->getMessage());
+            Log::error('Failed to create initial population: ' . $e->getMessage());
             return redirect()->back()
                 ->with('error', 'Could not create initial population: ' . $e->getMessage())
                 ->withInput();
@@ -213,7 +213,7 @@ class TimetableGenerationController extends Controller
                 'status' => 'running',
             ]);
 
-            // Log::info("Continue Evolution Population created with ID: {$newPopulation->population_id}, Parent: {$population->population_id}");
+            Log::info("Continue Evolution Population created with ID: {$newPopulation->population_id}, Parent: {$population->population_id}");
 
             // TODO: هنا سنستدعي Service لإكمال الخوارزمية من Population موجود
             ContinueEvolutionJob::dispatch($validatedSettings, $newPopulation->population_id, $population->population_id);
@@ -221,7 +221,7 @@ class TimetableGenerationController extends Controller
             return redirect()->route('algorithm-control.populations.index')
                 ->with('success', "Evolution continued! New Population ID: {$newPopulation->population_id}");
         } catch (Exception $e) {
-            // Log::error('Failed to continue evolution: ' . $e->getMessage());
+            Log::error('Failed to continue evolution: ' . $e->getMessage());
             return redirect()->back()
                 ->with('error', 'Could not continue evolution: ' . $e->getMessage())
                 ->withInput();
@@ -248,12 +248,12 @@ class TimetableGenerationController extends Controller
                 $population->delete();
             });
 
-            // Log::info("Population {$population->population_id} deleted successfully with all related data");
+            Log::info("Population {$population->population_id} deleted successfully with all related data");
 
             return redirect()->route('algorithm-control.populations.index')
                 ->with('success', "Population #{$population->population_id} and all related data deleted successfully!");
         } catch (Exception $e) {
-            // Log::error("Failed to delete population {$population->population_id}: " . $e->getMessage());
+            Log::error("Failed to delete population {$population->population_id}: " . $e->getMessage());
             return redirect()->back()
                 ->with('error', 'Could not delete population: ' . $e->getMessage());
         }
