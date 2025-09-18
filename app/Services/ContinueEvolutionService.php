@@ -15,6 +15,7 @@ use App\Models\Timeslot;
 use App\Models\CrossoverType;
 use App\Models\SelectionType;
 use App\Models\MutationType;
+use App\Models\PlanGroup;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -55,7 +56,7 @@ class ContinueEvolutionService
         $this->settings = $settings;
         $this->populationRun = $populationRun;
         $this->parentPopulation = $parentPopulation;
-        Log::info("7777777777777Continue Evolution Service initialized for Run ID: {$this->populationRun->population_id}, Parent ID: {$this->parentPopulation->population_id}");
+        Log::info("77700000077777Continue Evolution Service initialized for Run ID: {$this->populationRun->population_id}, Parent ID: {$this->parentPopulation->population_id}");
     }
 
     /**
@@ -546,7 +547,8 @@ class ContinueEvolutionService
 
         // بناء الخرائط المساعدة
         $this->buildConsecutiveTimeslotsMap();
-        $this->buildStudentGroupMap($sections);
+        // $this->buildStudentGroupMap($sections);
+        $this->studentGroupMap = $this->buildStudentGroupMapFromDatabase($this->settings['academic_year'], $this->settings['semester']);
 
         // **(الخطوة الأهم)**: التحضير المسبق الكامل للبلوكات مع تعيين المدرسين
         $this->precomputeLectureBlocks($sections);
@@ -556,6 +558,22 @@ class ContinueEvolutionService
         }
 
         Log::info("Data loaded and precomputed: " . $this->lectureBlocksToSchedule->count() . " lecture blocks will be scheduled.");
+    }
+
+    private function buildStudentGroupMapFromDatabase($academicYear, $semester)
+    {
+        $groupMap = [];
+
+        $planGroups = PlanGroup::where('academic_year', $academicYear)
+            ->where('semester', $semester)
+            ->get()
+            ->groupBy('section_id');
+
+        foreach ($planGroups as $sectionId => $groups) {
+            $groupMap[$sectionId] = $groups->pluck('group_no')->toArray();
+        }
+
+        return $groupMap;
     }
 
     /**

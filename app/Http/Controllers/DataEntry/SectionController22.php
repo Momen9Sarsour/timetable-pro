@@ -9,6 +9,7 @@ use App\Models\Department;
 use App\Models\PlanSubject;
 use App\Models\PlanExpectedCount;
 use App\Models\Subject;
+use App\Models\PlanGroup;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -202,7 +203,113 @@ class SectionController22 extends Controller
                 Log::warning("No sections (Theory or Practical) were created for Subject ID {$subjectIdForLog} (PS ID {$planSubjectId}). Check hours and category.");
             }
         }
+
+        // إنشاء المجموعات بعد إنشاء الشعب
+        $this->generatePlanGroups($expectedCount);
+
         Log::info("Finished generating sections for ExpectedCount ID: {$expectedCount->id}");
+    }
+
+    /**
+     * دالة جديدة لإنشاء المجموعات بناءً على الشعب المُنشأة
+     */
+    private function generatePlanGroups(PlanExpectedCount $expectedCount)
+    {
+        try {
+            Log::info("Generating plan groups for ExpectedCount ID: {$expectedCount->id}");
+
+            // حذف المجموعات القديمة لهذا السياق
+            PlanGroup::clearContextGroups(
+                $expectedCount->plan_id,
+                $expectedCount->plan_level,
+                $expectedCount->academic_year,
+                $expectedCount->plan_semester,
+                $expectedCount->branch
+            );
+
+            // جلب كل الشعب في هذا السياق
+            $sectionsInContext = Section::where('academic_year', $expectedCount->academic_year)
+                ->where('semester', $expectedCount->plan_semester)
+                ->where(function ($q) use ($expectedCount) {
+                    is_null($expectedCount->branch) ? $q->whereNull('branch') : $q->where('branch', $expectedCount->branch);
+                })
+                ->whereHas('planSubject', function ($q) use ($expectedCount) {
+                    $q->where('plan_id', $expectedCount->plan_id)
+                      ->where('plan_level', $expectedCount->plan_level)
+                      ->where('plan_semester', $expectedCount->plan_semester);
+                })
+                ->with(['planSubject.subject'])
+                ->get();
+
+            if ($sectionsInContext->isEmpty()) {
+                Log::info("No sections found for context. No groups to create.");
+                return;
+            }
+
+            // حساب عدد المجموعات (نفس المنطق من buildStudentGroupMap)
+            $maxPracticalSections = $sectionsInContext->where('activity_type', 'Practical')
+                ->groupBy('plan_subject_id')->map->count()->max() ?? 0;
+            $numberOfStudentGroups = $maxPracticalSections > 0 ? $maxPracticalSections : 1;
+
+            Log::info("Calculated number of student groups: {$numberOfStudentGroups}");
+
+            // إنشاء المجموعات
+            $groupsToInsert = [];
+
+            for ($groupIndex = 1; $groupIndex <= $numberOfStudentGroups; $groupIndex++) {
+                // ربط الشعب النظرية بكل المجموعات
+                $theorySections = $sectionsInContext->where('activity_type', 'Theory');
+                foreach ($theorySections as $theorySection) {
+                    $groupsToInsert[] = [
+                        'plan_id' => $expectedCount->plan_id,
+                        'plan_level' => $expectedCount->plan_level,
+                        'academic_year' => $expectedCount->academic_year,
+                        'semester' => $expectedCount->plan_semester,
+                        'branch' => $expectedCount->branch,
+                        'section_id' => $theorySection->id,
+                        'group_no' => $groupIndex,
+                        'group_size' => $theorySection->student_count,
+                        'gender' => $theorySection->section_gender ?? 'Mixed',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+
+                // ربط الشعب العملية - كل شعبة عملية بمجموعة واحدة
+                $practicalSectionsBySubject = $sectionsInContext->where('activity_type', 'Practical')
+                    ->groupBy('plan_subject_id');
+
+                foreach ($practicalSectionsBySubject as $sectionsForOneSubject) {
+                    $sortedSections = $sectionsForOneSubject->sortBy('section_number')->values();
+                    if ($sortedSections->has($groupIndex - 1)) {
+                        $practicalSectionForThisGroup = $sortedSections->get($groupIndex - 1);
+                        $groupsToInsert[] = [
+                            'plan_id' => $expectedCount->plan_id,
+                            'plan_level' => $expectedCount->plan_level,
+                            'academic_year' => $expectedCount->academic_year,
+                            'semester' => $expectedCount->plan_semester,
+                            'branch' => $expectedCount->branch,
+                            'section_id' => $practicalSectionForThisGroup->id,
+                            'group_no' => $groupIndex,
+                            'group_size' => $practicalSectionForThisGroup->student_count,
+                            'gender' => $practicalSectionForThisGroup->section_gender ?? 'Mixed',
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    }
+                }
+            }
+
+            // إدراج كل المجموعات دفعة واحدة
+            if (!empty($groupsToInsert)) {
+                PlanGroup::insert($groupsToInsert);
+                Log::info("Created " . count($groupsToInsert) . " group assignments for ExpectedCount ID: {$expectedCount->id}");
+            }
+
+        } catch (Exception $e) {
+            Log::error("Failed to generate plan groups for ExpectedCount ID: {$expectedCount->id}. Error: " . $e->getMessage());
+            throw $e;
+        }
     }
 
     /**
@@ -282,7 +389,11 @@ class SectionController22 extends Controller
         try {
             $data = $validator->validated();
             $data['branch'] = empty($data['branch']) ? null : $data['branch'];
-            Section::create($data);
+            $newSection = Section::create($data);
+
+            // تحديث المجموعات بعد إضافة شعبة جديدة
+            $this->updatePlanGroupsForSection($newSection, $expectedCount);
+
             return redirect()->route('data-entry.sections.manageSubjectContext', $redirectParams)->with('success', 'Section added.');
         } catch (Exception $e) {
             Log::error('Section Store Failed: ' . $e->getMessage());
@@ -310,7 +421,7 @@ class SectionController22 extends Controller
             return redirect()->back()->with('error', 'Could not determine the context for validation. Update aborted.');
         }
 
-        $errorBagName = 'updateSectionModal_' . $section->id;
+        $errorBagName = 'updateSectionModal_' . $section->id; // اسم مميز للـ error bag
 
         // 2. Validation الأساسي للحقول
         $validator = Validator::make($request->all(), [
@@ -376,6 +487,10 @@ class SectionController22 extends Controller
         // 6. Update Database
         try {
             $section->update($dataToUpdate);
+
+            // تحديث المجموعات بعد تحديث الشعبة
+            $this->updatePlanGroupsForSection($section, $expectedCountContext);
+
             return redirect()->route('data-entry.sections.manageContext', $expectedCountContext->id)
                 ->with('success', 'Section updated successfully.');
         } catch (Exception $e) {
@@ -399,9 +514,14 @@ class SectionController22 extends Controller
             ->where('branch', $section->branch)
             ->first();
         try {
+            // حذف المجموعات المرتبطة بالشعبة أولاً
+            PlanGroup::clearSectionGroups($section->id);
+
             $section->delete();
 
+            // إعادة توليد المجموعات لكامل السياق بعد حذف الشعبة
             if ($expectedCountContext) {
+                $this->generatePlanGroups($expectedCountContext);
                 return redirect()->route('data-entry.sections.manageContext', $expectedCountContext->id)
                     ->with('success', 'Section deleted successfully.');
             }
@@ -412,6 +532,24 @@ class SectionController22 extends Controller
             Log::error('Section Deletion (in context) Failed: ' . $e->getMessage());
             $redirectRoute = $expectedCountContext ? route('data-entry.sections.manageContext', $expectedCountContext->id) : route('data-entry.sections.index');
             return redirect($redirectRoute)->with('error', 'Failed to delete section: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * دالة مساعدة لتحديث المجموعات عند إضافة/تحديث شعبة واحدة
+     */
+    private function updatePlanGroupsForSection(Section $section, PlanExpectedCount $expectedCount)
+    {
+        try {
+            Log::info("Updating plan groups after section change for Section ID: {$section->id}");
+
+            // إعادة توليد كل المجموعات لهذا السياق
+            $this->generatePlanGroups($expectedCount);
+
+            Log::info("Plan groups updated successfully after section change");
+        } catch (Exception $e) {
+            Log::error("Failed to update plan groups for section {$section->id}: " . $e->getMessage());
+            // لا نوقف العملية، لكن نسجل الخطأ
         }
     }
 
@@ -556,6 +694,9 @@ class SectionController22 extends Controller
                 'branch' => $expectedCount->branch,
             ]);
 
+            // تحديث المجموعات
+            $this->updatePlanGroupsForSection($section, $expectedCount);
+
             return response()->json([
                 'success' => true,
                 'data' => $section,
@@ -639,6 +780,18 @@ class SectionController22 extends Controller
                 'section_gender' => $request->section_gender,
             ]);
 
+            // تحديث المجموعات
+            $expectedCount = PlanExpectedCount::where('plan_id', $section->planSubject->plan_id)
+                ->where('academic_year', $section->academic_year)
+                ->where('plan_level', $section->planSubject->plan_level)
+                ->where('plan_semester', $section->planSubject->plan_semester)
+                ->where('branch', $section->branch)
+                ->first();
+
+            if ($expectedCount) {
+                $this->updatePlanGroupsForSection($section, $expectedCount);
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $section,
@@ -659,7 +812,24 @@ class SectionController22 extends Controller
     public function APIDestroySectionInContext(Section $section)
     {
         try {
+            // حذف المجموعات المرتبطة أولاً
+            PlanGroup::clearSectionGroups($section->id);
+
+            // العثور على السياق لإعادة توليد المجموعات
+            $expectedCount = PlanExpectedCount::where('plan_id', $section->planSubject->plan_id)
+                ->where('academic_year', $section->academic_year)
+                ->where('plan_level', $section->planSubject->plan_level)
+                ->where('plan_semester', $section->planSubject->plan_semester)
+                ->where('branch', $section->branch)
+                ->first();
+
             $section->delete();
+
+            // إعادة توليد المجموعات للسياق
+            if ($expectedCount) {
+                $this->generatePlanGroups($expectedCount);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Section deleted successfully'
@@ -674,7 +844,7 @@ class SectionController22 extends Controller
     }
 
     /**
-     * إنشاء شعب تلقائيًا
+     * إنشاء شعب تلقائياً
      */
     public function APIGenerateSectionsForContext(Request $request, PlanExpectedCount $expectedCount)
     {
