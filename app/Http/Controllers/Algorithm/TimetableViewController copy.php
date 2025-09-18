@@ -27,16 +27,9 @@ class TimetableViewController extends Controller
             'section.planSubject.subject.subjectCategory',
             'section.planSubject.plan.department',
             'instructor.user',
-            'room'
+            'room',
+            'timeslot'
         ])->get();
-    }
-
-    /**
-     * جلب معلومات التوقيتات مرتبة
-     */
-    private function getTimeslotsMapping()
-    {
-        return Timeslot::orderBy('day')->orderBy('start_time')->get()->keyBy('id');
     }
 
     public function viewSectionTimetables(Request $request)
@@ -63,7 +56,8 @@ class TimetableViewController extends Controller
             'section.planSubject.subject.subjectCategory',
             'section.planSubject.plan.department',
             'instructor.user',
-            'room'
+            'room',
+            'timeslot'
         ])->get();
 
         // إذا كان الجدول فارغاً لسبب ما، نعرض صفحة "لا توجد نتائج"
@@ -167,7 +161,12 @@ class TimetableViewController extends Controller
 
                 // 3. بناء شبكة الجدول لهذه المجموعة
                 if ($allGenesForThisStudentGroup->isNotEmpty()) {
-                    $scheduleGrid = $this->buildScheduleGrid($allGenesForThisStudentGroup);
+                    $scheduleGrid = [];
+                    foreach ($allGenesForThisStudentGroup->unique('gene_id') as $gene) {
+                        if ($gene->timeslot) {
+                            $scheduleGrid[$gene->timeslot->day][$gene->timeslot->start_time][] = $gene;
+                        }
+                    }
 
                     $timetablesForThisContext[] = [
                         'title' => "Student Group {$groupIndex}", // عنوان الجدول (يمكن تغييره لاحقاً إلى "شعبة 2" مثلاً)
@@ -228,7 +227,12 @@ class TimetableViewController extends Controller
 
         foreach ($filteredInstructors as $instructor) {
             $instructorGenes = $genes->where('instructor_id', $instructor->id);
-            $scheduleGrid = $this->buildScheduleGrid($instructorGenes);
+            $scheduleGrid = [];
+            foreach ($instructorGenes as $gene) {
+                if ($gene->timeslot) {
+                    $scheduleGrid[$gene->timeslot->day][$gene->timeslot->start_time][] = $gene;
+                }
+            }
             $timetablesByInstructor[$instructor->id] = [
                 'instructor' => $instructor,
                 'schedule' => $scheduleGrid
@@ -271,7 +275,12 @@ class TimetableViewController extends Controller
 
         foreach ($filteredRooms as $room) {
             $roomGenes = $genes->where('room_id', $room->id);
-            $scheduleGrid = $this->buildScheduleGrid($roomGenes);
+            $scheduleGrid = [];
+            foreach ($roomGenes as $gene) {
+                if ($gene->timeslot) {
+                    $scheduleGrid[$gene->timeslot->day][$gene->timeslot->start_time][] = $gene;
+                }
+            }
             $timetablesByRoom[$room->id] = [
                 'room' => $room,
                 'schedule' => $scheduleGrid
@@ -288,42 +297,5 @@ class TimetableViewController extends Controller
             'roomsForFilter',
             'request'
         ));
-    }
-
-    /**
-     * بناء شبكة الجدول من الجينات - مع دعم البلوكات المتصلة
-     */
-    private function buildScheduleGrid($genes)
-    {
-        $scheduleGrid = [];
-        $timeslotsMapping = $this->getTimeslotsMapping();
-
-        foreach ($genes->unique('gene_id') as $gene) {
-            // معالجة timeslot_ids - قد تكون array أو string
-            $timeslotIds = is_array($gene->timeslot_ids)
-                ? $gene->timeslot_ids
-                : (json_decode($gene->timeslot_ids, true) ?? []);
-
-            if (empty($timeslotIds)) continue;
-
-            // ترتيب الـ timeslot IDs حسب التسلسل الزمني
-            sort($timeslotIds);
-
-            // إيجاد أول timeslot لتحديد موقع البلوك
-            $firstTimeslotId = $timeslotIds[0];
-            $firstTimeslot = $timeslotsMapping->get($firstTimeslotId);
-
-            if ($firstTimeslot) {
-                // إضافة الجين إلى الموقع المناسب مع معلومات البلوك
-                $geneWithBlockInfo = clone $gene;
-                $geneWithBlockInfo->timeslot_ids_array = $timeslotIds;
-                $geneWithBlockInfo->block_size = count($timeslotIds);
-                $geneWithBlockInfo->first_timeslot = $firstTimeslot;
-
-                $scheduleGrid[$firstTimeslot->day][$firstTimeslot->start_time][] = $geneWithBlockInfo;
-            }
-        }
-
-        return $scheduleGrid;
     }
 }
