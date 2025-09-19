@@ -506,17 +506,44 @@ class InitialPopulationService
         });
     }
 
-    private function calculateStudentConflicts(Collection $genes, array &$usageMap): int
+    // private function calculateStudentConflicts(Collection $genes, array &$usageMap): int
+    // {
+    //     $penalty = 0;
+    //     foreach ($genes as $gene) {
+    //         $studentGroupIds = $gene->student_group_id ?? [];
+    //         foreach ($gene->timeslot_ids as $timeslotId) {
+    //             foreach ($studentGroupIds as $groupId) {
+    //                 if (isset($usageMap['student_groups'][$groupId][$timeslotId])) {
+    //                     $penalty += 1;
+    //                 }
+    //                 $usageMap['student_groups'][$groupId][$timeslotId] = true;
+    //             }
+    //         }
+    //     }
+    //     return $penalty;
+    // }
+        private function calculateStudentConflicts(Collection $genes, array &$usageMap): int
     {
         $penalty = 0;
         foreach ($genes as $gene) {
             $studentGroupIds = $gene->student_group_id ?? [];
+            $isTheoreticalBlock = Str::contains($gene->lecture_unique_id, 'theory');
+
             foreach ($gene->timeslot_ids as $timeslotId) {
-                foreach ($studentGroupIds as $groupId) {
-                    if (isset($usageMap['student_groups'][$groupId][$timeslotId])) {
+                if ($isTheoreticalBlock) {
+                    // للمواد النظرية: تحقق من التعارض مع مواد أخرى فقط
+                    if (isset($usageMap['theoretical_shared'][$timeslotId])) {
                         $penalty += 1;
                     }
-                    $usageMap['student_groups'][$groupId][$timeslotId] = true;
+                    $usageMap['theoretical_shared'][$timeslotId] = true;
+                } else {
+                    // للمواد العملية: تحقق من تعارض المجموعات
+                    foreach ($studentGroupIds as $groupId) {
+                        if (isset($usageMap['student_groups'][$groupId][$timeslotId])) {
+                            $penalty += 1;
+                        }
+                        $usageMap['student_groups'][$groupId][$timeslotId] = true;
+                    }
                 }
             }
         }

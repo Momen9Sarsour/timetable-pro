@@ -210,6 +210,11 @@
                                         <i class="fas fa-users-class"></i> Sections
                                     </a>
                                 </li>
+                                <li class="{{ request()->routeIs('data-entry.plan-groups.*') ? 'active' : '' }}">
+                                    <a href="{{ route('data-entry.plan-groups.index') }}">
+                                        <i class="fas fa-users"></i> Plan Groups
+                                    </a>
+                                </li>
                                 <li class="{{ request()->routeIs('data-entry.instructors.*') ? 'active' : '' }}">
                                     <a href="{{ route('data-entry.instructors.index') }}">
                                         <i class="fas fa-chalkboard-teacher"></i> Instructors

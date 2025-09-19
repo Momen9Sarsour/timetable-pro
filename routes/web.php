@@ -15,6 +15,7 @@ use App\Http\Controllers\DataEntry\InstructorSubjectsController;
 use App\Http\Controllers\DataEntry\MutationTypeController;
 use App\Http\Controllers\DataEntry\PlanController;
 use App\Http\Controllers\DataEntry\PlanExpectedCountController;
+use App\Http\Controllers\DataEntry\PlanGroupsController;
 use App\Http\Controllers\DataEntry\PlanSubjectImportController;
 use App\Http\Controllers\DataEntry\RoleController;
 use App\Http\Controllers\DataEntry\RoomController;
@@ -191,6 +192,11 @@ Route::prefix('dashboard')->group(function () {
         Route::put('/sections/update-in-context/{section}', [SectionController22::class, 'updateSectionInContext'])->name('sections.updateInContext'); // {section} هنا هو section_id
         Route::delete('/sections/destroy-in-context/{section}', [SectionController22::class, 'destroySectionInContext'])->name('sections.destroyInContext');
 
+        // --- Plan Groups Management (Student Groups) ---
+        Route::get('/plan-groups', [PlanGroupsController::class, 'index'])->name('plan-groups.index');
+        Route::get('/plan-groups/get-plans', [PlanGroupsController::class, 'getPlans'])->name('plan-groups.get-plans'); // API للحصول على الخطط حسب القسم
+
+
         // --- Instructor Section Subject Assignments ---
         Route::get('/instructor-section', [InstructorSectionController::class, 'index'])->name('instructor-section.index'); // صفحة العرض الرئيسية
         Route::get('/instructor-section/{instructor}/edit', [InstructorSectionController::class, 'editAssignments'])->name('instructor-section.edit');
@@ -238,11 +244,11 @@ Route::prefix('dashboard')->group(function () {
         Route::resource('crossover-types', CrossoverTypeController::class)->except(['create', 'show', 'edit']);
         Route::resource('selection-types', SelectionTypeController::class)->except(['create', 'show', 'edit']);
         Route::resource('mutation-types', MutationTypeController::class)->except(['create', 'show', 'edit']);
-        
+
 
         // TimetableGenerationController
         Route::post('/timetable/generate', [TimetableGenerationController::class, 'start'])->name('timetable.generate.start');
-    
+
         Route::get('/populations', [TimetableGenerationController::class, 'populationIndex'])->name('populations.index');
         Route::post('/populations/generate-initial', [TimetableGenerationController::class, 'generateInitial'])->name('populations.generate-initial');
         Route::post('/populations/continue/{population}', [TimetableGenerationController::class, 'continueEvolution'])->name('populations.continue');

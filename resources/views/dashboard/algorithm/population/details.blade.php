@@ -221,7 +221,7 @@
                                                         <div class="text-danger">Students: {{ $chromosome->student_conflict_penalty }}</div>
                                                     @endif
                                                     @if($chromosome->teacher_conflict_penalty > 0)
-                                                        <div class="text-warning">Teachers: {{ $chromosome->teacher_conflict_penalty }}</div>
+                                                        <div class="text-warning">Teachers: {{ $chromosome->teacher_conflict_penalty }} + {{ $chromosome->teacher_eligibility_conflict_penalty }}</div>
                                                     @endif
                                                     @if($chromosome->room_conflict_penalty > 0)
                                                         <div class="text-info">Rooms: {{ $chromosome->room_conflict_penalty }}</div>
