@@ -57,10 +57,11 @@ class SubjectController extends Controller
             'subject_no' => 'required|string|max:20|unique:subjects,subject_no',
             'subject_name' => 'required|string|max:255',
             'subject_load' => 'required|integer|min:0',
-            'theoretical_hours' => 'required|integer|min:0',
-            'practical_hours' => 'required|integer|min:0',
-            'load_theoretical_section' => 'nullable|integer|min:1', // nullable للسماح بالقيمة الافتراضية
-            'load_practical_section' => 'nullable|integer|min:1',
+            'subject_hours' => 'required|integer|min:1',
+            // 'theoretical_hours' => 'required|integer|min:0',
+            // 'practical_hours' => 'required|integer|min:0',
+            // 'load_theoretical_section' => 'nullable|integer|min:1', // nullable للسماح بالقيمة الافتراضية
+            // 'load_practical_section' => 'nullable|integer|min:1',
             'subject_type_id' => 'required|integer|exists:subjects_types,id',
             'subject_category_id' => 'required|integer|exists:subjects_categories,id',
             'department_id' => 'required|integer|exists:departments,id',
@@ -68,14 +69,14 @@ class SubjectController extends Controller
 
         // 2. Prepare Data (validatedData جاهزة)
         $data = $validatedData;
-        if (!isset($validatedData['load_theoretical_section']) || is_null($validatedData['load_theoretical_section'])) {
-            // القيمة الافتراضية من قاعدة البيانات ستُستخدم إذا كان الحقل nullable
-            // أو يمكنك تعيينها هنا صراحة إذا أردت:
-            $dataToCreate['load_theoretical_section'] = 50;
-        }
-        if (!isset($validatedData['load_practical_section']) || is_null($validatedData['load_practical_section'])) {
-            $dataToCreate['load_practical_section'] = 25;
-        }
+        // if (!isset($validatedData['load_theoretical_section']) || is_null($validatedData['load_theoretical_section'])) {
+        //     // القيمة الافتراضية من قاعدة البيانات ستُستخدم إذا كان الحقل nullable
+        //     // أو يمكنك تعيينها هنا صراحة إذا أردت:
+        //     $dataToCreate['load_theoretical_section'] = 50;
+        // }
+        // if (!isset($validatedData['load_practical_section']) || is_null($validatedData['load_practical_section'])) {
+        //     $dataToCreate['load_practical_section'] = 25;
+        // }
         // 3. Add to Database
         try {
             Subject::create($data);
@@ -101,10 +102,11 @@ class SubjectController extends Controller
             'subject_no' => 'required|string|max:20|unique:subjects,subject_no,' . $subject->id,
             'subject_name' => 'required|string|max:255',
             'subject_load' => 'required|integer|min:0',
-            'theoretical_hours' => 'required|integer|min:0',
-            'practical_hours' => 'required|integer|min:0',
-            'load_theoretical_section' => 'nullable|integer|min:1',
-            'load_practical_section' => 'nullable|integer|min:1',
+            'subject_hours' => 'required|integer|min:1',
+            // 'theoretical_hours' => 'required|integer|min:0',
+            // 'practical_hours' => 'required|integer|min:0',
+            // 'load_theoretical_section' => 'nullable|integer|min:1',
+            // 'load_practical_section' => 'nullable|integer|min:1',
             'subject_type_id' => 'required|integer|exists:subjects_types,id',
             'subject_category_id' => 'required|integer|exists:subjects_categories,id',
             'department_id' => 'required|integer|exists:departments,id',
@@ -113,8 +115,8 @@ class SubjectController extends Controller
         // 2. Prepare Data (validatedData جاهزة)
         $data = $validatedData;
         // إذا أرسل المستخدم قيمة فارغة، يجب أن نخزن NULL وليس string فارغ (إذا كان الحقل يقبل NULL)
-        $dataToUpdate['load_theoretical_section'] = $request->filled('load_theoretical_section') ? $request->input('load_theoretical_section') : null;
-        $dataToUpdate['load_practical_section'] = $request->filled('load_practical_section') ? $request->input('load_practical_section') : null;
+        // $dataToUpdate['load_theoretical_section'] = $request->filled('load_theoretical_section') ? $request->input('load_theoretical_section') : null;
+        // $dataToUpdate['load_practical_section'] = $request->filled('load_practical_section') ? $request->input('load_practical_section') : null;
 
         // 3. Update Database
         try {
@@ -348,10 +350,11 @@ class SubjectController extends Controller
                     'subject_no' => $subjectNo,
                     'subject_name' => $subjectName,
                     'subject_load' => $row->get('subject_load'),
-                    'theoretical_hours' => $row->get('theoretical_hours'),
-                    'practical_hours' => $row->get('practical_hours'),
-                    'capacity_theoretical_section' => $row->get('capacity_theoretical_section'),
-                    'capacity_practical_section' => $row->get('capacity_practical_section'),
+                    'subject_hours' => $row->get('subject_hours'),
+                    // 'theoretical_hours' => $row->get('theoretical_hours'),
+                    // 'practical_hours' => $row->get('practical_hours'),
+                    // 'capacity_theoretical_section' => $row->get('capacity_theoretical_section'),
+                    // 'capacity_practical_section' => $row->get('capacity_practical_section'),
                     'subject_type_id' => $subjectTypeId,
                     'subject_category_id' => $subjectCategoryId,
                     'department_id' => $departmentId,
@@ -361,10 +364,11 @@ class SubjectController extends Controller
                     'subject_no' => 'required|string|max:20',
                     'subject_name' => 'required|string|max:255',
                     'subject_load' => 'required|integer|min:0',
-                    'theoretical_hours' => 'required|integer|min:0',
-                    'practical_hours' => 'required|integer|min:0',
-                    'capacity_theoretical_section' => 'nullable|integer|min:1',
-                    'capacity_practical_section' => 'nullable|integer|min:1',
+                    'subject_hours' => 'required|integer|min:1',
+                    // 'theoretical_hours' => 'required|integer|min:0',
+                    // 'practical_hours' => 'required|integer|min:0',
+                    // 'capacity_theoretical_section' => 'nullable|integer|min:1',
+                    // 'capacity_practical_section' => 'nullable|integer|min:1',
                     'subject_type_id' => 'required|integer|exists:subjects_types,id',
                     'subject_category_id' => 'required|integer|exists:subjects_categories,id',
                     'department_id' => 'required|integer|exists:departments,id',
@@ -378,8 +382,8 @@ class SubjectController extends Controller
                 }
                 $validatedData = $validator->validated();
                 // استخدام القيم الافتراضية إذا كانت السعات null بعد التحقق
-                $validatedData['capacity_theoretical_section'] = $validatedData['capacity_theoretical_section'] ?? 50;
-                $validatedData['capacity_practical_section'] = $validatedData['capacity_practical_section'] ?? 25;
+                // $validatedData['capacity_theoretical_section'] = $validatedData['capacity_theoretical_section'] ?? 50;
+                // $validatedData['capacity_practical_section'] = $validatedData['capacity_practical_section'] ?? 25;
 
 
                 $subject = Subject::where('subject_no', $validatedData['subject_no'])->first();
@@ -469,8 +473,9 @@ class SubjectController extends Controller
             'subject_no' => 'required|string|max:20|unique:subjects,subject_no',
             'subject_name' => 'required|string|max:255',
             'subject_load' => 'required|integer|min:0',
-            'theoretical_hours' => 'required|integer|min:0',
-            'practical_hours' => 'required|integer|min:0',
+            'subject_hours' => 'required|integer|min:1',
+            // 'theoretical_hours' => 'required|integer|min:0',
+            // 'practical_hours' => 'required|integer|min:0',
             'subject_type_id' => 'required|integer|exists:subjects_types,id',
             'subject_category_id' => 'required|integer|exists:subjects_categories,id',
             'department_id' => 'required|integer|exists:departments,id',
@@ -684,10 +689,11 @@ class SubjectController extends Controller
                     'subject_no' => $subjectNo,
                     'subject_name' => $subjectName,
                     'subject_load' => $row->get('subject_load'),
-                    'theoretical_hours' => $row->get('theoretical_hours'),
-                    'practical_hours' => $row->get('practical_hours'),
-                    'capacity_theoretical_section' => $row->get('capacity_theoretical_section'),
-                    'capacity_practical_section' => $row->get('capacity_practical_section'),
+                    'subject_hours' => $row->get('subject_hours'),
+                    // 'theoretical_hours' => $row->get('theoretical_hours'),
+                    // 'practical_hours' => $row->get('practical_hours'),
+                    // 'capacity_theoretical_section' => $row->get('capacity_theoretical_section'),
+                    // 'capacity_practical_section' => $row->get('capacity_practical_section'),
                     'subject_type_id' => $subjectTypeId,
                     'subject_category_id' => $subjectCategoryId,
                     'department_id' => $departmentId,
@@ -697,10 +703,11 @@ class SubjectController extends Controller
                     'subject_no' => 'required|string|max:20',
                     'subject_name' => 'required|string|max:255',
                     'subject_load' => 'required|integer|min:0',
-                    'theoretical_hours' => 'required|integer|min:0',
-                    'practical_hours' => 'required|integer|min:0',
-                    'capacity_theoretical_section' => 'nullable|integer|min:1',
-                    'capacity_practical_section' => 'nullable|integer|min:1',
+                    'subject_hours' => 'required|integer|min:1',
+                    // 'theoretical_hours' => 'required|integer|min:0',
+                    // 'practical_hours' => 'required|integer|min:0',
+                    // 'capacity_theoretical_section' => 'nullable|integer|min:1',
+                    // 'capacity_practical_section' => 'nullable|integer|min:1',
                     'subject_type_id' => 'required|integer|exists:subjects_types,id',
                     'subject_category_id' => 'required|integer|exists:subjects_categories,id',
                     'department_id' => 'required|integer|exists:departments,id',
@@ -714,8 +721,8 @@ class SubjectController extends Controller
                     continue;
                 }
                 $validatedData = $validator->validated();
-                $validatedData['capacity_theoretical_section'] = $validatedData['capacity_theoretical_section'] ?? 50;
-                $validatedData['capacity_practical_section'] = $validatedData['capacity_practical_section'] ?? 25;
+                // $validatedData['capacity_theoretical_section'] = $validatedData['capacity_theoretical_section'] ?? 50;
+                // $validatedData['capacity_practical_section'] = $validatedData['capacity_practical_section'] ?? 25;
 
                 $subject = Subject::updateOrCreate(['subject_no' => $validatedData['subject_no']], $validatedData);
                 if ($subject->wasRecentlyCreated) {

@@ -45,6 +45,11 @@ class Section extends Model
         return $this->planSubject->subject(); // قد تحتاج لتحسين الأداء Eager Loading
     }
 
+    public function instructor()
+    {
+        return $this->belongsTo(Instructor::class, 'instructor_id', 'id');
+    }
+
     public function instructors()
     {
         return $this->belongsToMany(Instructor::class, 'instructor_section');

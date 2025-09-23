@@ -64,8 +64,24 @@
                         </div>
 
                         <div class="col-md-4">
+                            <label for="add_subject_hours" class="form-label fw-medium small">
+                                 Subject Hours <span class="text-danger">*</span>
+                            </label>
+                            <input type="number"
+                                   class="form-control form-control-sm @error('subject_hours') is-invalid @enderror"
+                                   id="add_subject_hours"
+                                   name="subject_hours"
+                                   value="{{ old('subject_hours') }}"
+                                   min="0"
+                                   max="10"
+                                   required>
+                            @error('subject_hours')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-4">
                             <label for="add_subject_load" class="form-label fw-medium small">
-                                Credit Hours <span class="text-danger">*</span>
+                                 Subject load <span class="text-danger">*</span>
                             </label>
                             <input type="number"
                                    class="form-control form-control-sm @error('subject_load') is-invalid @enderror"
@@ -73,14 +89,16 @@
                                    name="subject_load"
                                    value="{{ old('subject_load') }}"
                                    min="0"
-                                   max="10"
+                                   max="1000"
                                    required>
                             @error('subject_load')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
 
-                        <div class="col-md-4">
+                        
+
+                        {{-- <div class="col-md-4">
                             <label for="add_theoretical_hours" class="form-label fw-medium small">
                                 Theory Hours/Week <span class="text-danger">*</span>
                             </label>
@@ -112,10 +130,10 @@
                             @error('practical_hours')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
-                        </div>
+                        </div> --}}
 
                         <!-- Section Capacity -->
-                        <div class="col-12 mt-2">
+                        {{-- <div class="col-12 mt-2">
                             <h6 class="text-primary border-bottom pb-1 mb-2 small">
                                 <i class="fas fa-users me-1"></i>Section Capacity
                             </h6>
@@ -153,7 +171,7 @@
                             @error('load_practical_section', 'store')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
-                        </div>
+                        </div> --}}
 
                         <!-- Classification -->
                         <div class="col-12 mt-2">
@@ -311,9 +329,24 @@
                             </h6>
                         </div>
 
-                        <div class="col-md-4">
-                            <label for="edit_subject_load_{{ $subject->id }}" class="form-label fw-medium small">
+                        <div class="col-md-6">
+                            <label for="edit_subject_hours_{{ $subject->id }}" class="form-label fw-medium small">
                                 Credit Hours <span class="text-danger">*</span>
+                            </label>
+                            <input type="number"
+                                   class="form-control form-control-sm @error('subject_hours', 'update_'.$subject->id) is-invalid @enderror"
+                                   id="edit_subject_hours_{{ $subject->id }}"
+                                   name="subject_hours"
+                                   value="{{ old('subject_hours', $subject->subject_hours) }}"
+                                   min="0"
+                                   required>
+                            @error('subject_hours', 'update_'.$subject->id)
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_subject_load_{{ $subject->id }}" class="form-label fw-medium small">
+                                Credit Load student <span class="text-danger">*</span>
                             </label>
                             <input type="number"
                                    class="form-control form-control-sm @error('subject_load', 'update_'.$subject->id) is-invalid @enderror"
@@ -327,7 +360,7 @@
                             @enderror
                         </div>
 
-                        <div class="col-md-4">
+                        {{-- <div class="col-md-4">
                             <label for="edit_theoretical_hours_{{ $subject->id }}" class="form-label fw-medium small">
                                 Theory Hours/Week <span class="text-danger">*</span>
                             </label>
@@ -357,7 +390,7 @@
                             @error('practical_hours', 'update_'.$subject->id)
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
-                        </div>
+                        </div> --}}
 
                         <!-- Section Capacity -->
                         <div class="col-12 mt-2">
@@ -515,8 +548,8 @@
                                     <h6 class="card-title mb-1 small">{{ $subject->subject_name }}</h6>
                                     <small class="text-muted">Code: {{ $subject->subject_no }}</small>
                                     <div class="d-flex gap-1 mt-1">
-                                        <span class="badge bg-info bg-opacity-20 text-info">{{ $subject->subject_load }} credits</span>
-                                        <span class="badge bg-secondary bg-opacity-20 text-secondary">{{ $subject->theoretical_hours }}h/{{ $subject->practical_hours }}h</span>
+                                        <span class="badge bg-info bg-opacity-20 text-white">{{ $subject->subject_load }} credits</span>
+                                        <span class="badge bg-secondary bg-opacity-20 text-white">{{ $subject->subject_hours }}H</span>
                                     </div>
                                 </div>
                                 <span class="badge bg-danger">Will be deleted</span>

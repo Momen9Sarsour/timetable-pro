@@ -23,6 +23,7 @@ return new class extends Migration
 
             // ربط مع الشعبة
             $table->foreignId('section_id')->constrained('sections')->onDelete('cascade');
+            $table->foreignId('subject_id')->nullable()->constrained('subjects')->onUpdate('cascade')->onDelete('set null');
 
             // معلومات المجموعة
             $table->unsignedTinyInteger('group_no'); // رقم المجموعة (1,2,3...)
@@ -34,7 +35,16 @@ return new class extends Migration
             $table->index(['section_id', 'group_no'], 'section_group_index');
 
             // ضمان عدم التكرار للمجموعة الواحدة في نفس الشعبة
-            $table->unique(['section_id', 'group_no'], 'unique_section_group');
+            // $table->unique(['section_id', 'group_no'], 'unique_section_group');
+            $table->unique([
+                'plan_id',
+                'plan_level',
+                'academic_year',
+                'semester',
+                'branch',
+                'subject_id', // مضاف
+                'group_no'
+            ], 'plan_groups_unique_constraint');
 
             $table->timestamps();
         });

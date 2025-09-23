@@ -66,7 +66,7 @@ class TimetableResultController extends Controller
         return back()->with('success', "Chromosome #{$chromosome->chromosome_id} is now set as the best solution.");
     }
 
-    /**
+/**
      * عرض تفاصيل الكروموسوم (الجدول)
      */
     public function show(Chromosome $chromosome)
@@ -186,6 +186,7 @@ class TimetableResultController extends Controller
                 'allInstructors',
                 'timeSlotUsage'
             ));
+
         } catch (Exception $e) {
             Log::error("Error displaying timetable: " . $e->getMessage() . "\n" . $e->getTraceAsString());
             return redirect()
@@ -303,229 +304,72 @@ class TimetableResultController extends Controller
     //         ], 500);
     //     }
     // }
-    /**
-     * حفظ التعديلات والحركات في قاعدة البيانات
-     */
-    public function saveEdits(Chromosome $chromosome, Request $request)
-    {
-        $request->validate([
-            'edits' => 'array',
-            'edits.*.gene_id' => 'required|exists:genes,gene_id',
-            'edits.*.field' => 'required|in:instructor,room',
-            'edits.*.new_value_id' => 'required|integer',
-            'edits.*.old_value_id' => 'nullable',
-            'moves' => 'array',
-            'moves.*.gene_id' => 'required|exists:genes,gene_id',
-            'moves.*.new_timeslots' => 'required|array',
-            'moves.*.new_position' => 'required|array',
+    public function saveEdits(Request $request)
+{
+    $request->validate([
+        'chromosome_id' => 'required|exists:chromosomes,chromosome_id',
+        'edits' => 'array',
+        'edits.*.gene_id' => 'required|exists:genes,gene_id',
+        'edits.*.field' => 'required|in:instructor,room',
+        'edits.*.new_value_id' => 'required|integer',
+        'moves' => 'array',
+        'moves.*.gene_id' => 'required|exists:genes,gene_id',
+        'moves.*.new_position' => 'required|array',
+    ]);
+
+    try {
+        $updatedGenes = [];
+        
+        DB::transaction(function () use ($request, &$updatedGenes) {
+            // حفظ التعديلات في الحقول
+            if (!empty($request->edits)) {
+                foreach ($request->edits as $edit) {
+                    $gene = Gene::findOrFail($edit['gene_id']);
+                    $field = $edit['field'] . '_id';
+
+                    // حفظ في جدول التغييرات
+                    DB::table('gene_edits')->insert([
+                        'gene_id' => $edit['gene_id'],
+                        'field' => $edit['field'],
+                        'old_value_id' => $gene->{$field},
+                        'new_value_id' => $edit['new_value_id'],
+                        'changed_by' => auth()->id(),
+                        'changed_at' => now(),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                    // تحديث الجين
+                    $gene->{$field} = $edit['new_value_id'];
+                    $gene->save();
+                    
+                    $updatedGenes[] = $gene->fresh()->load(['instructor.user', 'room']);
+                }
+            }
+
+            // حفظ تحركات البلوكات (يمكن إضافة جدول منفصل لاحقاً)
+            if (!empty($request->moves)) {
+                foreach ($request->moves as $move) {
+                    // يمكن حفظ معلومات المواقع في جدول منفصل أو كـ metadata
+                    Log::info("Gene {$move['gene_id']} moved to position", $move['new_position']);
+                }
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم حفظ التعديلات بنجاح',
+            'updated_genes' => $updatedGenes
         ]);
 
-        try {
-            DB::transaction(function () use ($request, $chromosome) {
-                $currentUserId = 1; // مؤقت - سيتم استبداله بـ auth()->id()
-
-                // معالجة تعديلات الحقول (مدرس/قاعة)
-                if (!empty($request->edits)) {
-                    foreach ($request->edits as $edit) {
-                        $gene = Gene::where('gene_id', $edit['gene_id'])
-                            ->where('chromosome_id', $chromosome->chromosome_id)
-                            ->firstOrFail();
-
-                        $field = $edit['field'] . '_id'; // instructor_id, room_id
-                        $oldValue = $gene->{$field};
-
-                        // حفظ التعديل في جدول التغييرات
-                        DB::table('gene_edits')->insert([
-                            'gene_id' => $edit['gene_id'],
-                            'field' => $edit['field'],
-                            'old_value_id' => $oldValue,
-                            'new_value_id' => $edit['new_value_id'],
-                            'changed_by' => $currentUserId,
-                            'changed_at' => now(),
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-
-                        // تحديث الجين
-                        $gene->{$field} = $edit['new_value_id'];
-                        $gene->save();
-                    }
-                }
-
-                // معالجة تحركات البلوكات
-                if (!empty($request->moves)) {
-                    foreach ($request->moves as $move) {
-                        $gene = Gene::where('gene_id', $move['gene_id'])
-                            ->where('chromosome_id', $chromosome->chromosome_id)
-                            ->firstOrFail();
-
-                        $oldTimeslots = $gene->timeslot_ids;
-
-                        // حفظ تحديث الوقت في جدول التغييرات
-                        DB::table('gene_edits')->insert([
-                            'gene_id' => $move['gene_id'],
-                            'field' => 'timeslots',
-                            'old_value_id' => json_encode($oldTimeslots),
-                            'new_value_id' => json_encode($move['new_timeslots']),
-                            'changed_by' => $currentUserId,
-                            'changed_at' => now(),
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-
-                        // تحديث التايم سلوتس
-                        $gene->timeslot_ids = $move['new_timeslots'];
-                        $gene->save();
-                    }
-                }
-
-                // إعادة حساب عقوبات التعارض للكروموسوم
-                $this->recalculateChromosomePenalties($chromosome);
-            });
-
-            return response()->json([
-                'success' => true,
-                'message' => 'تم حفظ التعديلات بنجاح في قاعدة البيانات.',
-                'timestamp' => now()->toISOString()
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error saving edits: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'فشل في حفظ التغييرات: ' . $e->getMessage()
-            ], 500);
-        }
+    } catch (\Exception $e) {
+        Log::error('فشل حفظ التعديلات: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'فشل الحفظ: ' . $e->getMessage()
+        ], 500);
     }
+}
 
-    /**
-     * إعادة حساب عقوبات التعارض بعد التعديلات
-     */
-    private function recalculateChromosomePenalties(Chromosome $chromosome)
-    {
-        try {
-            // جلب جميع الجينات المحدثة
-            $genes = $chromosome->genes()->with([
-                'section.planSubject.subject',
-                'instructor.user',
-                'room.roomType',
-            ])->get();
 
-            // تحويل الجينات لفحص التعارضات
-            $flatGenesForConflictCheck = collect();
-            $allTimeslots = Timeslot::all()->keyBy('id');
-
-            foreach ($genes as $geneBlock) {
-                $geneBlock->setRelation('timeslot', collect($geneBlock->timeslot_ids)->map(fn($id) => $allTimeslots->get($id)));
-                foreach ($geneBlock->timeslot_ids as $tsId) {
-                    $newGene = clone $geneBlock;
-                    $newGene->timeslot_id_single = $tsId;
-                    $flatGenesForConflictCheck->push($newGene);
-                }
-            }
-
-            // حساب التعارضات الجديدة
-            $conflictChecker = new ConflictCheckerService($flatGenesForConflictCheck);
-            $penalties = $conflictChecker->getConflicts();
-            // $penalties = $conflictChecker->calculatePenalties();
-            // $conflictChecker = new ConflictCheckerService($flatGenesForConflictCheck);
-            // $conflicts = $conflictChecker->getConflicts();
-            // $conflictingGeneIds = $conflictChecker->getConflictingGeneIds();
-
-            // تحديث عقوبات الكروموسوم
-            $chromosome->update([
-                'student_conflict_penalty' => $penalties['student_conflict_penalty'] ?? 0,
-                'teacher_conflict_penalty' => $penalties['teacher_conflict_penalty'] ?? 0,
-                'room_conflict_penalty' => $penalties['room_conflict_penalty'] ?? 0,
-                'capacity_conflict_penalty' => $penalties['capacity_conflict_penalty'] ?? 0,
-                'room_type_conflict_penalty' => $penalties['room_type_conflict_penalty'] ?? 0,
-                'teacher_eligibility_conflict_penalty' => $penalties['teacher_eligibility_conflict_penalty'] ?? 0,
-                'penalty_value' => array_sum($penalties),
-                'fitness_value' => $this->calculateFitnessFromPenalty(array_sum($penalties))
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error recalculating penalties: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * حساب قيمة اللياقة من العقوبة
-     */
-    private function calculateFitnessFromPenalty($penaltyValue)
-    {
-        if ($penaltyValue <= 0) {
-            return 1.0; // أفضل لياقة
-        }
-
-        return 1.0 / (1.0 + $penaltyValue);
-    }
-
-    /**
-     * API للحصول على التعارضات الحالية لبلوك معين
-     */
-    public function checkBlockConflicts(Request $request)
-    {
-        $request->validate([
-            'gene_id' => 'required|exists:genes,gene_id',
-            'instructor_id' => 'nullable|exists:instructors,id',
-            'room_id' => 'nullable|exists:rooms,id',
-            'timeslot_ids' => 'required|array',
-            'timeslot_ids.*' => 'exists:timeslots,id'
-        ]);
-
-        try {
-            $geneId = $request->gene_id;
-            $instructorId = $request->instructor_id;
-            $roomId = $request->room_id;
-            $timeslotIds = $request->timeslot_ids;
-
-            $conflicts = [];
-
-            // فحص تعارض المدرس
-            if ($instructorId) {
-                $instructorConflicts = Gene::where('instructor_id', $instructorId)
-                    ->where('gene_id', '!=', $geneId)
-                    ->get()
-                    ->filter(function ($gene) use ($timeslotIds) {
-                        return !empty(array_intersect($gene->timeslot_ids, $timeslotIds));
-                    });
-
-                foreach ($instructorConflicts as $conflict) {
-                    $conflicts[] = [
-                        'type' => 'instructor',
-                        'description' => 'المدرس مشغول في نفس الوقت',
-                        'conflicting_gene_id' => $conflict->gene_id
-                    ];
-                }
-            }
-
-            // فحص تعارض القاعة
-            if ($roomId) {
-                $roomConflicts = Gene::where('room_id', $roomId)
-                    ->where('gene_id', '!=', $geneId)
-                    ->get()
-                    ->filter(function ($gene) use ($timeslotIds) {
-                        return !empty(array_intersect($gene->timeslot_ids, $timeslotIds));
-                    });
-
-                foreach ($roomConflicts as $conflict) {
-                    $conflicts[] = [
-                        'type' => 'room',
-                        'description' => 'القاعة محجوزة لمحاضرة أخرى',
-                        'conflicting_gene_id' => $conflict->gene_id
-                    ];
-                }
-            }
-
-            return response()->json([
-                'success' => true,
-                'conflicts' => $conflicts,
-                'has_conflict' => count($conflicts) > 0
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'خطأ في فحص التعارضات: ' . $e->getMessage()
-            ], 500);
-        }
-    }
 }

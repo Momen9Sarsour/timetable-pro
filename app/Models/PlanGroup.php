@@ -23,6 +23,7 @@ class PlanGroup extends Model
         'semester',
         'branch',
         'section_id',
+        'subject_id',
         'group_no',
         'group_size',
         'gender',
@@ -53,6 +54,21 @@ class PlanGroup extends Model
         return $this->belongsTo(Section::class, 'section_id', 'id');
     }
 
+    public static function clearSubjectGroups($planId, $planLevel, $academicYear, $semester, $subjectId, $branch = null)
+    {
+        return static::byContext($planId, $planLevel, $academicYear, $semester, $branch)
+            ->bySubjectId($subjectId)
+            ->delete();
+    }
+
+    /**
+     * علاقة: المجموعة تنتمي لمادة واحدة (جديد)
+     */
+    public function subject()
+    {
+        return $this->belongsTo(Subject::class, 'subject_id', 'id');
+    }
+
     /**
      * علاقة: المجموعة مرتبطة بقسم من خلال الخطة
      */
@@ -74,10 +90,10 @@ class PlanGroup extends Model
     public function scopeByContext($query, $planId, $planLevel, $academicYear, $semester, $branch = null)
     {
         return $query->where('plan_id', $planId)
-                    ->where('plan_level', $planLevel)
-                    ->where('academic_year', $academicYear)
-                    ->where('semester', $semester)
-                    ->where('branch', $branch);
+            ->where('plan_level', $planLevel)
+            ->where('academic_year', $academicYear)
+            ->where('semester', $semester)
+            ->where('branch', $branch);
     }
 
     /**
@@ -86,6 +102,33 @@ class PlanGroup extends Model
     public function scopeBySectionId($query, $sectionId)
     {
         return $query->where('section_id', $sectionId);
+    }
+
+    /**
+     * Scope: البحث حسب المادة
+     */
+    public function scopeBySubjectId($query, $subjectId)
+    {
+        return $query->where('subject_id', $subjectId);
+    }
+
+    /**
+     * Scope: البحث حسب الجنس
+     */
+    public function scopeByGender($query, $gender)
+    {
+        return $query->where('gender', $gender);
+    }
+
+    /**
+     * دالة لجلب كل المجموعات في سياق ومادة معينة
+     */
+    public static function getGroupsForContextAndSubject($planId, $planLevel, $academicYear, $semester, $subjectId, $branch = null)
+    {
+        return static::byContext($planId, $planLevel, $academicYear, $semester, $branch)
+            ->bySubjectId($subjectId)
+            ->orderBy('group_no')
+            ->get();
     }
 
     /**
@@ -126,9 +169,9 @@ class PlanGroup extends Model
     public static function getGroupsForContext($planId, $planLevel, $academicYear, $semester, $branch = null)
     {
         return static::byContext($planId, $planLevel, $academicYear, $semester, $branch)
-                    ->with(['section.planSubject.subject'])
-                    ->orderBy('group_no')
-                    ->get();
+            ->with(['section.planSubject.subject'])
+            ->orderBy('group_no')
+            ->get();
     }
 
     /**
@@ -137,8 +180,8 @@ class PlanGroup extends Model
     public static function getGroupsForSection($sectionId)
     {
         return static::bySectionId($sectionId)
-                    ->orderBy('group_no')
-                    ->get();
+            ->orderBy('group_no')
+            ->get();
     }
 
     /**
@@ -147,8 +190,8 @@ class PlanGroup extends Model
     public static function getGroupNumbersForSection($sectionId)
     {
         return static::bySectionId($sectionId)
-                    ->pluck('group_no')
-                    ->toArray();
+            ->pluck('group_no')
+            ->toArray();
     }
 
     /**

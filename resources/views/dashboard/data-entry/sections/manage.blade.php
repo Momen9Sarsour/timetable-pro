@@ -131,7 +131,7 @@
     @endphp
 
     <!-- Theory Sections -->
-    @if (($subject->theoretical_hours ?? 0) > 0 && Str::contains($subjectCategoryName, ['theory', 'نظري', 'combined', 'مشترك']))
+    @if (($subject->subject_hours ?? 0) > 0 && Str::contains($subjectCategoryName, ['theory', 'نظري', 'combined', 'مشترك']))
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card border-0 shadow-sm">
@@ -292,7 +292,7 @@
     @endif
 
     <!-- Practical Sections -->
-    @if (($subject->practical_hours ?? 0) > 0 && Str::contains($subjectCategoryName, ['practical', 'عملي', 'combined', 'مشترك']))
+    @if (($subject->subject_hours ?? 0) > 0 && Str::contains($subjectCategoryName, ['practical', 'عملي', 'combined', 'مشترك']))
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card border-0 shadow-sm">

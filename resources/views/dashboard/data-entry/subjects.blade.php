@@ -85,10 +85,11 @@
                                         <th class="border-0" style="width: 100px;">Code</th>
                                         <th class="border-0">Subject Name</th>
                                         <th class="border-0 text-center" style="width: 60px;">Load</th>
-                                        <th class="border-0 text-center" style="width: 60px;">Theo</th>
+                                        <th class="border-0 text-center" style="width: 60px;">Load hours</th>
+                                        {{-- <th class="border-0 text-center" style="width: 60px;">Theo</th>
                                         <th class="border-0 text-center" style="width: 60px;">Prac</th>
                                         <th class="border-0 text-center" style="width: 80px;">T.Cap</th>
-                                        <th class="border-0 text-center" style="width: 80px;">P.Cap</th>
+                                        <th class="border-0 text-center" style="width: 80px;">P.Cap</th> --}}
                                         <th class="border-0" style="width: 100px;">Type</th>
                                         <th class="border-0" style="width: 100px;">Category</th>
                                         <th class="border-0" style="width: 100px;">Department</th>
@@ -111,6 +112,9 @@
                                                 <span class="badge bg-info bg-opacity-10 text-info">{{ $subject->subject_load }}</span>
                                             </td>
                                             <td class="text-center">
+                                                <span class="badge bg-info bg-opacity-10 text-info">{{ $subject->subject_hours }}</span>
+                                            </td>
+                                            {{-- <td class="text-center">
                                                 <small>{{ $subject->theoretical_hours }}h</small>
                                             </td>
                                             <td class="text-center">
@@ -121,7 +125,7 @@
                                             </td>
                                             <td class="text-center">
                                                 <small>{{ $subject->load_practical_section ?? '-' }}</small>
-                                            </td>
+                                            </td> --}}
                                             <td>
                                                 <span class="badge bg-secondary bg-opacity-10 text-secondary small">
                                                     {{ $subject->subjectType->subject_type_name ?? 'N/A' }}
@@ -185,7 +189,8 @@
                                             <td>
                                                 <small>
                                                     <span class="badge bg-info bg-opacity-10 text-info">{{ $subject->subject_load }} cr</span><br>
-                                                    T:{{ $subject->theoretical_hours }}h P:{{ $subject->practical_hours }}h
+                                                    <span class="badge bg-info bg-opacity-10 text-info">{{ $subject->subject_hours }} cr</span><br>
+                                                    {{-- T:{{ $subject->theoretical_hours }}h P:{{ $subject->practical_hours }}h --}}
                                                 </small>
                                             </td>
                                             <td>
@@ -232,8 +237,9 @@
 
                                                 <div class="d-flex flex-wrap gap-1 mb-2">
                                                     <span class="badge bg-info bg-opacity-10 text-info">{{ $subject->subject_load }} credits</span>
-                                                    <span class="badge bg-warning bg-opacity-10 text-warning">T:{{ $subject->theoretical_hours }}h</span>
-                                                    <span class="badge bg-success bg-opacity-10 text-success">P:{{ $subject->practical_hours }}h</span>
+                                                    <span class="badge bg-info bg-opacity-10 text-info">{{ $subject->subject_hours }} credits</span>
+                                                    {{-- <span class="badge bg-warning bg-opacity-10 text-warning">T:{{ $subject->theoretical_hours }}h</span>
+                                                    <span class="badge bg-success bg-opacity-10 text-success">P:{{ $subject->practical_hours }}h</span> --}}
                                                 </div>
 
                                                 <div class="d-flex flex-wrap gap-1">

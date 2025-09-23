@@ -123,8 +123,8 @@ class InitialPopulationService
     {
         // Log::info("Loading data for context -> Year: {$this->settings['academic_year']}, Semester: {$this->settings['semester']}");
 
-        // جلب كل البيانات اللازمة من قاعدة البيانات مرة واحدة
-        $sections = Section::with(['planSubject.subject', 'instructors'])
+        // **تحديث**: استخدام instructor مباشرة بدل instructors كعلاقة منفصلة
+        $sections = Section::with(['planSubject.subject', 'instructor'])
             ->where('academic_year', $this->settings['academic_year'])
             ->where('semester', $this->settings['semester'])
             ->get();
@@ -173,7 +173,7 @@ class InitialPopulationService
     }
 
     /**
-     * [الدالة المحورية الجديدة]
+     * [الدالة المحورية الجديدة - محدثة للداتابيز الجديدة]
      * تقوم بالتحضير المسبق لكل بلوكات المحاضرات، وتعيين المدرسين، وتجهيزها للجدولة.
      */
     private function precomputeLectureBlocks(Collection $sections)
@@ -187,11 +187,12 @@ class InitialPopulationService
             $subject = optional(optional($firstSection)->planSubject)->subject;
             if (!$subject) continue;
 
-            // اختيار المدرس الأقل عبئاً مرة واحدة لكل مادة
-            $assignedInstructor = $this->getLeastLoadedInstructorForSubject($subject, $instructorLoad);
+            // **تحديث**: استخدام المدرس المعين للشعبة مباشرة، أو اختيار الأقل عبئاً
+            $assignedInstructor = $firstSection->instructor ?? $this->getLeastLoadedInstructorForSubject($subject, $instructorLoad);
 
+            // **تحديث**: استخدام subject_hours بدل theoretical_hours و practical_hours
             // التعامل مع الجزء النظري
-            if ($subject->theoretical_hours > 0) {
+            if ($subject->subject_hours > 0) {
                 $theorySection = $subjectSections->firstWhere('activity_type', 'Theory');
                 if ($theorySection) {
                     // استدعاء دالة تقسيم البلوكات النظرية
@@ -200,7 +201,7 @@ class InitialPopulationService
             }
 
             // التعامل مع الجزء العملي
-            if ($subject->practical_hours > 0) {
+            if ($subject->subject_hours > 0) {
                 $practicalSections = $subjectSections->where('activity_type', 'Practical');
                 foreach ($practicalSections as $practicalSection) {
                     // استدعاء دالة تقسيم البلوكات العملية
@@ -211,12 +212,13 @@ class InitialPopulationService
     }
 
     /**
-     * [مصححة]
+     * [مصححة - محدثة للداتابيز الجديدة]
      * تقسم الساعات النظرية إلى بلوكات (2+1) حسب المنطق المطلوب.
      */
     private function splitTheoryBlocks(Section $section, Instructor $instructor, array &$instructorLoad)
     {
-        $totalSlotsNeeded = $section->planSubject->subject->theoretical_hours * ($this->settings['theory_credit_to_slots'] ?? 1);
+        // **تحديث**: استخدام subject_hours بدل theoretical_hours
+        $totalSlotsNeeded = $section->planSubject->subject->subject_hours * ($this->settings['theory_credit_to_slots'] ?? 1);
         $remainingSlots = $totalSlotsNeeded;
         $blockCounter = 1;
 
@@ -240,12 +242,13 @@ class InitialPopulationService
     }
 
     /**
-     * [مصححة]
+     * [مصححة - محدثة للداتابيز الجديدة]
      * تنشئ بلوكاً واحداً متصلاً للجزء العملي بالحجم الصحيح.
      */
     private function splitPracticalBlocks(Section $section, Instructor $instructor, array &$instructorLoad)
     {
-        $totalSlotsNeeded = $section->planSubject->subject->practical_hours * ($this->settings['practical_credit_to_slots'] ?? 1);
+        // **تحديث**: استخدام subject_hours بدل practical_hours
+        $totalSlotsNeeded = $section->planSubject->subject->subject_hours * ($this->settings['practical_credit_to_slots'] ?? 1);
         if ($totalSlotsNeeded <= 0) return;
 
         $remainingSlots = $totalSlotsNeeded;
@@ -506,23 +509,7 @@ class InitialPopulationService
         });
     }
 
-    // private function calculateStudentConflicts(Collection $genes, array &$usageMap): int
-    // {
-    //     $penalty = 0;
-    //     foreach ($genes as $gene) {
-    //         $studentGroupIds = $gene->student_group_id ?? [];
-    //         foreach ($gene->timeslot_ids as $timeslotId) {
-    //             foreach ($studentGroupIds as $groupId) {
-    //                 if (isset($usageMap['student_groups'][$groupId][$timeslotId])) {
-    //                     $penalty += 1;
-    //                 }
-    //                 $usageMap['student_groups'][$groupId][$timeslotId] = true;
-    //             }
-    //         }
-    //     }
-    //     return $penalty;
-    // }
-        private function calculateStudentConflicts(Collection $genes, array &$usageMap): int
+    private function calculateStudentConflicts(Collection $genes, array &$usageMap): int
     {
         $penalty = 0;
         foreach ($genes as $gene) {

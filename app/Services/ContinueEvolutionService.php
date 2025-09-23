@@ -934,157 +934,6 @@ class ContinueEvolutionService
     }
 
     /**
-     * محاولة تحسين ذكي للطفرة
-     */
-    private function trySmartMutationImprovement(array &$geneToMutate, \stdClass $lectureBlock, array $genes, int $geneIndex): bool
-    {
-        $currentConflicts = $this->calculateStudentSpecificConflicts($geneToMutate, $genes, $geneIndex);
-        $bestImprovement = false;
-
-        // محاولة 1: تحسين الوقت فقط
-        for ($attempt = 0; $attempt < 3; $attempt++) {
-            $newTimeslots = $this->findRandomConsecutiveTimeslots($lectureBlock->slots_needed);
-            $tempGene = $geneToMutate;
-            $tempGene['timeslot_ids'] = $newTimeslots;
-
-            $newConflicts = $this->calculateStudentSpecificConflicts($tempGene, $genes, $geneIndex);
-            if ($newConflicts < $currentConflicts) {
-                $geneToMutate['timeslot_ids'] = $newTimeslots;
-                $bestImprovement = true;
-                break;
-            }
-        }
-
-        // محاولة 2: تحسين القاعة إذا لم ينجح تحسين الوقت
-        if (!$bestImprovement) {
-            for ($attempt = 0; $attempt < 3; $attempt++) {
-                $newRoom = $this->getRandomRoomForBlock($lectureBlock);
-                $tempGene = $geneToMutate;
-                $tempGene['room_id'] = $newRoom->id;
-
-                // تحقق من عدم وجود تعارض في القاعة
-                $hasRoomConflict = false;
-                foreach ($genes as $index => $otherGene) {
-                    if ($index === $geneIndex || !$otherGene) continue;
-
-                    $otherTimeslots = $otherGene['timeslot_ids'] ?? [];
-                    $currentTimeslots = $geneToMutate['timeslot_ids'] ?? [];
-
-                    if (count(array_intersect($currentTimeslots, $otherTimeslots)) > 0 && $otherGene['room_id'] == $newRoom->id) {
-                        $hasRoomConflict = true;
-                        break;
-                    }
-                }
-
-                if (!$hasRoomConflict) {
-                    $geneToMutate['room_id'] = $newRoom->id;
-                    $bestImprovement = true;
-                    break;
-                }
-            }
-        }
-
-        return $bestImprovement;
-    }
-
-    /**
-     * حفظ الجيل الجديد بطريقة محسنة
-     */
-    private function saveNewGenerationOptimized(int $generationNumber, int $elitismCount, array $newChildrenData): void
-    {
-        Log::info("Saving generation #{$generationNumber} with optimization");
-
-        DB::transaction(function () use ($generationNumber, $elitismCount, $newChildrenData) {
-            $chromosomesToInsert = [];
-            $genesToInsert = [];
-
-            // **حفظ Elite من الـ Pool المستمر**
-            $eliteCount = 0;
-            foreach ($this->persistentElitePool as $eliteData) {
-                if ($eliteCount >= $elitismCount) break;
-
-                // جلب جينات Elite من الكروموسوم الأصلي
-                $eliteGenes = Gene::where('chromosome_id', $eliteData['chromosome_id'])->get();
-
-                // إنشاء كروموسوم Elite جديد
-                $newEliteChromosome = Chromosome::create([
-                    'population_id' => $this->populationRun->population_id,
-                    'generation_number' => $generationNumber,
-                    'penalty_value' => $eliteData['penalty_value'],
-                    'fitness_value' => $eliteData['fitness_value'],
-                    'student_conflict_penalty' => $eliteData['student_conflict_penalty'],
-                    'teacher_conflict_penalty' => $eliteData['teacher_conflict_penalty'],
-                    'room_conflict_penalty' => $eliteData['room_conflict_penalty'],
-                    'capacity_conflict_penalty' => $eliteData['capacity_conflict_penalty'],
-                    'room_type_conflict_penalty' => $eliteData['room_type_conflict_penalty'],
-                    'teacher_eligibility_conflict_penalty' => $eliteData['teacher_eligibility_conflict_penalty'],
-                ]);
-
-                // نسخ جينات Elite
-                foreach ($eliteGenes as $gene) {
-                    $genesToInsert[] = [
-                        'chromosome_id' => $newEliteChromosome->chromosome_id,
-                        'lecture_unique_id' => $gene->lecture_unique_id,
-                        'section_id' => $gene->section_id,
-                        'instructor_id' => $gene->instructor_id,
-                        'room_id' => $gene->room_id,
-                        'timeslot_ids' => is_string($gene->timeslot_ids) ? $gene->timeslot_ids : json_encode($gene->timeslot_ids),
-                        'student_group_id' => is_string($gene->student_group_id) ? $gene->student_group_id : json_encode($gene->student_group_id),
-                        'block_type' => $gene->block_type,
-                        'block_duration' => $gene->block_duration,
-                    ];
-                }
-
-                $eliteCount++;
-            }
-
-            // **حفظ الأطفال الجدد**
-            foreach ($newChildrenData as $childData) {
-                $newChildChromosome = Chromosome::create([
-                    'population_id' => $this->populationRun->population_id,
-                    'generation_number' => $generationNumber,
-                    'penalty_value' => -1,
-                    'fitness_value' => 0,
-                    'student_conflict_penalty' => 0,
-                    'teacher_conflict_penalty' => 0,
-                    'room_conflict_penalty' => 0,
-                    'capacity_conflict_penalty' => 0,
-                    'room_type_conflict_penalty' => 0,
-                    'teacher_eligibility_conflict_penalty' => 0,
-                ]);
-
-                foreach ($childData['genes_data'] as $geneData) {
-                    $genesToInsert[] = [
-                        'chromosome_id' => $newChildChromosome->chromosome_id,
-                        'lecture_unique_id' => $geneData['lecture_unique_id'],
-                        'section_id' => $geneData['section_id'],
-                        'instructor_id' => $geneData['instructor_id'],
-                        'room_id' => $geneData['room_id'],
-                        'timeslot_ids' => is_string($geneData['timeslot_ids']) ? $geneData['timeslot_ids'] : json_encode($geneData['timeslot_ids']),
-                        'student_group_id' => is_string($geneData['student_group_id']) ? $geneData['student_group_id'] : json_encode($geneData['student_group_id']),
-                        'block_type' => $geneData['block_type'],
-                        'block_duration' => $geneData['block_duration'],
-                    ];
-                }
-            }
-
-            // **إدراج الجينات على دفعات لتجنب مشكلة MySQL placeholders**
-            if (!empty($genesToInsert)) {
-                $batchSize = 1000; // دفعات من 1000 جين
-                $chunks = array_chunk($genesToInsert, $batchSize);
-
-                foreach ($chunks as $chunk) {
-                    Gene::insert($chunk);
-                }
-
-                Log::info("Inserted " . count($genesToInsert) . " genes in " . count($chunks) . " batches");
-            }
-        });
-
-        Log::info("Generation #{$generationNumber} saved with {$elitismCount} elite and " . count($newChildrenData) . " children");
-    }
-
-    /**
      * تقييم محسن للـ fitness
      */
     private function evaluateFitnessOptimized(int $generationNumber): void
@@ -1155,27 +1004,6 @@ class ContinueEvolutionService
     }
 
     /**
-     * حذف الجيل القديم بطريقة محسنة
-     */
-    private function deleteOldGenerationOptimized(int $currentGenerationNumber): void
-    {
-        DB::transaction(function () use ($currentGenerationNumber) {
-            $oldChromosomeIds = Chromosome::where('population_id', $this->populationRun->population_id)
-                ->where('generation_number', '!=', $currentGenerationNumber)
-                ->pluck('chromosome_id');
-
-            if ($oldChromosomeIds->isNotEmpty()) {
-                // حذف الجينات أولاً
-                Gene::whereIn('chromosome_id', $oldChromosomeIds)->delete();
-                // ثم حذف الكروموسومات
-                Chromosome::whereIn('chromosome_id', $oldChromosomeIds)->delete();
-
-                Log::info("Deleted " . $oldChromosomeIds->count() . " old chromosomes and their genes");
-            }
-        });
-    }
-
-    /**
      * الحصول على أفضل fitness في الجيل الحالي
      */
     private function getCurrentBestFitness(int $generationNumber): float
@@ -1196,7 +1024,7 @@ class ContinueEvolutionService
     }
 
     //======================================================================
-    // الدوال المنسوخة بدون تعديل من الكود الأصلي
+    // الدوال المنسوخة بدون تعديل من الكود الأصلي مع التحديثات المطلوبة
     //======================================================================
 
     private function loadAndPrepareData()
@@ -1204,7 +1032,8 @@ class ContinueEvolutionService
         Log::info("Loading data for context -> Year: {$this->settings['academic_year']}, Semester: {$this->settings['semester']}");
 
         // جلب كل البيانات اللازمة من قاعدة البيانات مرة واحدة
-        $sections = Section::with(['planSubject.subject', 'instructors'])
+        // تحديث: استخدام instructor مباشرة من sections بدل جدول منفصل
+        $sections = Section::with(['planSubject.subject', 'instructor'])
             ->where('academic_year', $this->settings['academic_year'])
             ->where('semester', $this->settings['semester'])
             ->get();
@@ -1252,7 +1081,7 @@ class ContinueEvolutionService
     }
 
     /**
-     * [الدالة المحورية الجديدة]
+     * [الدالة المحورية الجديدة - محدثة للداتابيز الجديدة]
      * تقوم بالتحضير المسبق لكل بلوكات المحاضرات، وتعيين المدرسين، وتجهيزها للجدولة.
      */
     private function precomputeLectureBlocks(Collection $sections)
@@ -1266,11 +1095,12 @@ class ContinueEvolutionService
             $subject = optional(optional($firstSection)->planSubject)->subject;
             if (!$subject) continue;
 
-            // اختيار المدرس الأقل عبئاً مرة واحدة لكل مادة
-            $assignedInstructor = $this->getLeastLoadedInstructorForSubject($subject, $instructorLoad);
+            // **تحديث**: استخدام المدرس المعين للشعبة مباشرة، أو اختيار الأقل عبئاً
+            $assignedInstructor = $firstSection->instructor ?? $this->getLeastLoadedInstructorForSubject($subject, $instructorLoad);
 
+            // **تحديث**: استخدام subject_hours بدل theoretical_hours و practical_hours
             // التعامل مع الجزء النظري
-            if ($subject->theoretical_hours > 0) {
+            if ($subject->subject_hours > 0) {
                 $theorySection = $subjectSections->firstWhere('activity_type', 'Theory');
                 if ($theorySection) {
                     // استدعاء دالة تقسيم البلوكات النظرية
@@ -1279,7 +1109,7 @@ class ContinueEvolutionService
             }
 
             // التعامل مع الجزء العملي
-            if ($subject->practical_hours > 0) {
+            if ($subject->subject_hours > 0) {
                 $practicalSections = $subjectSections->where('activity_type', 'Practical');
                 foreach ($practicalSections as $practicalSection) {
                     // استدعاء دالة تقسيم البلوكات العملية
@@ -1290,12 +1120,13 @@ class ContinueEvolutionService
     }
 
     /**
-     * [مصححة]
+     * [مصححة - محدثة للداتابيز الجديدة]
      * تقسم الساعات النظرية إلى بلوكات (2+1) حسب المنطق المطلوب.
      */
     private function splitTheoryBlocks(Section $section, Instructor $instructor, array &$instructorLoad)
     {
-        $totalSlotsNeeded = $section->planSubject->subject->theoretical_hours * ($this->settings['theory_credit_to_slots'] ?? 1);
+        // **تحديث**: استخدام subject_hours بدل theoretical_hours
+        $totalSlotsNeeded = $section->planSubject->subject->subject_hours * ($this->settings['theory_credit_to_slots'] ?? 1);
         $remainingSlots = $totalSlotsNeeded;
         $blockCounter = 1;
 
@@ -1319,12 +1150,13 @@ class ContinueEvolutionService
     }
 
     /**
-     * [مصححة]
+     * [مصححة - محدثة للداتابيز الجديدة]
      * تنشئ بلوكاً واحداً متصلاً للجزء العملي بالحجم الصحيح.
      */
     private function splitPracticalBlocks(Section $section, Instructor $instructor, array &$instructorLoad)
     {
-        $totalSlotsNeeded = $section->planSubject->subject->practical_hours * ($this->settings['practical_credit_to_slots'] ?? 1);
+        // **تحديث**: استخدام subject_hours بدل practical_hours
+        $totalSlotsNeeded = $section->planSubject->subject->subject_hours * ($this->settings['practical_credit_to_slots'] ?? 1);
         if ($totalSlotsNeeded <= 0) return;
 
         $remainingSlots = $totalSlotsNeeded;
@@ -1436,23 +1268,7 @@ class ContinueEvolutionService
         return array_slice($selectedSlots, 0, $slotsNeeded);
     }
 
-    // دوال التقييم (نفس الكود من InitialPopulationService)
-    // private function calculateStudentConflicts(Collection $genes, array &$usageMap): int
-    // {
-    //     $penalty = 0;
-    //     foreach ($genes as $gene) {
-    //         $studentGroupIds = $gene->student_group_id ?? [];
-    //         foreach ($gene->timeslot_ids as $timeslotId) {
-    //             foreach ($studentGroupIds as $groupId) {
-    //                 if (isset($usageMap['student_groups'][$groupId][$timeslotId])) {
-    //                     $penalty += 1;
-    //                 }
-    //                 $usageMap['student_groups'][$groupId][$timeslotId] = true;
-    //             }
-    //         }
-    //     }
-    //     return $penalty;
-    // }
+    // دوال التقييم (محدثة للداتابيز الجديدة)
     private function calculateStudentConflicts(Collection $genes, array &$usageMap): int
     {
         $penalty = 0;

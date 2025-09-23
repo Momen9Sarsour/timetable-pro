@@ -12,14 +12,20 @@ class Subject extends Model
     protected $fillable = [
         'subject_no',
         'subject_name',
+        'subject_hours',
         'subject_load',
-        'theoretical_hours',
-        'practical_hours',
+        // 'theoretical_hours',
+        // 'practical_hours',
         'subject_type_id',
         'subject_category_id',
         'department_id',
-        'load_theoretical_section',
-        'load_practical_section',
+        // 'load_theoretical_section',
+        // 'load_practical_section',
+    ];
+
+     protected $casts = [
+        'subject_load' => 'integer',
+        'subject_hours' => 'integer',
     ];
 
     /**

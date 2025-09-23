@@ -133,7 +133,8 @@
 
                     <div class="sections-content">
                         <!-- Theory Sections -->
-                        @if (($subject->theoretical_hours ?? 0) > 0 && Str::contains($subjectCategoryName, ['theory', 'نظري', 'combined', 'مشترك']))
+                        {{-- @if (($subject->theoretical_hours ?? 0) > 0 && Str::contains($subjectCategoryName, ['theory', 'نظري', 'combined', 'مشترك'])) --}}
+                        @if ($subject->subject_hours > 0 && Str::contains($subjectCategoryName, ['theory', 'نظري', 'combined', 'مشترك']))
                             <div class="section-type-card mb-3">
                                 <div class="card border-0 shadow-sm">
                                     <div class="card-header bg-info bg-opacity-10 border-0 d-flex justify-content-between align-items-center py-3">
@@ -165,6 +166,7 @@
                                                         <tr>
                                                             <th class="border-0 text-center" style="width: 50px;">#</th>
                                                             <th class="border-0">Section No.</th>
+                                                            <th class="border-0">Instructor</th>
                                                             <th class="border-0">Gender</th>
                                                             <th class="border-0">Branch</th>
                                                             <th class="border-0">Students</th>
@@ -179,6 +181,15 @@
                                                                     <span class="badge bg-primary bg-opacity-10 text-primary">
                                                                         {{ $section->section_number }}
                                                                     </span>
+                                                                </td>
+                                                                <td>
+                                                                    @if($section->instructor)
+                                                                        <span class="badge bg-info bg-opacity-10 text-info">
+                                                                            {{ $section->instructor->instructor_name }}
+                                                                        </span>
+                                                                    @else
+                                                                        <span class="text-muted small">Not assigned</span>
+                                                                    @endif
                                                                 </td>
                                                                 <td>
                                                                     <span class="badge bg-{{ $section->section_gender == 'Mixed' ? 'info' : ($section->section_gender == 'Male' ? 'primary' : 'danger') }} bg-opacity-10 text-{{ $section->section_gender == 'Mixed' ? 'info' : ($section->section_gender == 'Male' ? 'primary' : 'danger') }}">
@@ -289,7 +300,8 @@
                         @endif
 
                         <!-- Practical Sections -->
-                        @if (($subject->practical_hours ?? 0) > 0 && Str::contains($subjectCategoryName, ['practical', 'عملي', 'combined', 'مشترك']))
+                        {{-- @if (($subject->practical_hours ?? 0) > 0 && Str::contains($subjectCategoryName, ['practical', 'عملي', 'combined', 'مشترك'])) --}}
+                        @if ($subject->subject_hours > 0 && Str::contains($subjectCategoryName, ['practical', 'عملي', 'combined', 'مشترك']))
                             <div class="section-type-card mb-3">
                                 <div class="card border-0 shadow-sm">
                                     <div class="card-header bg-success bg-opacity-10 border-0 d-flex justify-content-between align-items-center py-3">
@@ -321,6 +333,7 @@
                                                         <tr>
                                                             <th class="border-0 text-center" style="width: 50px;">#</th>
                                                             <th class="border-0">Section No.</th>
+                                                            <th class="border-0">Instructor</th>
                                                             <th class="border-0">Gender</th>
                                                             <th class="border-0">Branch</th>
                                                             <th class="border-0">Students</th>
@@ -335,6 +348,15 @@
                                                                     <span class="badge bg-success bg-opacity-10 text-success">
                                                                         {{ $section->section_number }}
                                                                     </span>
+                                                                </td>
+                                                                <td>
+                                                                    @if($section->instructor)
+                                                                        <span class="badge bg-info bg-opacity-10 text-info">
+                                                                            {{ $section->instructor->instructor_name }}
+                                                                        </span>
+                                                                    @else
+                                                                        <span class="text-muted small">Not assigned</span>
+                                                                    @endif
                                                                 </td>
                                                                 <td>
                                                                     <span class="badge bg-{{ $section->section_gender == 'Mixed' ? 'info' : ($section->section_gender == 'Male' ? 'primary' : 'danger') }} bg-opacity-10 text-{{ $section->section_gender == 'Mixed' ? 'info' : ($section->section_gender == 'Male' ? 'primary' : 'danger') }}">
