@@ -417,7 +417,7 @@ class ContinueEvolutionService
                     $penalties = [];
 
                     // **استخدام دالة التقييم المحسنة للطلاب**
-                    $penalties['student_conflict_penalty'] = $this->calculateStudentConflictsFixed($genes, $resourceUsageMap);
+                    $penalties['student_conflict_penalty'] = $this->calculateStudentConflicts($genes, $resourceUsageMap);
                     $penalties['teacher_conflict_penalty'] = $this->calculateTeacherConflicts($genes, $resourceUsageMap);
                     $penalties['room_conflict_penalty'] = $this->calculateRoomConflicts($genes, $resourceUsageMap);
                     $penalties['capacity_conflict_penalty'] = $this->calculateCapacityConflicts($genes);
@@ -439,35 +439,67 @@ class ContinueEvolutionService
     }
 
     /**
-     * دالة تقييم محسنة لتعارضات الطلاب - تميز بين النظري والعملي
+     * دالة تقييم محسنة لتعارضات الطلاب - النسخة المحدثة والمحسنة
+     * تميز بين النظري والعملي بشكل صحيح وتعالج المواد النظرية المشتركة
      */
-    private function calculateStudentConflictsFixed(Collection $genes, array &$usageMap): int
+    private function calculateStudentConflicts(Collection $genes, array &$usageMap): int
     {
         $penalty = 0;
 
+        // تجميع الجينات حسب المجموعات الطلابية
+        $studentGroupUsage = [];
+        $sharedTheoryUsage = []; // للمواد النظرية المشتركة
+
         foreach ($genes as $gene) {
-            $studentGroupIds = $gene->student_group_id ?? [];
+            $studentGroupIds = is_string($gene->student_group_id) 
+                ? json_decode($gene->student_group_id, true) 
+                : ($gene->student_group_id ?? []);
+            
+            $timeslotIds = is_string($gene->timeslot_ids) 
+                ? json_decode($gene->timeslot_ids, true) 
+                : ($gene->timeslot_ids ?? []);
+
             $isTheoreticalBlock = Str::contains($gene->lecture_unique_id, 'theory');
 
-            foreach ($gene->timeslot_ids as $timeslotId) {
+            foreach ($timeslotIds as $timeslotId) {
                 if ($isTheoreticalBlock) {
-                    // للمواد النظرية: تحقق من التعارض مع مواد نظرية أخرى فقط
-                    // (المواد النظرية مشتركة بين المجموعات)
-                    if (isset($usageMap['theoretical_shared'][$timeslotId])) {
-                        $penalty += 1;
+                    // **التحسين الرئيسي**: للمواد النظرية المشتركة
+                    // نتحقق من التعارض مع مواد نظرية أخرى لنفس المجموعات
+                    $sectionInfo = $gene->section ?? null;
+                    $contextKey = '';
+                    
+                    if ($sectionInfo) {
+                        // إنشاء مفتاح يمثل السياق (المستوى، الفصل، السنة الأكاديمية)
+                        $planSubject = optional($sectionInfo)->planSubject;
+                        $contextKey = implode('-', [
+                            optional($planSubject)->plan_level ?? 0,
+                            optional($planSubject)->plan_semester ?? 0,
+                            $sectionInfo->academic_year ?? 0,
+                            $sectionInfo->branch ?? 'default'
+                        ]);
                     }
-                    $usageMap['theoretical_shared'][$timeslotId] = true;
+
+                    // للمواد النظرية: تحقق من تعارضات مع مواد أخرى من نفس السياق
+                    if (isset($sharedTheoryUsage[$contextKey][$timeslotId])) {
+                        $penalty += 1; // تعارض مع مادة نظرية أخرى من نفس السياق
+                    }
+                    $sharedTheoryUsage[$contextKey][$timeslotId] = true;
+
                 } else {
-                    // للمواد العملية: تحقق من تعارض المجموعات المنفصلة
+                    // للمواد العملية: تحقق من تعارض المجموعات المحددة
                     foreach ($studentGroupIds as $groupId) {
-                        if (isset($usageMap['student_groups'][$groupId][$timeslotId])) {
-                            $penalty += 1;
+                        if (isset($studentGroupUsage[$groupId][$timeslotId])) {
+                            $penalty += 1; // تعارض مجموعة طلاب
                         }
-                        $usageMap['student_groups'][$groupId][$timeslotId] = true;
+                        $studentGroupUsage[$groupId][$timeslotId] = true;
                     }
                 }
             }
         }
+
+        // حفظ في الخريطة العامة للاستخدام اللاحق
+        $usageMap['student_groups'] = $studentGroupUsage;
+        $usageMap['theoretical_shared'] = $sharedTheoryUsage;
 
         return $penalty;
     }
@@ -686,7 +718,7 @@ class ContinueEvolutionService
     }
 
     /**
-     * تطبيق تغيير محسن أثناء التزاوج - أكثر عدوانية
+     * تطبيق تغيير محسن أثناء التزاوج - مع احترام أولوية المدرسين
      */
     private function applyOptimizedCrossoverChange(array $gene, \stdClass $lectureBlock): array
     {
@@ -728,6 +760,9 @@ class ContinueEvolutionService
                     } elseif ($i == 1) {
                         $testGene['timeslot_ids'] = $this->findRandomConsecutiveTimeslots($lectureBlock->slots_needed);
                     } else {
+                        // **التحسين المهم**: تغيير المدرس مع احترام الأولوية
+                        $newInstructor = $this->getEligibleInstructor($lectureBlock);
+                        $testGene['instructor_id'] = $newInstructor->id;
                         $testGene['room_id'] = $this->getRandomRoomForBlock($lectureBlock)->id;
                         $testGene['timeslot_ids'] = $this->findRandomConsecutiveTimeslots($lectureBlock->slots_needed);
                     }
@@ -744,6 +779,34 @@ class ContinueEvolutionService
         }
 
         return $gene;
+    }
+
+    /**
+     * **دالة جديدة**: اختيار المدرس المؤهل مع احترام الأولوية
+     */
+    private function getEligibleInstructor(\stdClass $lectureBlock): Instructor
+    {
+        $section = $lectureBlock->section;
+        
+        // **الأولوية الأولى**: المدرس المخصص للشعبة
+        if ($section->instructor) {
+            return $section->instructor;
+        }
+
+        // **الأولوية الثانية**: المدرسين المؤهلين للمادة
+        $subject = optional(optional($section)->planSubject)->subject;
+        if ($subject) {
+            $suitableInstructors = $this->instructors->filter(function ($inst) use ($subject) {
+                return $inst->subjects && $inst->subjects->contains($subject->id);
+            });
+
+            if ($suitableInstructors->isNotEmpty()) {
+                return $suitableInstructors->random();
+            }
+        }
+
+        // **الخيار الأخير**: أي مدرس متاح
+        return $this->instructors->random();
     }
 
     /**
@@ -780,6 +843,24 @@ class ContinueEvolutionService
             }
         }
 
+        // **التحسين المهم**: فحص مؤهلية المدرس
+        $instructor = $this->instructors->firstWhere('id', $gene['instructor_id']);
+        if ($instructor) {
+            $section = $lectureBlock->section;
+            $subject = optional(optional($section)->planSubject)->subject;
+            
+            // مكافأة للمدرس المخصص للشعبة
+            if ($section->instructor && $section->instructor->id == $instructor->id) {
+                $quality += 25; // مكافأة كبيرة للمدرس المخصص
+            }
+            // مكافأة للمدرس المؤهل للمادة
+            else if ($subject && $instructor->subjects && $instructor->subjects->contains($subject->id)) {
+                $quality += 15; // مكافأة للمدرس المؤهل
+            } else {
+                $quality -= 30; // عقوبة كبيرة للمدرس غير المؤهل
+            }
+        }
+
         // جودة التوقيت (فحص بسيط)
         $timeslots = $gene['timeslot_ids'] ?? [];
         if (count($timeslots) == $lectureBlock->slots_needed) {
@@ -792,7 +873,7 @@ class ContinueEvolutionService
     }
 
     /**
-     * طفرة محسنة مع التركيز على تعارضات الطلاب - أكثر عدوانية
+     * طفرة محسنة مع التركيز على تعارضات الطلاب وأولوية المدرسين
      */
     private function performOptimizedMutation(array $genes): array
     {
@@ -809,7 +890,7 @@ class ContinueEvolutionService
         // حساب تعارضات كل جين
         $geneConflictScores = [];
         foreach ($genes as $index => $gene) {
-            $conflicts = $this->calculateStudentSpecificConflicts($gene, $genes, $index);
+            $conflicts = $this->calculateGeneSpecificConflicts($gene, $genes, $index);
             $geneConflictScores[$index] = $conflicts;
         }
 
@@ -827,43 +908,59 @@ class ContinueEvolutionService
 
             if (!$lectureBlock) continue;
 
-            // **تحسين 3**: طفرة أكثر عدوانية - 3 محاولات تحسين مختلفة
+            // **تحسين 3**: طفرة موجهة حسب نوع التعارض
             $originalGene = $geneToMutate;
             $bestImprovement = false;
             $currentConflicts = $geneConflictScores[$geneIndex];
 
-            // محاولة 1: تغيير الوقت (3 محاولات)
-            for ($attempt = 0; $attempt < 3; $attempt++) {
-                $testGene = $originalGene;
-                $newTimeslots = $this->findRandomConsecutiveTimeslots($lectureBlock->slots_needed);
-                $testGene['timeslot_ids'] = $newTimeslots;
+            // تحليل نوع التعارضات الموجودة
+            $conflictTypes = $this->analyzeConflictTypes($originalGene, $genes, $geneIndex);
 
-                $newConflicts = $this->calculateStudentSpecificConflicts($testGene, $genes, $geneIndex);
-                if ($newConflicts < $currentConflicts) {
-                    $geneToMutate['timeslot_ids'] = $newTimeslots;
-                    $bestImprovement = true;
-                    $currentConflicts = $newConflicts;
-                    break;
+            // **طفرة ذكية حسب نوع التعارض**
+            if ($conflictTypes['teacher_eligibility'] > 0) {
+                // محاولة إصلاح مؤهلية المدرس أولاً
+                $newInstructor = $this->getEligibleInstructor($lectureBlock);
+                $geneToMutate['instructor_id'] = $newInstructor->id;
+                $bestImprovement = true;
+            }
+            
+            if ($conflictTypes['student_conflicts'] > 0) {
+                // محاولة إصلاح تعارضات الطلاب بتغيير الوقت
+                for ($attempt = 0; $attempt < 3; $attempt++) {
+                    $testGene = $geneToMutate;
+                    $newTimeslots = $this->findRandomConsecutiveTimeslots($lectureBlock->slots_needed);
+                    $testGene['timeslot_ids'] = $newTimeslots;
+
+                    $newConflicts = $this->calculateGeneSpecificConflicts($testGene, $genes, $geneIndex);
+                    if ($newConflicts < $currentConflicts) {
+                        $geneToMutate['timeslot_ids'] = $newTimeslots;
+                        $bestImprovement = true;
+                        $currentConflicts = $newConflicts;
+                        break;
+                    }
                 }
             }
 
-            // محاولة 2: تغيير القاعة (3 محاولات)
-            for ($attempt = 0; $attempt < 3; $attempt++) {
-                $testGene = $geneToMutate; // استخدام أفضل نسخة حتى الآن
-                $newRoom = $this->getRandomRoomForBlock($lectureBlock);
-                $testGene['room_id'] = $newRoom->id;
+            if ($conflictTypes['room_conflicts'] > 0) {
+                // محاولة إصلاح تعارضات القاعات
+                for ($attempt = 0; $attempt < 3; $attempt++) {
+                    $testGene = $geneToMutate;
+                    $newRoom = $this->getRandomRoomForBlock($lectureBlock);
+                    $testGene['room_id'] = $newRoom->id;
 
-                // فحص تعارضات القاعة سريعاً
-                $hasRoomConflict = $this->quickRoomConflictCheck($testGene, $genes, $geneIndex);
-                if (!$hasRoomConflict) {
-                    $geneToMutate['room_id'] = $newRoom->id;
-                    $bestImprovement = true;
-                    break;
+                    // فحص تعارضات القاعة سريعاً
+                    $hasRoomConflict = $this->quickRoomConflictCheck($testGene, $genes, $geneIndex);
+                    if (!$hasRoomConflict) {
+                        $geneToMutate['room_id'] = $newRoom->id;
+                        $bestImprovement = true;
+                        break;
+                    }
                 }
             }
 
-            // محاولة 3: إذا فشل التحسين، طفرة قوية (تغيير كلي)
+            // محاولة أخيرة: إذا فشل التحسين، طفرة قوية مع احترام الأولوية
             if (!$bestImprovement && lcg_value() < 0.3) {
+                $geneToMutate['instructor_id'] = $this->getEligibleInstructor($lectureBlock)->id;
                 $geneToMutate['room_id'] = $this->getRandomRoomForBlock($lectureBlock)->id;
                 $geneToMutate['timeslot_ids'] = $this->findRandomConsecutiveTimeslots($lectureBlock->slots_needed);
                 $bestImprovement = true;
@@ -880,6 +977,85 @@ class ContinueEvolutionService
         }
 
         return $genes;
+    }
+
+    /**
+     * **دالة جديدة**: تحليل أنواع التعارضات في الجين
+     */
+    private function analyzeConflictTypes(array $targetGene, array $allGenes, int $excludeIndex): array
+    {
+        $conflicts = [
+            'student_conflicts' => 0,
+            'teacher_conflicts' => 0,
+            'room_conflicts' => 0,
+            'teacher_eligibility' => 0,
+        ];
+
+        $lectureBlock = $this->lectureBlocksToSchedule->firstWhere('unique_id', $targetGene['lecture_unique_id']);
+        if (!$lectureBlock) return $conflicts;
+
+        // فحص مؤهلية المدرس
+        $instructor = $this->instructors->firstWhere('id', $targetGene['instructor_id']);
+        $section = $lectureBlock->section;
+        $subject = optional(optional($section)->planSubject)->subject;
+
+        if ($instructor && $subject) {
+            // إذا لم يكن هو المدرس المخصص وغير مؤهل للمادة
+            if (!($section->instructor && $section->instructor->id == $instructor->id) && 
+                !($instructor->subjects && $instructor->subjects->contains($subject->id))) {
+                $conflicts['teacher_eligibility'] = 1;
+            }
+        }
+
+        // فحص التعارضات الأخرى
+        $targetTimeslots = $targetGene['timeslot_ids'] ?? [];
+        $targetStudentGroups = $targetGene['student_group_id'] ?? [];
+
+        foreach ($targetTimeslots as $timeslotId) {
+            foreach ($allGenes as $index => $otherGene) {
+                if ($index === $excludeIndex || !$otherGene) continue;
+
+                $otherTimeslots = $otherGene['timeslot_ids'] ?? [];
+                if (in_array($timeslotId, $otherTimeslots)) {
+                    // تعارض المدرسين
+                    if ($otherGene['instructor_id'] == $targetGene['instructor_id']) {
+                        $conflicts['teacher_conflicts']++;
+                    }
+                    
+                    // تعارض القاعات
+                    if ($otherGene['room_id'] == $targetGene['room_id']) {
+                        $conflicts['room_conflicts']++;
+                    }
+                    
+                    // تعارض الطلاب (محسن)
+                    $otherStudentGroups = $otherGene['student_group_id'] ?? [];
+                    if (!empty($targetStudentGroups) && !empty($otherStudentGroups)) {
+                        if (count(array_intersect($targetStudentGroups, $otherStudentGroups)) > 0) {
+                            $conflicts['student_conflicts']++;
+                        }
+                    }
+                }
+            }
+        }
+
+        return $conflicts;
+    }
+
+    /**
+     * حساب تعارضات محددة للجين (محسن)
+     */
+    private function calculateGeneSpecificConflicts(array $targetGene, array $otherGenes, int $excludeIndex): int
+    {
+        $totalConflicts = 0;
+        $conflictTypes = $this->analyzeConflictTypes($targetGene, $otherGenes, $excludeIndex);
+        
+        // وزن التعارضات حسب الأهمية
+        $totalConflicts += $conflictTypes['teacher_eligibility'] * 50; // أهمية عالية جداً
+        $totalConflicts += $conflictTypes['student_conflicts'] * 20;   // أهمية عالية
+        $totalConflicts += $conflictTypes['teacher_conflicts'] * 15;   // أهمية متوسطة-عالية
+        $totalConflicts += $conflictTypes['room_conflicts'] * 10;      // أهمية متوسطة
+
+        return $totalConflicts;
     }
 
     /**
@@ -901,36 +1077,6 @@ class ContinueEvolutionService
         }
 
         return false; // لا يوجد تعارض
-    }
-
-    /**
-     * حساب تعارضات محددة بالطلاب لجين معين
-     */
-    private function calculateStudentSpecificConflicts(array $targetGene, array $otherGenes, int $excludeIndex): int
-    {
-        $conflicts = 0;
-        $studentGroupIds = $targetGene['student_group_id'] ?? [];
-        $targetTimeslots = $targetGene['timeslot_ids'] ?? [];
-
-        foreach ($targetTimeslots as $timeslotId) {
-            foreach ($otherGenes as $index => $otherGene) {
-                if ($index === $excludeIndex || !$otherGene) continue;
-
-                $otherTimeslots = $otherGene['timeslot_ids'] ?? [];
-                if (in_array($timeslotId, $otherTimeslots)) {
-                    $otherStudentGroupIds = $otherGene['student_group_id'] ?? [];
-
-                    // التركيز على تعارضات الطلاب (أهم نوع تعارض)
-                    if (!empty($studentGroupIds) && !empty($otherStudentGroupIds)) {
-                        if (count(array_intersect($studentGroupIds, $otherStudentGroupIds)) > 0) {
-                            $conflicts += 10; // وزن عالي لتعارضات الطلاب
-                        }
-                    }
-                }
-            }
-        }
-
-        return $conflicts;
     }
 
     /**
@@ -1269,39 +1415,15 @@ class ContinueEvolutionService
     }
 
     // دوال التقييم (محدثة للداتابيز الجديدة)
-    private function calculateStudentConflicts(Collection $genes, array &$usageMap): int
-    {
-        $penalty = 0;
-        foreach ($genes as $gene) {
-            $studentGroupIds = $gene->student_group_id ?? [];
-            $isTheoreticalBlock = Str::contains($gene->lecture_unique_id, 'theory');
-
-            foreach ($gene->timeslot_ids as $timeslotId) {
-                if ($isTheoreticalBlock) {
-                    // للمواد النظرية: تحقق من التعارض مع مواد أخرى فقط
-                    if (isset($usageMap['theoretical_shared'][$timeslotId])) {
-                        $penalty += 1;
-                    }
-                    $usageMap['theoretical_shared'][$timeslotId] = true;
-                } else {
-                    // للمواد العملية: تحقق من تعارض المجموعات
-                    foreach ($studentGroupIds as $groupId) {
-                        if (isset($usageMap['student_groups'][$groupId][$timeslotId])) {
-                            $penalty += 1;
-                        }
-                        $usageMap['student_groups'][$groupId][$timeslotId] = true;
-                    }
-                }
-            }
-        }
-        return $penalty;
-    }
-
     private function calculateTeacherConflicts(Collection $genes, array &$usageMap): int
     {
         $penalty = 0;
         foreach ($genes as $gene) {
-            foreach ($gene->timeslot_ids as $timeslotId) {
+            $timeslotIds = is_string($gene->timeslot_ids) 
+                ? json_decode($gene->timeslot_ids, true) 
+                : ($gene->timeslot_ids ?? []);
+
+            foreach ($timeslotIds as $timeslotId) {
                 if (isset($usageMap['instructors'][$gene->instructor_id][$timeslotId])) {
                     $penalty += 1;
                 }
@@ -1315,7 +1437,11 @@ class ContinueEvolutionService
     {
         $penalty = 0;
         foreach ($genes as $gene) {
-            foreach ($gene->timeslot_ids as $timeslotId) {
+            $timeslotIds = is_string($gene->timeslot_ids) 
+                ? json_decode($gene->timeslot_ids, true) 
+                : ($gene->timeslot_ids ?? []);
+
+            foreach ($timeslotIds as $timeslotId) {
                 if (isset($usageMap['rooms'][$gene->room_id][$timeslotId])) {
                     $penalty += 1;
                 }
@@ -1341,7 +1467,7 @@ class ContinueEvolutionService
         $penalty = 0;
         foreach ($genes->unique('lecture_unique_id') as $gene) {
             $isPracticalBlock = Str::contains($gene->lecture_unique_id, 'practical');
-            $isPracticalRoom = Str::contains(strtolower(optional($gene->room->roomType)->room_type_name), ['lab', 'مختبر']);
+            $isPracticalRoom = Str::contains(strtolower(optional($gene->room->roomType)->room_type_name ?? ''), ['lab', 'مختبر']);
 
             if ($isPracticalBlock && !$isPracticalRoom) {
                 $penalty += 1;
@@ -1353,12 +1479,31 @@ class ContinueEvolutionService
         return $penalty;
     }
 
+    /**
+     * **دالة محسنة**: حساب تعارضات مؤهلية المدرسين مع احترام الأولوية
+     */
     private function calculateTeacherEligibilityConflicts(Collection $genes): int
     {
         $penalty = 0;
         foreach ($genes->unique('lecture_unique_id') as $gene) {
-            if (!optional($gene->instructor)->canTeach(optional(optional($gene->section)->planSubject)->subject)) {
+            $instructor = $gene->instructor;
+            $section = $gene->section;
+            $subject = optional(optional($section)->planSubject)->subject;
+
+            if (!$instructor || !$subject) {
                 $penalty += 1;
+                continue;
+            }
+
+            // **التحسين المهم**: فحص الأولوية أولاً
+            // إذا كان هو المدرس المخصص للشعبة، لا توجد عقوبة
+            if ($section->instructor && $section->instructor->id == $instructor->id) {
+                continue; // لا عقوبة - هو المدرس المخصص
+            }
+
+            // إذا لم يكن المدرس المخصص، تحقق من المؤهلات
+            if (!$instructor->subjects || !$instructor->subjects->contains($subject->id)) {
+                $penalty += 1; // عقوبة لعدم الأهلية
             }
         }
         return $penalty;

@@ -2,69 +2,105 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Plan;
+use App\Models\Room;
+use App\Models\User;
+use App\Models\Subject;
+use App\Models\Section;
 use App\Models\Timeslot;
 use App\Models\Chromosome;
 use App\Models\Population;
+use App\Models\Instructor;
+use App\Models\Department;
+use App\Models\PlanExpectedCount;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Services\ConflictCheckerService;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        // return view('dashboard.index');
-        // جلب آخر عملية تشغيل مكتملة
+        // الإحصائيات العامة
+        $stats = [
+            'total_subjects' => Subject::count(),
+            'total_plans' => Plan::count(),
+            'total_instructors' => Instructor::count(),
+            'total_rooms' => Room::count(),
+            'total_sections' => Section::count(),
+            'total_departments' => Department::count(),
+            'active_plans' => Plan::where('is_active', true)->count(),
+            'total_populations' => Population::count(),
+            'completed_populations' => Population::where('status', 'completed')->count(),
+            'total_chromosomes' => Chromosome::count(),
+        ];
+
+        // آخر 5 عناصر من كل نوع
+        $recentData = [
+            'subjects' => Subject::with(['department', 'subjectType', 'subjectCategory'])
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get(),
+                
+            'plans' => Plan::with('department')
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get(),
+                
+            'instructors' => Instructor::with(['department', 'user'])
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get(),
+                
+            'rooms' => Room::with('roomType')
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get(),
+                
+            'sections' => Section::with(['planSubject.subject', 'planSubject.plan'])
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get(),
+                
+            'departments' => Department::withCount(['instructors', 'subjects', 'plans'])
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get(),
+                
+            'populations' => Population::with(['crossover', 'selectionType', 'mutationType'])
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get(),
+                
+            'chromosomes' => Chromosome::with('population')
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get(),
+                
+            'expected_counts' => PlanExpectedCount::with('plan')
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get(),
+                
+            'timeslots' => Timeslot::orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get(),
+        ];
+
+        // آخر عملية تشغيل مكتملة للمعلومات الإضافية
         $lastSuccessfulRun = Population::where('status', 'completed')
             ->orderBy('end_time', 'desc')
             ->first();
 
         $bestChromosome = null;
-        $scheduleData = [];
-        $conflicts = [];
-        $conflictingGeneIds = [];
-        $timeslots = collect();
-
         if ($lastSuccessfulRun && $lastSuccessfulRun->best_chromosome_id) {
-            // جلب أفضل جدول من هذه العملية
             $bestChromosome = Chromosome::find($lastSuccessfulRun->best_chromosome_id);
-
-            if ($bestChromosome) {
-                // جلب بيانات هذا الجدول للعرض
-                $genes = $bestChromosome->genes()->with([
-                    'section.planSubject.subject',
-                    'instructor.user',
-                    'room',
-                    'timeslot'
-                ])->get();
-
-                // فحص التعارضات
-                $conflictChecker = new ConflictCheckerService($genes);
-                $conflicts = $conflictChecker->getConflicts();
-                $conflictingGeneIds = $conflictChecker->getConflictingGeneIds();
-
-                // تحضير بيانات الجدول للعرض
-                foreach ($genes as $gene) {
-                    if ($gene->timeslot) { // تحقق من وجود الفترة الزمنية
-                        $scheduleData[$gene->timeslot->day][$gene->timeslot->start_time][] = $gene;
-                    }
-                }
-            }
         }
 
-        // جلب كل الفترات الزمنية المتاحة لعرض هيكل الجدول
-        $timeslots = Timeslot::orderBy('start_time')->get()->groupBy('day');
-
-
-        // تمرير البيانات للـ view
         return view('dashboard.index', compact(
+            'stats',
+            'recentData',
             'lastSuccessfulRun',
-            'bestChromosome',
-            'scheduleData',
-            'timeslots',
-            'conflicts',
-            'conflictingGeneIds'
-            // ... يمكنك تمرير إحصائيات أخرى هنا (Total Courses, Instructors, etc.)
+            'bestChromosome'
         ));
     }
 

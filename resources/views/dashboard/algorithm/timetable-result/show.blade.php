@@ -12,7 +12,7 @@
                         Interactive Timetable - Chromosome #{{ $chromosome->chromosome_id }}
                     </h5>
                     <div class="text-muted" style="font-size: 0.75rem;">
-                        <span class="badge bg-light text-dark me-1" style="font-size: 0.7rem;">Penalty: {{ $chromosome->penalty_value }}</span>
+                        <span class="badge bg-light text-dark me-1" style="font-size: 0.7rem;">Total Penalty: {{ $conflictStats['total_penalty'] }}</span>
                         <span class="badge bg-light text-dark me-1" style="font-size: 0.7rem;">Generation: {{ $chromosome->generation_number }}</span>
                         <span class="badge bg-light text-dark" style="font-size: 0.7rem;">Run ID: {{ $chromosome->population->population_id }}</span>
                     </div>
@@ -45,7 +45,7 @@
     <!-- Status Messages -->
     @include('dashboard.data-entry.partials._status_messages')
 
-    <!-- Conflicts Detection Card - Compact -->
+    <!-- Enhanced Conflicts Detection Card -->
     <div class="row mb-3">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
@@ -55,17 +55,56 @@
                             <i class="fas fa-exclamation-triangle text-warning me-2" style="font-size: 0.75rem;"></i>
                             <h6 class="card-title mb-0" style="font-size: 0.8rem;">Conflicts Detection</h6>
                         </div>
-                        <span class="badge {{ count($conflicts) > 0 ? 'bg-danger' : 'bg-success' }} bg-opacity-10 text-{{ count($conflicts) > 0 ? 'danger' : 'success' }}" style="font-size: 0.65rem; padding: 0.2rem 0.4rem;">
-                            {{ count($conflicts) }} Conflicts
+                        <span class="badge {{ $conflictStats['total_conflicts'] > 0 ? 'bg-danger' : 'bg-success' }} bg-opacity-10 text-{{ $conflictStats['total_conflicts'] > 0 ? 'danger' : 'success' }}" style="font-size: 0.65rem; padding: 0.2rem 0.4rem;">
+                            {{ $conflictStats['total_conflicts'] }} Conflicts Found
                         </span>
                     </div>
                 </div>
 
                 <div class="card-body py-2">
                     <div class="row g-2">
-                        <!-- Conflicts List -->
+                        <!-- Penalty Breakdown -->
                         <div class="col-lg-8">
-                            <div class="conflicts-container" style="max-height: 100px; overflow-y: auto;">
+                            <div class="row g-2">
+                                <div class="col-md-2">
+                                    <div class="text-center p-2 border rounded" style="background: #e83e8c10;">
+                                        <div class="fw-bold" style="font-size: 0.8rem; color: #e83e8c;">{{ $conflictStats['student_conflicts'] }}</div>
+                                        <small style="font-size: 0.6rem;">Students</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="text-center p-2 border rounded" style="background: #dc354510;">
+                                        <div class="fw-bold" style="font-size: 0.8rem; color: #dc3545;">{{ $conflictStats['teacher_conflicts'] }}</div>
+                                        <small style="font-size: 0.6rem;">Teachers</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="text-center p-2 border rounded" style="background: #fd7e1410;">
+                                        <div class="fw-bold" style="font-size: 0.8rem; color: #fd7e14;">{{ $conflictStats['room_conflicts'] }}</div>
+                                        <small style="font-size: 0.6rem;">Rooms</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="text-center p-2 border rounded" style="background: #ffc10710;">
+                                        <div class="fw-bold" style="font-size: 0.8rem; color: #ffc107;">{{ $conflictStats['capacity_conflicts'] }}</div>
+                                        <small style="font-size: 0.6rem;">Capacity</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="text-center p-2 border rounded" style="background: #ffc10710;">
+                                        <div class="fw-bold" style="font-size: 0.8rem; color: #ffc107;">{{ $conflictStats['room_type_conflicts'] }}</div>
+                                        <small style="font-size: 0.6rem;">Room Type</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="text-center p-2 border rounded" style="background: #6f42c110;">
+                                        <div class="fw-bold" style="font-size: 0.8rem; color: #6f42c1;">{{ $conflictStats['teacher_eligibility_conflicts'] }}</div>
+                                        <small style="font-size: 0.6rem;">Eligibility</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="conflicts-container mt-2" style="max-height: 80px; overflow-y: auto;">
                                 @if (!empty($conflicts))
                                     <div class="list-group list-group-flush">
                                         @foreach ($conflicts as $c)
@@ -84,39 +123,47 @@
                                 @else
                                     <div class="text-center py-2">
                                         <i class="fas fa-check-circle text-success mb-1" style="font-size: 1.2rem;"></i>
-                                        <h6 class="text-success mb-0" style="font-size: 0.7rem;">No Conflicts Found</h6>
-                                        <small class="text-muted" style="font-size: 0.55rem;">All blocks are properly arranged</small>
+                                        <h6 class="text-success mb-0" style="font-size: 0.7rem;">Perfect Schedule!</h6>
+                                        <small class="text-muted" style="font-size: 0.55rem;">No conflicts detected</small>
                                     </div>
                                 @endif
                             </div>
                         </div>
 
-                        <!-- Legend -->
+                        <!-- Enhanced Legend -->
                         <div class="col-lg-4">
                             <div class="card bg-light border-0" style="font-size: 0.6rem;">
                                 <div class="card-header bg-transparent border-0 py-1">
                                     <h6 class="mb-0" style="font-size: 0.65rem;">
                                         <i class="fas fa-palette me-1 text-primary" style="font-size: 0.55rem;"></i>
-                                        Legend
+                                        Color Legend
                                     </h6>
                                 </div>
                                 <div class="card-body py-1">
                                     <div class="legend-items">
                                         <div class="legend-item d-flex align-items-center mb-1">
-                                            <div class="legend-color me-1" style="width: 6px; height: 6px; background: #0d6efd; border-radius: 1px;"></div>
+                                            <div class="legend-color me-1" style="width: 8px; height: 8px; background: #0d6efd; border-radius: 2px;"></div>
                                             <small style="font-size: 0.55rem;">No Conflict</small>
                                         </div>
                                         <div class="legend-item d-flex align-items-center mb-1">
-                                            <div class="legend-color me-1" style="width: 6px; height: 6px; background: #dc3545; border-radius: 1px;"></div>
-                                            <small style="font-size: 0.55rem;">Time/Instructor</small>
+                                            <div class="legend-color me-1" style="width: 8px; height: 8px; background: #dc3545; border-radius: 2px;"></div>
+                                            <small style="font-size: 0.55rem;">Instructor Conflict</small>
                                         </div>
                                         <div class="legend-item d-flex align-items-center mb-1">
-                                            <div class="legend-color me-1" style="width: 6px; height: 6px; background: #fd7e14; border-radius: 1px;"></div>
+                                            <div class="legend-color me-1" style="width: 8px; height: 8px; background: #fd7e14; border-radius: 2px;"></div>
                                             <small style="font-size: 0.55rem;">Room Conflict</small>
                                         </div>
+                                        <div class="legend-item d-flex align-items-center mb-1">
+                                            <div class="legend-color me-1" style="width: 8px; height: 8px; background: #e83e8c; border-radius: 2px;"></div>
+                                            <small style="font-size: 0.55rem;">Student Conflict</small>
+                                        </div>
+                                        <div class="legend-item d-flex align-items-center mb-1">
+                                            <div class="legend-color me-1" style="width: 8px; height: 8px; background: #ffc107; border-radius: 2px;"></div>
+                                            <small style="font-size: 0.55rem;">Room Type/Capacity</small>
+                                        </div>
                                         <div class="legend-item d-flex align-items-center">
-                                            <div class="legend-color me-1" style="width: 6px; height: 6px; background: #6f42c1; border-radius: 1px;"></div>
-                                            <small style="font-size: 0.55rem;">Qualification</small>
+                                            <div class="legend-color me-1" style="width: 8px; height: 8px; background: #6f42c1; border-radius: 2px;"></div>
+                                            <small style="font-size: 0.55rem;">Teacher Qualification</small>
                                         </div>
                                     </div>
                                 </div>
@@ -128,7 +175,7 @@
         </div>
     </div>
 
-    <!-- Timetable Schedule Card -->
+    <!-- Enhanced Timetable Schedule Card -->
     <div class="row">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
@@ -136,19 +183,20 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <h6 class="card-title mb-0" style="font-size: 0.8rem;">
                             <i class="fas fa-calendar-week text-primary me-2" style="font-size: 0.7rem;"></i>
-                            Interactive Weekly Schedule
+                            Enhanced Interactive Schedule
                             <span class="badge bg-primary bg-opacity-10 text-primary ms-2" style="font-size: 0.6rem;">
-                                Drag & Drop Enabled
+                                <i class="fas fa-hand-rock me-1" style="font-size: 0.5rem;"></i>
+                                Drag & Drop • Edit Fields
                             </span>
                         </h6>
                         <div class="d-flex gap-1">
-                            <button class="btn btn-outline-primary btn-sm" id="zoomInBtn" title="Zoom In" style="padding: 0.2rem 0.35rem;">
+                            <button class="btn btn-outline-primary btn-sm" id="zoomInBtn" title="Zoom In (Ctrl + +)" style="padding: 0.2rem 0.35rem;">
                                 <i class="fas fa-search-plus" style="font-size: 0.6rem;"></i>
                             </button>
-                            <button class="btn btn-outline-primary btn-sm" id="zoomOutBtn" title="Zoom Out" style="padding: 0.2rem 0.35rem;">
+                            <button class="btn btn-outline-primary btn-sm" id="zoomOutBtn" title="Zoom Out (Ctrl + -)" style="padding: 0.2rem 0.35rem;">
                                 <i class="fas fa-search-minus" style="font-size: 0.6rem;"></i>
                             </button>
-                            <button class="btn btn-outline-secondary btn-sm" id="resetZoomBtn" title="Reset Zoom" style="padding: 0.2rem 0.35rem;">
+                            <button class="btn btn-outline-secondary btn-sm" id="resetZoomBtn" title="Reset Zoom (Ctrl + 0)" style="padding: 0.2rem 0.35rem;">
                                 <i class="fas fa-expand-arrows-alt" style="font-size: 0.6rem;"></i>
                             </button>
                         </div>
@@ -181,40 +229,39 @@
                                         <tr>
                                             <th class="group-header sticky-start">{{ $group['name'] }}</th>
                                             <td class="group-row position-relative schedule-drop-zone" colspan="{{ $totalColumnsOverall }}" data-group-id="{{ $groupId }}">
-                                                <!-- Enhanced Grid Background with Visual Feedback -->
+                                                <!-- Enhanced Grid Background -->
                                                 <div class="grid-background d-flex position-absolute w-100 h-100" style="top: 0; left: 0; pointer-events: none; z-index: 1;">
                                                     @for ($i = 0; $i < $totalColumnsOverall; $i++)
                                                         <div class="grid-column flex-fill border-end drop-slot" 
                                                              data-slot="{{ $i }}" 
                                                              style="border-color: rgba(0,0,0,0.04); min-height: 100%; position: relative;">
-                                                            <!-- Drop indicator -->
                                                             <div class="drop-indicator" style="
                                                                 position: absolute; 
                                                                 top: 50%; 
                                                                 left: 50%; 
                                                                 transform: translate(-50%, -50%);
-                                                                width: 12px; 
-                                                                height: 12px; 
+                                                                width: 16px; 
+                                                                height: 16px; 
                                                                 border: 2px dashed var(--primary-color);
                                                                 border-radius: 50%;
                                                                 background: rgba(13, 110, 253, 0.1);
                                                                 opacity: 0;
-                                                                transition: all 0.2s ease;
+                                                                transition: all 0.3s ease;
                                                                 display: flex;
                                                                 align-items: center;
                                                                 justify-content: center;
                                                             ">
-                                                                <i class="fas fa-plus" style="font-size: 6px; color: var(--primary-color);"></i>
+                                                                <i class="fas fa-plus" style="font-size: 8px; color: var(--primary-color);"></i>
                                                             </div>
                                                         </div>
                                                     @endfor
                                                 </div>
 
-                                                <!-- Schedule Blocks with Enhanced Drag & Drop -->
+                                                <!-- Enhanced Schedule Blocks -->
                                                 @php $slotsForGroup = []; @endphp
                                                 @foreach (collect($group['blocks'])->unique('gene_id') as $block)
                                                     @php
-                                                        $timeslotIds = $block->timeslot_ids;
+                                                        $timeslotIds = is_string($block->timeslot_ids) ? json_decode($block->timeslot_ids, true) : $block->timeslot_ids;
                                                         if (empty($timeslotIds)) continue;
 
                                                         $startSlotId = $timeslotIds[0];
@@ -241,20 +288,23 @@
 
                                                         $left = ($startColumn / $totalColumnsOverall) * 100;
                                                         $width = ($span / $totalColumnsOverall) * 100;
-                                                        $height = 65;
-                                                        $top = $stackLevel * ($height + 4) + 2;
+                                                        $height = 70;
+                                                        $top = $stackLevel * ($height + 5) + 3;
 
+                                                        // تحديد لون البلوك حسب نوع التعارض
                                                         $conflictType = $conflictChecker->getGeneConflictType($block->gene_id);
                                                         $borderColor = $conflictChecker->getGeneConflictColor($block->gene_id);
                                                         $bgColor = match ($conflictType) {
-                                                            'Time Overlap', 'Instructor Conflict' => '#fff0f1',
-                                                            'Room Conflict', 'Room Capacity', 'Room Type' => '#fff4e6',
+                                                            'Instructor Conflict' => '#fff0f1',
+                                                            'Room Conflict' => '#fff4e6',  
+                                                            'Student Conflict' => '#fce8f3',
+                                                            'Room Capacity', 'Room Type' => '#fffaeb',
                                                             'Instructor Qualification' => '#f8f3fc',
                                                             default => '#ffffff',
                                                         };
                                                     @endphp
 
-                                                    <div class="event-block draggable-course"
+                                                    <div class="event-block draggable-course enhanced-block"
                                                          draggable="true"
                                                          data-gene-id="{{ $block->gene_id }}"
                                                          data-original-left="{{ $left }}"
@@ -263,73 +313,104 @@
                                                          data-course="{{ $block->gene_id }}"
                                                          data-start-column="{{ $startColumn }}"
                                                          data-span="{{ $span }}"
+                                                         data-conflict-type="{{ $conflictType }}"
                                                          style="
                                                             position: absolute;
                                                             top: {{ $top }}px;
                                                             left: {{ $left }}%;
-                                                            width: calc({{ $width }}% - 2px);
+                                                            width: calc({{ $width }}% - 3px);
                                                             height: {{ $height }}px;
                                                             background: {{ $bgColor }};
                                                             border: 2px solid {{ $borderColor }};
-                                                            border-radius: 4px;
-                                                            padding: 4px;
+                                                            border-radius: 6px;
+                                                            padding: 6px;
                                                             cursor: grab;
-                                                            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-                                                            transition: all 0.15s ease;
+                                                            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                                                            transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
                                                             z-index: 10;
                                                             touch-action: none;
                                                             user-select: none;
+                                                            overflow: hidden;
                                                          ">
 
-                                                        <!-- Drag Handle -->
-                                                        <div class="drag-handle" style="
+                                                        <!-- Enhanced Drag Handle -->
+                                                        <div class="drag-handle" title="Drag to move" style="
                                                             position: absolute;
-                                                            top: 2px;
-                                                            right: 2px;
-                                                            width: 8px;
-                                                            height: 8px;
-                                                            background: {{ $borderColor }};
-                                                            border-radius: 1px;
-                                                            opacity: 0.6;
+                                                            top: 3px;
+                                                            right: 3px;
+                                                            width: 12px;
+                                                            height: 12px;
+                                                            background: linear-gradient(45deg, {{ $borderColor }}, {{ $borderColor }}dd);
+                                                            border-radius: 3px;
+                                                            opacity: 0.7;
                                                             cursor: grab;
-                                                            transition: all 0.15s ease;
+                                                            transition: all 0.2s ease;
+                                                            display: flex;
+                                                            align-items: center;
+                                                            justify-content: center;
                                                         ">
-                                                            <i class="fas fa-grip-vertical" style="font-size: 4px; color: white; line-height: 8px; margin-left: 1px;"></i>
+                                                            <i class="fas fa-grip-vertical" style="font-size: 6px; color: white;"></i>
                                                         </div>
 
+                                                        <!-- Conflict Status Indicator -->
+                                                        @if ($conflictType)
+                                                            <div class="conflict-badge" style="
+                                                                position: absolute;
+                                                                top: 3px;
+                                                                left: 3px;
+                                                                width: 8px;
+                                                                height: 8px;
+                                                                background: {{ $borderColor }};
+                                                                border-radius: 50%;
+                                                                border: 1px solid white;
+                                                                animation: conflictPulse 2s infinite;
+                                                                z-index: 15;
+                                                            " title="{{ $conflictType }}"></div>
+                                                        @endif
+
                                                         <div class="event-content d-flex flex-column h-100">
-                                                            <div class="course-code fw-bold mb-1 text-truncate" style="font-size: 0.6rem; line-height: 1.1; color: {{ $borderColor }};">
+                                                            <div class="course-code fw-bold mb-1 text-truncate" style="font-size: 0.65rem; line-height: 1.2; color: {{ $borderColor }};">
                                                                 {{ optional($block->section->planSubject->subject)->subject_no }} -
-                                                                {{ Str::limit(optional($block->section->planSubject->subject)->subject_name, 18) }}
+                                                                {{ Str::limit(optional($block->section->planSubject->subject)->subject_name, 20) }}
                                                             </div>
 
+                                                            <!-- Enhanced Editable Instructor -->
                                                             <div class="course-instructor editable-field text-truncate mb-1"
                                                                  data-field="instructor"
                                                                  data-gene-id="{{ $block->gene_id }}"
                                                                  data-subject-id="{{ optional($block->section->planSubject->subject)->id }}"
-                                                                 style="font-size: 0.5rem; cursor: pointer; padding: 1px 2px; border-radius: 2px; background: rgba(13,110,253,0.06);">
-                                                                <i class="fas fa-user-tie me-1" style="font-size: 0.45rem;"></i>
-                                                                {{ Str::limit(optional($block->instructor->user)->name, 12) }}
+                                                                 data-current-value="{{ $block->instructor_id }}"
+                                                                 title="Click to change instructor"
+                                                                 style="font-size: 0.55rem; cursor: pointer; padding: 2px 4px; border-radius: 3px; background: rgba(13,110,253,0.08); border: 1px solid transparent; transition: all 0.2s ease;">
+                                                                <i class="fas fa-user-tie me-1" style="font-size: 0.5rem;"></i>
+                                                                {{ Str::limit(optional($block->instructor->user)->name, 14) }}
+                                                                <i class="fas fa-edit ms-1" style="font-size: 0.45rem; opacity: 0.6;"></i>
                                                             </div>
 
+                                                            <!-- Enhanced Editable Room -->
                                                             <div class="course-room editable-field text-truncate mb-1"
                                                                  data-field="room"
                                                                  data-gene-id="{{ $block->gene_id }}"
-                                                                 data-timeslot-ids='@json($block->timeslot_ids)'
-                                                                 style="font-size: 0.5rem; cursor: pointer; padding: 1px 2px; border-radius: 2px; background: rgba(13,110,253,0.06);">
-                                                                <i class="fas fa-door-open me-1" style="font-size: 0.45rem;"></i>
+                                                                 data-timeslot-ids='@json($timeslotIds)'
+                                                                 data-current-value="{{ $block->room_id }}"
+                                                                 data-block-type="{{ $block->block_type }}"
+                                                                 title="Click to change room"
+                                                                 style="font-size: 0.55rem; cursor: pointer; padding: 2px 4px; border-radius: 3px; background: rgba(13,110,253,0.08); border: 1px solid transparent; transition: all 0.2s ease;">
+                                                                <i class="fas fa-door-open me-1" style="font-size: 0.5rem;"></i>
                                                                 {{ optional($block->room)->room_name }}
+                                                                <i class="fas fa-edit ms-1" style="font-size: 0.45rem; opacity: 0.6;"></i>
                                                             </div>
 
-                                                            <div class="course-type text-muted mt-auto" style="font-size: 0.45rem; line-height: 1;">
-                                                                <i class="fas fa-clock me-1" style="font-size: 0.4rem;"></i>
-                                                                {{ ucfirst($block->block_type) }} | {{ $block->block_duration }}h
+                                                            <div class="course-type text-muted mt-auto d-flex justify-content-between align-items-center" style="font-size: 0.45rem; line-height: 1;">
+                                                                <span>
+                                                                    <i class="fas fa-clock me-1" style="font-size: 0.4rem;"></i>
+                                                                    {{ ucfirst($block->block_type) }} | {{ $block->block_duration }}min
+                                                                </span>
+                                                                <span class="timeslot-count text-primary" style="font-size: 0.4rem;">
+                                                                    {{ count($timeslotIds) }} slots
+                                                                </span>
                                                             </div>
                                                         </div>
-
-                                                        <!-- Resize Handle -->
-                                                        <div class="resize-handle position-absolute"
-                                                             style="bottom: 1px; right: 1px; width: 4px; height: 4px; cursor: se-resize; background: {{ $borderColor }}; opacity: 0.5; border-radius: 1px;"></div>
                                                     </div>
                                                 @endforeach
                                             </td>
@@ -339,22 +420,37 @@
                             </table>
                         </div>
 
-                        <!-- Drop Zone Indicator -->
+                        <!-- Enhanced Drop Zone Indicator -->
                         <div id="dropIndicator" class="position-absolute d-none" style="
-                            background: rgba(13, 110, 253, 0.15); 
-                            border: 2px dashed #0d6efd; 
-                            border-radius: 6px; 
+                            background: linear-gradient(135deg, rgba(13, 110, 253, 0.2), rgba(13, 110, 253, 0.1)); 
+                            border: 3px dashed #0d6efd; 
+                            border-radius: 8px; 
                             z-index: 9999; 
                             pointer-events: none;
-                            backdrop-filter: blur(1px);
+                            backdrop-filter: blur(2px);
+                            box-shadow: 0 4px 16px rgba(13, 110, 253, 0.3);
                         ">
                             <div class="d-flex align-items-center justify-content-center h-100">
-                                <span class="text-primary fw-medium" style="font-size: 0.6rem;">
-                                    <i class="fas fa-arrows-alt me-1" style="font-size: 0.5rem;"></i>
-                                    Drop here
+                                <span class="text-primary fw-bold" style="font-size: 0.7rem;">
+                                    <i class="fas fa-arrows-alt me-2 animate-bounce" style="font-size: 0.6rem;"></i>
+                                    Drop here to move
                                 </span>
                             </div>
                         </div>
+
+                        <!-- Zoom Indicator -->
+                        <div class="zoom-indicator position-absolute" style="
+                            top: 15px; 
+                            right: 15px; 
+                            background: rgba(0,0,0,0.8); 
+                            color: white; 
+                            padding: 4px 8px; 
+                            border-radius: 4px; 
+                            font-size: 0.6rem; 
+                            z-index: 100; 
+                            opacity: 0; 
+                            transition: opacity 0.3s ease;
+                        ">80%</div>
                     </div>
                 </div>
             </div>
@@ -362,11 +458,11 @@
     </div>
 </div>
 
-<!-- Pending Changes Toast -->
+<!-- Enhanced Changes Indicator -->
 <div id="changesIndicator" class="position-fixed bottom-0 start-50 translate-middle-x mb-3 d-none" style="z-index: 1050;">
-    <div class="toast show align-items-center text-white bg-warning border-0" role="alert">
-        <div class="d-flex">
-            <div class="toast-body">
+    <div class="toast show align-items-center text-white bg-gradient border-0 shadow-lg" style="background: linear-gradient(135deg, #ff6b6b, #ffa726);" role="alert">
+        <div class="d-flex align-items-center">
+            <div class="toast-body fw-bold">
                 <i class="fas fa-edit me-2"></i>
                 <span id="changesText">You have unsaved changes</span>
             </div>
@@ -374,12 +470,21 @@
         </div>
     </div>
 </div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(255,255,255,0.95); z-index: 10000;">
+    <div class="d-flex align-items-center justify-content-center h-100 flex-column">
+        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+        <h5 class="text-muted">Processing Changes...</h5>
+        <p class="text-muted mb-0">Please wait while we save your modifications</p>
+    </div>
+</div>
 @endsection
 
 @push('styles')
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
-/* Enhanced Timetable Styling - Compact & Smooth */
+/* Enhanced Timetable Styling */
 .timetable {
     border-collapse: separate;
     border-spacing: 0;
@@ -387,12 +492,8 @@
     min-width: 2800px;
     width: max-content;
     background: var(--light-bg-secondary);
-    transform: scale(0.8); /* Initial zoom out */
+    transform: scale(0.8);
     transform-origin: top left;
-}
-
-body.dark-mode .timetable {
-    background: var(--dark-bg-secondary);
 }
 
 .timetable th,
@@ -402,15 +503,10 @@ body.dark-mode .timetable {
     vertical-align: top;
 }
 
-body.dark-mode .timetable th,
-body.dark-mode .timetable td {
-    border-color: var(--dark-border);
-}
-
 .group-header {
     background: linear-gradient(135deg, var(--light-bg), #e9ecef);
     font-weight: 600;
-    padding: 6px 8px;
+    padding: 8px 10px;
     width: 220px;
     min-width: 220px;
     font-size: 0.65rem;
@@ -418,27 +514,20 @@ body.dark-mode .timetable td {
     position: sticky;
     left: 0;
     z-index: 20;
-    box-shadow: 2px 0 4px rgba(0,0,0,0.06);
+    box-shadow: 2px 0 6px rgba(0,0,0,0.08);
     color: var(--light-text);
-}
-
-body.dark-mode .group-header {
-    background: linear-gradient(135deg, var(--dark-bg-secondary), var(--dark-bg));
-    color: var(--dark-text-secondary);
-    border-right-color: var(--primary-light) !important;
 }
 
 .day-header {
     background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
     color: white;
     font-weight: 700;
-    padding: 6px;
+    padding: 8px;
     font-size: 0.65rem;
-    border-bottom: 2px solid var(--primary-dark) !important;
     position: sticky;
     top: 0;
     z-index: 18;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
 .time-header {
@@ -446,116 +535,138 @@ body.dark-mode .group-header {
     color: var(--light-text-secondary);
     font-size: 0.55rem;
     font-weight: 500;
-    padding: 4px 2px;
+    padding: 6px 4px;
     width: 90px;
     min-width: 90px;
-    border-bottom: 1px solid var(--light-border) !important;
     position: sticky;
-    top: 32px;
+    top: 33px;
     z-index: 17;
 }
 
-body.dark-mode .time-header {
-    background: linear-gradient(135deg, var(--dark-bg), var(--dark-bg-secondary));
-    color: var(--dark-text-secondary);
-    border-bottom-color: var(--dark-border) !important;
-}
-
 .group-row {
-    height: 150px;
-    min-height: 150px;
+    height: 160px;
+    min-height: 160px;
     position: relative;
     background: var(--light-bg);
-    transition: all 0.2s ease;
-}
-
-body.dark-mode .group-row {
-    background: var(--dark-bg);
+    transition: all 0.3s ease;
 }
 
 /* Enhanced Event Block Styling */
-.event-block {
-    transition: all 0.15s ease;
+.enhanced-block {
+    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     overflow: hidden;
     user-select: none;
     cursor: grab;
-    border-radius: 4px !important;
+    border-radius: 6px !important;
+    backdrop-filter: blur(1px);
 }
 
-.event-block:hover {
-    box-shadow: 0 3px 8px rgba(0,0,0,0.12) !important;
-    transform: translateY(-1px) scale(1.02);
+.enhanced-block:hover {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
+    transform: translateY(-2px) scale(1.02);
     z-index: 25 !important;
 }
 
-.event-block:hover .drag-handle {
+.enhanced-block:hover .drag-handle {
     opacity: 1;
-    transform: scale(1.2);
+    transform: scale(1.1);
 }
 
-.event-block:active {
+.enhanced-block:hover .editable-field {
+    background: rgba(13,110,253,0.15) !important;
+    border-color: rgba(13,110,253,0.4);
+}
+
+.enhanced-block.dragging {
+    opacity: 0.9;
+    transform: rotate(3deg) scale(1.08);
+    z-index: 1000 !important;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.25) !important;
+    cursor: grabbing !important;
+}
+
+.enhanced-block:active {
     cursor: grabbing;
 }
 
-.event-block.dragging {
-    opacity: 0.8;
-    transform: rotate(2deg) scale(1.05);
-    z-index: 1000 !important;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3) !important;
-    cursor: grabbing !important;
-    border-color: var(--primary-color) !important;
-}
-
-/* Enhanced Grid Background */
+/* Enhanced Grid System */
 .grid-column {
     border-right: 1px solid rgba(0,0,0,0.02);
-    transition: all 0.15s ease;
+    transition: all 0.2s ease;
     position: relative;
 }
 
 .grid-column:nth-child(5n) {
-    border-right: 1px solid rgba(0,0,0,0.05);
+    border-right: 1px solid rgba(0,0,0,0.06);
 }
 
 .grid-column.drag-over {
-    background: rgba(13, 110, 253, 0.08) !important;
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.08), rgba(13, 110, 253, 0.04)) !important;
     border-color: var(--primary-color) !important;
+    box-shadow: inset 0 0 8px rgba(13, 110, 253, 0.2);
 }
 
 .grid-column.drag-over .drop-indicator {
     opacity: 1 !important;
-    transform: translate(-50%, -50%) scale(1.3);
+    transform: translate(-50%, -50%) scale(1.2);
+    animation: dropBounce 0.6s infinite alternate;
 }
 
-body.dark-mode .grid-column {
-    border-right-color: rgba(255,255,255,0.04);
+@keyframes dropBounce {
+    0% { transform: translate(-50%, -50%) scale(1.2); }
+    100% { transform: translate(-50%, -50%) scale(1.4); }
 }
 
-body.dark-mode .grid-column:nth-child(5n) {
-    border-right-color: rgba(255,255,255,0.08);
+@keyframes conflictPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.3); }
 }
 
-/* Drag and Drop Enhancements */
-.schedule-drop-zone {
-    transition: all 0.15s ease;
+@keyframes animate-bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
 }
 
-.schedule-drop-zone.drag-over {
-    background: rgba(13, 110, 253, 0.06) !important;
-    box-shadow: inset 0 0 12px rgba(13, 110, 253, 0.2);
+.animate-bounce {
+    animation: animate-bounce 1s infinite;
 }
 
-/* Drop indicator animation */
-@keyframes dropPulse {
-    0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
-    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+/* Enhanced Editable Fields */
+.editable-field {
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    position: relative;
 }
 
-.grid-column.drag-over .drop-indicator {
-    animation: dropPulse 1s infinite;
+.editable-field:hover {
+    background: rgba(13, 110, 253, 0.15) !important;
+    transform: scale(1.05);
+    border-color: rgba(13, 110, 253, 0.4);
+    box-shadow: 0 2px 4px rgba(13, 110, 253, 0.2);
 }
 
-/* Zoom Controls Enhancement */
+.editable-field:hover .fa-edit {
+    opacity: 1 !important;
+}
+
+/* Enhanced Drag Handle */
+.drag-handle {
+    opacity: 0.6;
+    transition: all 0.2s ease;
+}
+
+.drag-handle:hover {
+    opacity: 1;
+    transform: scale(1.2);
+    cursor: grab;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+/* Enhanced Zoom Controls */
 .timetable-wrapper {
     position: relative;
     border: 1px solid var(--light-border);
@@ -563,53 +674,74 @@ body.dark-mode .grid-column:nth-child(5n) {
     background: var(--light-bg-secondary);
 }
 
-body.dark-mode .timetable-wrapper {
-    border-color: var(--dark-border);
-    background: var(--dark-bg-secondary);
+/* Enhanced Drop Zones */
+.schedule-drop-zone {
+    transition: all 0.2s ease;
 }
 
-/* Editable Fields */
-.editable-field {
+.schedule-drop-zone.drag-over {
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.06), rgba(13, 110, 253, 0.02)) !important;
+    box-shadow: inset 0 0 16px rgba(13, 110, 253, 0.2);
+}
+
+/* Enhanced Select2 Styling */
+.select2-container {
+    z-index: 9999 !important;
+}
+
+.select2-container .select2-selection--single {
+    height: 32px !important;
+    border: 1px solid var(--primary-color) !important;
+    border-radius: 4px !important;
+}
+
+.select2-container .select2-selection--single .select2-selection__rendered {
+    line-height: 30px !important;
+    font-size: 0.6rem !important;
+    padding-left: 8px !important;
+}
+
+.select2-dropdown {
+    border: 2px solid var(--primary-color);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    font-size: 0.65rem;
+    border-radius: 6px;
+}
+
+.select2-results__option {
+    font-size: 0.65rem;
+    padding: 0.5rem;
     transition: all 0.15s ease;
-    border: 1px solid transparent;
-    border-radius: 2px;
 }
 
-.editable-field:hover {
-    background: rgba(13, 110, 253, 0.12) !important;
-    transform: scale(1.05);
-    border-color: rgba(13, 110, 253, 0.3);
+.select2-results__option--highlighted {
+    background: var(--primary-color) !important;
+    transform: translateX(3px);
 }
 
-/* Resize Handle Enhancement */
-.resize-handle {
-    opacity: 0;
-    transition: all 0.15s ease;
+/* Success/Error States */
+.enhanced-block.success {
+    border-color: var(--success-color) !important;
+    box-shadow: 0 0 12px rgba(34, 197, 94, 0.4) !important;
+    animation: successPulse 0.6s ease-out;
 }
 
-.event-block:hover .resize-handle {
-    opacity: 0.8;
+.enhanced-block.error {
+    border-color: var(--danger-color) !important;
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.4) !important;
+    animation: errorShake 0.6s ease-in-out;
 }
 
-.resize-handle:hover {
-    opacity: 1 !important;
-    transform: scale(1.3);
+@keyframes successPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
 }
 
-/* Drag Handle Styling */
-.drag-handle {
-    opacity: 0.4;
-    transition: all 0.15s ease;
-}
-
-.drag-handle:hover {
-    opacity: 1;
-    transform: scale(1.3);
-    cursor: grab;
-}
-
-.drag-handle:active {
-    cursor: grabbing;
+@keyframes errorShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-3px); }
+    75% { transform: translateX(3px); }
 }
 
 /* Loading Animation */
@@ -622,52 +754,7 @@ body.dark-mode .timetable-wrapper {
     animation: saveSpinner 1s linear infinite;
 }
 
-/* Conflict Indicators */
-.conflict-indicator {
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    animation: conflictPulse 2s infinite;
-    z-index: 15;
-}
-
-@keyframes conflictPulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.6; transform: scale(1.3); }
-}
-
-/* Enhanced Tooltips */
-.tooltip {
-    font-size: 0.6rem !important;
-}
-
-/* Select2 Customization */
-.select2-container {
-    z-index: 9999 !important;
-}
-
-.select2-dropdown {
-    border: 1px solid var(--primary-color);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-    font-size: 0.65rem;
-    border-radius: 6px;
-}
-
-.select2-results__option {
-    font-size: 0.65rem;
-    padding: 0.4rem;
-    transition: all 0.15s ease;
-}
-
-.select2-results__option--highlighted {
-    background: var(--primary-color) !important;
-    transform: translateX(2px);
-}
-
-/* Responsive Enhancements */
+/* Enhanced Responsive Design */
 @media (max-width: 768px) {
     .timetable {
         transform: scale(0.6);
@@ -678,7 +765,7 @@ body.dark-mode .timetable-wrapper {
         width: 180px;
         min-width: 180px;
         font-size: 0.6rem;
-        padding: 4px 6px;
+        padding: 6px 8px;
     }
 
     .time-header {
@@ -687,195 +774,52 @@ body.dark-mode .timetable-wrapper {
         font-size: 0.5rem;
     }
 
-    .event-block {
-        min-height: 55px;
-        padding: 3px;
-    }
-
-    .course-code {
-        font-size: 0.55rem;
-    }
-
-    .course-instructor,
-    .course-room {
-        font-size: 0.45rem;
-    }
-
-    .course-type {
-        font-size: 0.4rem;
+    .enhanced-block {
+        min-height: 60px;
+        padding: 4px;
     }
 
     .group-row {
-        height: 130px;
-        min-height: 130px;
+        height: 140px;
+        min-height: 140px;
     }
 }
 
-@media (max-width: 576px) {
-    .timetable {
-        transform: scale(0.5);
-    }
-
-    .event-block {
-        padding: 2px;
-        min-height: 45px;
-    }
-
-    .drag-handle,
-    .resize-handle {
-        width: 3px;
-        height: 3px;
-    }
-}
-
-/* Print Styles */
-@media print {
-    .timetable-wrapper {
-        height: auto !important;
-        overflow: visible !important;
-    }
-
-    .timetable {
-        transform: scale(0.7) !important;
-    }
-
-    .card-header,
-    .btn,
-    .conflicts-container {
-        display: none !important;
-    }
-
-    .event-block {
-        break-inside: avoid;
-        border-width: 1px !important;
-    }
-}
-
-/* Touch Support */
-@media (pointer: coarse) {
-    .event-block {
-        cursor: grab;
-        touch-action: manipulation;
-    }
-
-    .event-block:active {
-        cursor: grabbing;
-    }
-
-    .drag-handle {
-        opacity: 0.7;
-        width: 12px;
-        height: 12px;
-    }
-
-    .editable-field {
-        padding: 4px 6px !important;
-        font-size: 0.55rem !important;
-    }
-}
-
-/* Animation for better UX */
-@keyframes slideInBlock {
-    from {
-        opacity: 0;
-        transform: translateY(8px) scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-.event-block {
-    animation: slideInBlock 0.3s ease-out;
-}
-
-/* Enhanced focus states */
-.btn:focus,
-.editable-field:focus {
-    outline: 2px solid var(--primary-color);
+/* Enhanced Accessibility */
+.enhanced-block:focus {
+    outline: 3px solid var(--primary-color);
     outline-offset: 2px;
 }
 
-/* Better accessibility */
-.event-block[aria-grabbed="true"] {
-    opacity: 0.85;
-    transform: scale(1.02);
-    border-width: 3px !important;
+.editable-field:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 1px;
 }
 
-.schedule-drop-zone[aria-dropeffect="move"] {
-    background: rgba(13, 110, 253, 0.05) !important;
-}
-
-/* Success/Error States */
-.event-block.success {
-    border-color: var(--success-color) !important;
-    box-shadow: 0 0 8px rgba(34, 197, 94, 0.3) !important;
-}
-
-.event-block.error {
-    border-color: var(--danger-color) !important;
-    box-shadow: 0 0 8px rgba(239, 68, 68, 0.3) !important;
-    animation: errorShake 0.5s ease-in-out;
-}
-
-@keyframes errorShake {
-    0%, 50%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-2px); }
-    75% { transform: translateX(2px); }
-}
-
-/* Changes Indicator Styling */
-#changesIndicator .toast {
-    border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-    backdrop-filter: blur(4px);
-}
-
-/* Zoom Level Indicator */
-.zoom-indicator {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: rgba(0,0,0,0.7);
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.6rem;
-    z-index: 100;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
+/* Enhanced Visual Feedback */
 .zoom-indicator.show {
     opacity: 1;
 }
 
 /* Enhanced Scrollbars */
 .timetable-wrapper::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
 }
 
 .timetable-wrapper::-webkit-scrollbar-track {
     background: var(--light-bg);
-    border-radius: 4px;
+    border-radius: 5px;
 }
 
 .timetable-wrapper::-webkit-scrollbar-thumb {
     background: var(--primary-color);
-    border-radius: 4px;
+    border-radius: 5px;
     transition: background 0.15s ease;
 }
 
 .timetable-wrapper::-webkit-scrollbar-thumb:hover {
     background: var(--primary-dark);
-}
-
-body.dark-mode .timetable-wrapper::-webkit-scrollbar-track {
-    background: var(--dark-bg-secondary);
 }
 
 /* Sticky Elements Enhancement */
@@ -900,91 +844,92 @@ body.dark-mode .timetable-wrapper::-webkit-scrollbar-track {
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Server Data
+    const chromosomeId = {{ $chromosome->chromosome_id }};
     const allRooms = @json($allRooms);
     const allInstructors = @json($allInstructors);
     const timeSlotUsage = @json($timeSlotUsage);
     const totalColumns = {{ $totalColumnsOverall }};
+    const saveUrl = "{{ route('algorithm-control.timetable.results.saveEdits') }}";
+    const csrfToken = "{{ csrf_token() }}";
 
     // Enhanced State Management
-    let currentZoom = 0.8; // Start zoomed out
+    let currentZoom = 0.8;
     let pendingChanges = [];
     let draggedElement = null;
     let isDragging = false;
     let originalPositions = new Map();
-    let ghostElement = null;
     let dropIndicator = null;
+    let loadingOverlay = null;
 
     // Initialize all functionalities
+    initializeElements();
     initializeDragAndDrop();
     initializeZoomControls();
     initializeEditableFields();
     initializeButtons();
     initializeKeyboardShortcuts();
     
-    // Set initial zoom
     updateZoom();
-    showZoomIndicator();
+
+    function initializeElements() {
+        dropIndicator = document.getElementById('dropIndicator');
+        loadingOverlay = document.getElementById('loadingOverlay');
+        
+        // Store original positions for all course blocks
+        document.querySelectorAll('.draggable-course').forEach(course => {
+            originalPositions.set(course.dataset.geneId, {
+                left: course.style.left,
+                top: course.style.top,
+                groupId: course.dataset.groupId
+            });
+        });
+    }
 
     function initializeDragAndDrop() {
         const draggableCourses = document.querySelectorAll('.draggable-course');
         const dropZones = document.querySelectorAll('.schedule-drop-zone');
-        dropIndicator = document.getElementById('dropIndicator');
 
-        // Enhanced drag and drop for course blocks
+        // Enhanced drag and drop functionality
         draggableCourses.forEach(course => {
-            // Store original position
-            originalPositions.set(course.dataset.geneId, {
-                left: course.style.left,
-                top: course.style.top
-            });
-
-            // Mouse events
+            // Mouse/Touch events
             course.addEventListener('dragstart', handleCourseDragStart);
             course.addEventListener('dragend', handleCourseDragEnd);
-
-            // Touch events for mobile
-            course.addEventListener('touchstart', handleCourseTouchStart, { passive: false });
-            course.addEventListener('touchmove', handleCourseTouchMove, { passive: false });
-            course.addEventListener('touchend', handleCourseTouchEnd, { passive: false });
-
-            // Accessibility
-            course.setAttribute('aria-grabbed', 'false');
-            course.setAttribute('role', 'button');
-            course.setAttribute('tabindex', '0');
-
-            // Keyboard support
-            course.addEventListener('keydown', handleCourseKeyDown);
-
-            // Visual feedback on hover
+            
+            // Enhanced visual feedback
             course.addEventListener('mouseenter', () => {
                 if (!isDragging) {
                     course.style.transform = 'translateY(-2px) scale(1.02)';
+                    course.style.zIndex = '15';
                 }
             });
 
             course.addEventListener('mouseleave', () => {
                 if (!isDragging) {
                     course.style.transform = '';
+                    course.style.zIndex = '10';
                 }
             });
+
+            // Accessibility
+            course.setAttribute('aria-grabbed', 'false');
+            course.setAttribute('role', 'button');
+            course.setAttribute('tabindex', '0');
         });
 
-        // Enhanced drop zones with grid snapping
+        // Enhanced drop zones
         dropZones.forEach(zone => {
             zone.addEventListener('dragover', handleScheduleDragOver);
             zone.addEventListener('dragenter', handleScheduleDragEnter);
             zone.addEventListener('dragleave', handleScheduleDragLeave);
             zone.addEventListener('drop', handleScheduleDrop);
 
-            // Set up grid columns for precise dropping
+            // Enhanced grid columns
             const gridColumns = zone.querySelectorAll('.grid-column');
             gridColumns.forEach((column, index) => {
                 column.addEventListener('dragover', (e) => handleColumnDragOver(e, index));
                 column.addEventListener('dragenter', (e) => handleColumnDragEnter(e, index));
                 column.addEventListener('dragleave', (e) => handleColumnDragLeave(e, index));
             });
-
-            zone.setAttribute('aria-dropeffect', 'none');
         });
 
         function handleCourseDragStart(e) {
@@ -993,27 +938,19 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.add('dragging');
             this.setAttribute('aria-grabbed', 'true');
 
-            // Store current position for undo functionality
             const currentPos = {
                 left: this.style.left,
                 top: this.style.top,
                 groupId: this.dataset.groupId
             };
 
-            // Create ghost element for better visual feedback
-            createGhostElement(this);
-
-            // Get current row (group) ID
             const currentGroupId = this.dataset.groupId;
-
-            // Update only the same row drop zone
             const sameRowDropZone = document.querySelector(`[data-group-id="${currentGroupId}"]`);
             if (sameRowDropZone) {
                 sameRowDropZone.setAttribute('aria-dropeffect', 'move');
                 sameRowDropZone.classList.add('drag-target');
             }
 
-            // Set drag data with enhanced information
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('application/json', JSON.stringify({
                 courseId: this.dataset.course,
@@ -1024,15 +961,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentPosition: currentPos
             }));
 
-            // Create drag image
-            const rect = this.getBoundingClientRect();
-            e.dataTransfer.setDragImage(this, rect.width / 2, rect.height / 2);
-
-            // Haptic feedback
-            if (navigator.vibrate) {
-                navigator.vibrate(30);
-            }
-
             showToast('Drag to reposition within the same row', 'info');
         }
 
@@ -1041,24 +969,16 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.remove('dragging');
             this.setAttribute('aria-grabbed', 'false');
 
-            // Clean up ghost element
-            if (ghostElement) {
-                ghostElement.remove();
-                ghostElement = null;
-            }
-
-            // Clean up all visual indicators
-            dropZones.forEach(zone => {
+            // Clean up visual indicators
+            document.querySelectorAll('.schedule-drop-zone').forEach(zone => {
                 zone.classList.remove('drag-target', 'drag-over');
                 zone.setAttribute('aria-dropeffect', 'none');
                 
-                // Clean up grid columns
                 zone.querySelectorAll('.grid-column').forEach(col => {
                     col.classList.remove('drag-over');
                 });
             });
 
-            // Hide drop indicator
             if (dropIndicator) {
                 dropIndicator.classList.add('d-none');
             }
@@ -1072,12 +992,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const currentGroupId = draggedElement.dataset.groupId;
             const dropZoneGroupId = this.dataset.groupId;
 
-            // Only allow drop in same row
             if (currentGroupId === dropZoneGroupId) {
                 e.preventDefault();
                 e.dataTransfer.dropEffect = 'move';
-                
-                // Show drop indicator
                 updateDropIndicator(e, this);
             } else {
                 e.dataTransfer.dropEffect = 'none';
@@ -1090,7 +1007,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const currentGroupId = draggedElement.dataset.groupId;
             const dropZoneGroupId = this.dataset.groupId;
 
-            // Only highlight same row
             if (currentGroupId === dropZoneGroupId) {
                 e.preventDefault();
                 this.classList.add('drag-over');
@@ -1139,7 +1055,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const currentGroupId = dragData.groupId;
                 const dropZoneGroupId = this.dataset.groupId;
 
-                // Only allow drop in same row
                 if (currentGroupId !== dropZoneGroupId) {
                     e.preventDefault();
                     showToast('Can only move within the same row', 'warning');
@@ -1155,164 +1070,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 handleCourseBlockDrop(dragData, x, y, this);
 
-                // Success haptic feedback
-                if (navigator.vibrate) {
-                    navigator.vibrate([30, 50, 30]);
-                }
-
             } catch (error) {
                 console.error('Drop error:', error);
                 showToast('Failed to move course block', 'danger');
             }
         }
-
-        // Enhanced touch support
-        let touchStartX, touchStartY, touchStartPos;
-
-        function handleCourseTouchStart(e) {
-            const touch = e.touches[0];
-            touchStartX = touch.clientX;
-            touchStartY = touch.clientY;
-
-            draggedElement = this;
-            touchStartPos = {
-                left: this.style.left,
-                top: this.style.top
-            };
-
-            this.classList.add('dragging');
-            this.setAttribute('aria-grabbed', 'true');
-
-            // Visual feedback
-            this.style.zIndex = '1000';
-            this.style.transform = 'rotate(2deg) scale(1.05)';
-
-            // Haptic feedback
-            if (navigator.vibrate) {
-                navigator.vibrate(30);
-            }
-        }
-
-        function handleCourseTouchMove(e) {
-            e.preventDefault();
-            if (!draggedElement) return;
-
-            const touch = e.touches[0];
-            const deltaX = touch.clientX - touchStartX;
-            const deltaY = touch.clientY - touchStartY;
-
-            // Move element with finger
-            draggedElement.style.position = 'fixed';
-            draggedElement.style.left = (touch.clientX - 50) + 'px';
-            draggedElement.style.top = (touch.clientY - 25) + 'px';
-
-            // Find drop zone under touch
-            const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-            const dropZone = elementBelow?.closest('.schedule-drop-zone');
-            const currentGroupId = draggedElement.dataset.groupId;
-
-            // Clean up previous highlights
-            document.querySelectorAll('.grid-column').forEach(col => {
-                col.classList.remove('drag-over');
-            });
-
-            if (dropZone && dropZone.dataset.groupId === currentGroupId) {
-                const column = elementBelow?.closest('.grid-column');
-                if (column) {
-                    column.classList.add('drag-over');
-                }
-            }
-        }
-
-        function handleCourseTouchEnd(e) {
-            if (!draggedElement) return;
-
-            const touch = e.changedTouches[0];
-            const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-            const dropZone = elementBelow?.closest('.schedule-drop-zone');
-            const currentGroupId = draggedElement.dataset.groupId;
-
-            // Clean up styles
-            draggedElement.classList.remove('dragging');
-            draggedElement.setAttribute('aria-grabbed', 'false');
-            draggedElement.style.position = 'absolute';
-            draggedElement.style.zIndex = '10';
-            draggedElement.style.transform = '';
-
-            // Clean up grid highlights
-            document.querySelectorAll('.grid-column').forEach(col => {
-                col.classList.remove('drag-over');
-            });
-
-            // Only allow drop in same row
-            if (dropZone && dropZone.dataset.groupId === currentGroupId) {
-                const rect = dropZone.getBoundingClientRect();
-                const x = touch.clientX - rect.left;
-                const y = touch.clientY - rect.top;
-
-                const dragData = {
-                    courseId: draggedElement.dataset.course,
-                    geneId: draggedElement.dataset.geneId,
-                    groupId: currentGroupId,
-                    startColumn: parseInt(draggedElement.dataset.startColumn),
-                    span: parseInt(draggedElement.dataset.span),
-                    currentPosition: touchStartPos
-                };
-
-                handleCourseBlockDrop(dragData, x, y, dropZone);
-
-                // Success haptic feedback
-                if (navigator.vibrate) {
-                    navigator.vibrate([30, 50, 30]);
-                }
-            } else {
-                // Return to original position with animation
-                draggedElement.style.transition = 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-                draggedElement.style.left = touchStartPos.left;
-                draggedElement.style.top = touchStartPos.top;
-
-                setTimeout(() => {
-                    draggedElement.style.transition = 'all 0.15s ease';
-                }, 300);
-
-                showToast('Can only move within the same row', 'warning');
-            }
-
-            draggedElement = null;
-        }
-
-        // Keyboard support
-        function handleCourseKeyDown(e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                showToast('Use mouse/touch to drag within the same row', 'info');
-            } else if (e.key === 'Escape' && isDragging) {
-                // Cancel drag operation
-                if (draggedElement) {
-                    draggedElement.classList.remove('dragging');
-                    draggedElement.setAttribute('aria-grabbed', 'false');
-                    isDragging = false;
-                    draggedElement = null;
-                    showToast('Drag cancelled', 'info');
-                }
-            }
-        }
-    }
-
-    function createGhostElement(originalElement) {
-        if (ghostElement) {
-            ghostElement.remove();
-        }
-
-        ghostElement = originalElement.cloneNode(true);
-        ghostElement.classList.add('ghost-element');
-        ghostElement.style.position = 'absolute';
-        ghostElement.style.opacity = '0.5';
-        ghostElement.style.pointerEvents = 'none';
-        ghostElement.style.zIndex = '999';
-        ghostElement.style.transform = 'rotate(1deg) scale(0.95)';
-
-        originalElement.parentNode.appendChild(ghostElement);
     }
 
     function updateDropIndicator(e, container) {
@@ -1322,16 +1084,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
 
-        // Calculate grid position
         const columnWidth = rect.width / totalColumns;
         const snapColumn = Math.floor(x / columnWidth);
         const snapX = snapColumn * columnWidth;
 
-        // Position drop indicator
         dropIndicator.style.left = (rect.left + snapX) + 'px';
-        dropIndicator.style.top = (rect.top + y - 30) + 'px';
+        dropIndicator.style.top = (rect.top + y - 35) + 'px';
         dropIndicator.style.width = (columnWidth * (draggedElement?.dataset.span || 1)) + 'px';
-        dropIndicator.style.height = '60px';
+        dropIndicator.style.height = '70px';
         dropIndicator.classList.remove('d-none');
     }
 
@@ -1342,62 +1102,74 @@ document.addEventListener('DOMContentLoaded', function() {
         const containerWidth = container.offsetWidth;
         const newLeft = Math.max(0, Math.min(95, (x / containerWidth) * 100));
 
-        // Enhanced grid snapping with span consideration
+        // Enhanced grid snapping
         const gridSize = 100 / totalColumns;
         const spanWidth = gridSize * dragData.span;
         const maxLeft = 100 - spanWidth;
         let snappedLeft = Math.round(newLeft / gridSize) * gridSize;
         snappedLeft = Math.min(snappedLeft, maxLeft);
 
-        // Intelligent vertical positioning
-        const newTop = Math.max(2, Math.min(120, y - 30));
-        const stackHeight = 69; // Height + margin
+        // Smart vertical positioning
+        const newTop = Math.max(3, Math.min(130, y - 35));
+        const stackHeight = 75;
         const stackLevel = Math.floor(newTop / stackHeight);
-        const finalTop = stackLevel * stackHeight + 2;
+        const finalTop = stackLevel * stackHeight + 3;
 
-        // Check for overlaps and adjust if necessary
+        // Overlap detection and resolution
         const finalPosition = checkAndResolveOverlap(course, snappedLeft, finalTop, container);
 
-        // Smooth animation to new position
-        course.style.transition = 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-        course.style.position = 'absolute';
+        // Smooth animation
+        course.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
         course.style.left = finalPosition.left + '%';
         course.style.top = finalPosition.top + 'px';
-        course.style.zIndex = '10';
 
-        // Visual success feedback
+        // Visual feedback
         course.classList.add('success');
         setTimeout(() => {
             course.classList.remove('success');
-            course.style.transition = 'all 0.15s ease';
-        }, 600);
+            course.style.transition = 'all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        }, 800);
 
-        // Update data attributes
-        course.dataset.startColumn = Math.round(finalPosition.left / gridSize);
+        // Update data and add to pending changes
+        const startColumn = Math.round(finalPosition.left / gridSize);
+        const newTimeslotIds = calculateNewTimeslotIds(startColumn, dragData.span);
+        
+        course.dataset.startColumn = startColumn;
 
-        // Add to pending changes with more detail
         pendingChanges.push({
             type: 'move',
-            courseId: dragData.courseId,
-            geneId: dragData.geneId,
+            gene_id: dragData.geneId,
+            new_timeslot_ids: newTimeslotIds,
             oldPosition: dragData.currentPosition,
             newPosition: { 
                 left: finalPosition.left, 
                 top: finalPosition.top,
-                column: Math.round(finalPosition.left / gridSize)
+                column: startColumn
             },
-            groupId: container.dataset.groupId,
-            timestamp: Date.now(),
-            span: dragData.span
+            timestamp: Date.now()
         });
 
         updateChangesIndicator();
         showToast('Course repositioned successfully!', 'success');
 
-        // Hide drop indicator
         if (dropIndicator) {
             dropIndicator.classList.add('d-none');
         }
+    }
+
+    function calculateNewTimeslotIds(startColumn, span) {
+        // Convert column positions back to timeslot IDs
+        const timeslotArray = @json(collect($timeslotsByDay)->flatten()->pluck('id'));
+        const newTimeslotIds = [];
+        
+        for (let i = 0; i < span; i++) {
+            const columnIndex = startColumn + i;
+            if (columnIndex < timeslotArray.length) {
+                newTimeslotIds.push(timeslotArray[columnIndex]);
+            }
+        }
+        
+        return newTimeslotIds;
     }
 
     function checkAndResolveOverlap(movingElement, targetLeft, targetTop, container) {
@@ -1405,25 +1177,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const gridSize = 100 / totalColumns;
         const movingRight = targetLeft + (movingSpan * gridSize);
 
-        // Get all other blocks in the same container
         const otherBlocks = container.querySelectorAll('.event-block:not([data-gene-id="' + movingElement.dataset.geneId + '"])');
         
         let finalLeft = targetLeft;
         let finalTop = targetTop;
         
-        // Check for horizontal overlaps
         for (const block of otherBlocks) {
             const blockLeft = parseFloat(block.style.left);
             const blockSpan = parseInt(block.dataset.span) || 1;
             const blockRight = blockLeft + (blockSpan * gridSize);
             const blockTop = parseFloat(block.style.top);
             
-            // Check if there's vertical overlap (same row)
-            if (Math.abs(blockTop - finalTop) < 65) {
-                // Check horizontal overlap
+            if (Math.abs(blockTop - finalTop) < 70) {
                 if (finalLeft < blockRight && movingRight > blockLeft) {
-                    // Move to next available position
-                    finalTop += 69; // Move down one level
+                    finalTop += 75;
                 }
             }
         }
@@ -1433,16 +1200,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function initializeZoomControls() {
         const container = document.getElementById('timetableContainer');
-        const zoomIndicator = createZoomIndicator();
+        const zoomIndicator = document.querySelector('.zoom-indicator');
 
         document.getElementById('zoomInBtn').addEventListener('click', () => {
-            currentZoom = Math.min(1.5, currentZoom + 0.1);
+            currentZoom = Math.min(1.2, currentZoom + 0.1);
             updateZoom();
             showZoomIndicator();
         });
 
         document.getElementById('zoomOutBtn').addEventListener('click', () => {
-            currentZoom = Math.max(0.4, currentZoom - 0.1);
+            currentZoom = Math.max(0.5, currentZoom - 0.1);
             updateZoom();
             showZoomIndicator();
         });
@@ -1453,42 +1220,17 @@ document.addEventListener('DOMContentLoaded', function() {
             showZoomIndicator();
         });
 
-        // Enhanced mouse wheel zoom
-        container.parentElement.addEventListener('wheel', function(e) {
-            if (e.ctrlKey) {
-                e.preventDefault();
-                const zoomSpeed = 0.05;
-                if (e.deltaY < 0) {
-                    currentZoom = Math.min(1.5, currentZoom + zoomSpeed);
-                } else {
-                    currentZoom = Math.max(0.4, currentZoom - zoomSpeed);
-                }
-                updateZoom();
-                showZoomIndicator();
-            }
-        });
-
         function updateZoom() {
             container.style.transform = `scale(${currentZoom})`;
             container.style.width = `${100 / currentZoom}%`;
             container.style.height = `${100 / currentZoom}%`;
 
-            // Update button states
-            document.getElementById('zoomInBtn').disabled = currentZoom >= 1.5;
-            document.getElementById('zoomOutBtn').disabled = currentZoom <= 0.4;
+            document.getElementById('zoomInBtn').disabled = currentZoom >= 1.2;
+            document.getElementById('zoomOutBtn').disabled = currentZoom <= 0.5;
 
-            // Update zoom indicator
             if (zoomIndicator) {
                 zoomIndicator.textContent = Math.round(currentZoom * 100) + '%';
             }
-        }
-
-        function createZoomIndicator() {
-            const indicator = document.createElement('div');
-            indicator.className = 'zoom-indicator';
-            indicator.textContent = Math.round(currentZoom * 100) + '%';
-            container.parentElement.appendChild(indicator);
-            return indicator;
         }
 
         function showZoomIndicator() {
@@ -1509,38 +1251,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const fieldType = field.dataset.field;
             const geneId = field.dataset.geneId;
-            const currentValue = field.textContent.trim().replace(/^[^\s]*\s/, ''); // Remove icon
+            const currentValue = field.dataset.currentValue;
+            const currentText = field.textContent.trim().replace(/^[^\s]*\s/, '').replace(/\s*[^\s]*$/, '');
 
             let options = [];
             if (fieldType === 'instructor') {
                 const subjectId = field.dataset.subjectId;
-                options = getInstructorsForSubject(parseInt(subjectId));
+                options = getEligibleInstructorsForSubject(parseInt(subjectId));
             } else if (fieldType === 'room') {
                 const timeslotIds = JSON.parse(field.dataset.timeslotIds);
-                const blockType = field.closest('.event-block').querySelector('.course-type').textContent.includes('Practical') ? 'practical' : 'theory';
-                options = getAvailableRoomsForTimeslots(timeslotIds, blockType, field.dataset.subjectId);
+                const blockType = field.dataset.blockType;
+                options = getAvailableRoomsForTimeslots(timeslotIds, blockType);
             }
 
-            createEditSelect(field, fieldType, geneId, currentValue, options);
+            createEditSelect(field, fieldType, geneId, currentValue, currentText, options);
         });
     }
 
-    function createEditSelect(field, fieldType, geneId, currentValue, options) {
+    function createEditSelect(field, fieldType, geneId, currentValue, currentText, options) {
         const select = document.createElement('select');
         select.className = 'form-select form-select-sm';
-        select.style.fontSize = '0.5rem';
+        select.style.fontSize = '0.55rem';
         select.style.width = '100%';
         select.dataset.field = fieldType;
         select.dataset.geneId = geneId;
+        select.dataset.originalValue = currentValue;
+        select.dataset.originalText = currentText;
 
         // Copy data attributes
-        if (fieldType === 'instructor') {
-            select.dataset.subjectId = field.dataset.subjectId;
-        } else if (fieldType === 'room') {
-            select.dataset.timeslotIds = field.dataset.timeslotIds;
-        }
+        Object.keys(field.dataset).forEach(key => {
+            select.dataset[key] = field.dataset[key];
+        });
 
-        // Add default option
+        // Add options
         const defaultOption = document.createElement('option');
         defaultOption.value = '';
         defaultOption.textContent = `Select ${fieldType}...`;
@@ -1550,25 +1293,22 @@ document.addEventListener('DOMContentLoaded', function() {
             const option = document.createElement('option');
             option.value = item.id;
             option.textContent = item.name;
-            if (item.name === currentValue) option.selected = true;
+            if (item.id == currentValue) option.selected = true;
             select.appendChild(option);
         });
 
         field.replaceWith(select);
         
-        // Initialize Select2 with enhanced options
+        // Initialize Select2
         $(select).select2({
             width: '100%',
             dropdownAutoWidth: true,
             placeholder: `Select ${fieldType}...`,
-            minimumResultsForSearch: 5,
-            dropdownParent: $(select.closest('.event-block')),
+            minimumResultsForSearch: 3,
+            dropdownParent: $(select.closest('.enhanced-block')),
             templateResult: function(option) {
                 if (!option.id) return option.text;
                 return $(`<span style="font-size: 0.65rem;">${option.text}</span>`);
-            },
-            escapeMarkup: function(markup) {
-                return markup;
             }
         }).focus();
 
@@ -1582,81 +1322,79 @@ document.addEventListener('DOMContentLoaded', function() {
 
         $(select).on('select2:close', function() {
             if (!$(this).val()) {
-                // Revert to original field
-                revertToOriginalField(this, fieldType, geneId, currentValue);
+                revertToOriginalField(this, fieldType);
             }
         });
     }
 
-    function updateFieldValue(select, fieldType, geneId, newValue, newId) {
-        const icon = fieldType === 'instructor' ? 'fa-user-tie' : 'fa-door-open';
-        const oldValue = select.dataset.originalValue || '';
+    function updateFieldValue(select, fieldType, geneId, newText, newValue) {
+        const oldValue = select.dataset.originalValue;
+        const oldText = select.dataset.originalText;
 
-        const div = document.createElement('div');
-        div.className = `course-${fieldType} editable-field text-truncate mb-1`;
-        div.dataset.field = fieldType;
-        div.dataset.geneId = geneId;
-        div.style.cssText = 'font-size: 0.5rem; cursor: pointer; padding: 1px 2px; border-radius: 2px; background: rgba(13,110,253,0.06);';
-        div.innerHTML = `<i class="fas ${icon} me-1" style="font-size: 0.45rem;"></i>${newValue}`;
-
-        // Copy additional data attributes
-        if (fieldType === 'instructor') {
-            div.dataset.subjectId = select.dataset.subjectId;
-        } else if (fieldType === 'room') {
-            div.dataset.timeslotIds = select.dataset.timeslotIds;
-        }
+        const div = createFieldDiv(fieldType, geneId, newText, select.dataset);
 
         $(select).replaceWith(div);
 
         // Add to pending changes
         pendingChanges.push({
             type: 'edit',
-            geneId: geneId,
+            gene_id: geneId,
             field: fieldType,
-            newValue: newValue,
-            newId: newId,
+            new_value_id: newValue,
+            newText: newText,
             oldValue: oldValue,
+            oldText: oldText,
             timestamp: Date.now()
         });
 
         updateChangesIndicator();
-        updateBlockConflictStatus(div.closest('.event-block'), fieldType, newValue);
-        showToast(`${fieldType.charAt(0).toUpperCase() + fieldType.slice(1)} updated`, 'success');
+        updateBlockConflictStatus(div.closest('.enhanced-block'), fieldType, newValue);
+        showToast(`${fieldType.charAt(0).toUpperCase() + fieldType.slice(1)} updated successfully`, 'success');
     }
 
-    function revertToOriginalField(select, fieldType, geneId, currentValue) {
+    function createFieldDiv(fieldType, geneId, text, dataAttrs) {
         const icon = fieldType === 'instructor' ? 'fa-user-tie' : 'fa-door-open';
         const div = document.createElement('div');
         div.className = `course-${fieldType} editable-field text-truncate mb-1`;
         div.dataset.field = fieldType;
         div.dataset.geneId = geneId;
-        div.style.cssText = 'font-size: 0.5rem; cursor: pointer; padding: 1px 2px; border-radius: 2px; background: rgba(13,110,253,0.06);';
-        div.innerHTML = `<i class="fas ${icon} me-1" style="font-size: 0.45rem;"></i>${currentValue}`;
+        div.dataset.currentValue = dataAttrs.currentValue;
+        div.title = `Click to change ${fieldType}`;
+        div.style.cssText = 'font-size: 0.55rem; cursor: pointer; padding: 2px 4px; border-radius: 3px; background: rgba(13,110,253,0.08); border: 1px solid transparent; transition: all 0.2s ease;';
+        div.innerHTML = `<i class="fas ${icon} me-1" style="font-size: 0.5rem;"></i>${text}<i class="fas fa-edit ms-1" style="font-size: 0.45rem; opacity: 0.6;"></i>`;
 
         // Copy additional data attributes
-        if (fieldType === 'instructor') {
-            div.dataset.subjectId = select.dataset.subjectId;
-        } else if (fieldType === 'room') {
-            div.dataset.timeslotIds = select.dataset.timeslotIds;
-        }
+        Object.keys(dataAttrs).forEach(key => {
+            if (key !== 'field' && key !== 'geneId') {
+                div.dataset[key] = dataAttrs[key];
+            }
+        });
 
+        return div;
+    }
+
+    function revertToOriginalField(select, fieldType) {
+        const div = createFieldDiv(fieldType, select.dataset.geneId, select.dataset.originalText, select.dataset);
         $(select).replaceWith(div);
     }
 
     function updateBlockConflictStatus(block, fieldType, newValue) {
         if (fieldType === 'room') {
-            const timeslotIds = JSON.parse(block.querySelector('.course-room').dataset.timeslotIds);
+            const roomField = block.querySelector('.course-room');
+            const timeslotIds = JSON.parse(roomField.dataset.timeslotIds);
             const hasConflict = checkRoomConflict(newValue, timeslotIds);
 
             if (hasConflict) {
-                block.style.borderColor = '#dc3545';
-                block.style.backgroundColor = '#fff0f1';
+                block.style.borderColor = '#fd7e14';
+                block.style.backgroundColor = '#fff4e6';
+                block.dataset.conflictType = 'Room Conflict';
                 addConflictIndicator(block, 'room');
                 block.classList.add('error');
                 setTimeout(() => block.classList.remove('error'), 1000);
             } else {
                 block.style.borderColor = '#0d6efd';
                 block.style.backgroundColor = '#ffffff';
+                block.dataset.conflictType = '';
                 removeConflictIndicator(block);
                 block.classList.add('success');
                 setTimeout(() => block.classList.remove('success'), 1000);
@@ -1665,11 +1403,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function addConflictIndicator(block, type) {
-        let indicator = block.querySelector('.conflict-indicator');
+        let indicator = block.querySelector('.conflict-badge');
         if (!indicator) {
             indicator = document.createElement('div');
-            indicator.className = 'conflict-indicator';
-            indicator.title = `${type} conflict detected`;
+            indicator.className = 'conflict-badge';
+            indicator.style.cssText = `
+                position: absolute;
+                top: 3px;
+                left: 3px;
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                border: 1px solid white;
+                animation: conflictPulse 2s infinite;
+                z-index: 15;
+            `;
             block.appendChild(indicator);
         }
 
@@ -1680,63 +1428,25 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         indicator.style.backgroundColor = colors[type] || '#dc3545';
+        indicator.title = `${type} conflict detected`;
     }
 
     function removeConflictIndicator(block) {
-        const indicator = block.querySelector('.conflict-indicator');
+        const indicator = block.querySelector('.conflict-badge');
         if (indicator) {
             indicator.remove();
         }
     }
 
     function initializeButtons() {
-        // Save Changes Button with enhanced feedback
+        // Enhanced Save Changes Button
         document.getElementById('saveChangesBtn').addEventListener('click', function() {
             if (pendingChanges.length === 0) {
                 showToast('No changes to save', 'info');
                 return;
             }
 
-            const saveBtn = this;
-            const originalText = saveBtn.innerHTML;
-            const changesCount = pendingChanges.length;
-            
-            saveBtn.innerHTML = '<i class="fas fa-spinner loading-spinner me-1"></i><span class="d-none d-lg-inline">Saving...</span>';
-            saveBtn.disabled = true;
-            saveBtn.classList.add('btn-warning');
-
-            // Simulate API call with progress feedback
-            let progress = 0;
-            const progressInterval = setInterval(() => {
-                progress += Math.random() * 20;
-                if (progress >= 100) {
-                    progress = 100;
-                    clearInterval(progressInterval);
-                }
-                
-                const progressText = Math.round(progress) + '%';
-                saveBtn.innerHTML = `<i class="fas fa-spinner loading-spinner me-1"></i><span class="d-none d-lg-inline">Saving ${progressText}</span>`;
-            }, 200);
-
-            setTimeout(() => {
-                clearInterval(progressInterval);
-                console.log('Saving changes:', pendingChanges);
-
-                // Reset UI
-                pendingChanges = [];
-                updateChangesIndicator();
-                saveBtn.innerHTML = originalText;
-                saveBtn.disabled = false;
-                saveBtn.classList.remove('btn-warning');
-                saveBtn.classList.add('btn-success');
-                
-                setTimeout(() => {
-                    saveBtn.classList.remove('btn-success');
-                    saveBtn.classList.add('btn-primary');
-                }, 2000);
-
-                showToast(`${changesCount} change(s) saved successfully!`, 'success');
-            }, 2000);
+            performSaveChanges();
         });
 
         // Enhanced Undo Changes Button
@@ -1746,41 +1456,165 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            const undoCount = pendingChanges.length;
-            let undoneCount = 0;
-
-            // Animate undo process
-            const undoInterval = setInterval(() => {
-                if (pendingChanges.length === 0) {
-                    clearInterval(undoInterval);
-                    updateChangesIndicator();
-                    showToast(`${undoneCount} change(s) undone`, 'warning');
-                    return;
-                }
-
-                const change = pendingChanges.pop();
-                undoneCount++;
-
-                if (change.type === 'move') {
-                    const course = document.querySelector(`[data-gene-id="${change.geneId}"]`);
-                    if (course) {
-                        course.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-                        course.style.left = change.oldPosition.left;
-                        course.style.top = change.oldPosition.top;
-
-                        setTimeout(() => {
-                            course.style.transition = 'all 0.15s ease';
-                        }, 400);
-                    }
-                }
-                // Add more undo logic for edit operations
-
-                updateChangesIndicator();
-            }, 150);
+            performUndoChanges();
         });
 
-        // Enhanced Export PDF Button
+        // Export PDF Button
         document.getElementById('exportPdfBtn').addEventListener('click', generatePDF);
+    }
+
+    async function performSaveChanges() {
+        const saveBtn = document.getElementById('saveChangesBtn');
+        const originalText = saveBtn.innerHTML;
+        const changesCount = pendingChanges.length;
+
+        // Show loading state
+        saveBtn.innerHTML = '<i class="fas fa-spinner loading-spinner me-1"></i><span class="d-none d-lg-inline">Saving...</span>';
+        saveBtn.disabled = true;
+        showLoadingOverlay('Saving changes...');
+
+        try {
+            // Prepare data for server
+            const saveData = {
+                chromosome_id: chromosomeId,
+                edits: pendingChanges.filter(c => c.type === 'edit').map(c => ({
+                    gene_id: c.gene_id,
+                    field: c.field,
+                    new_value_id: c.new_value_id
+                })),
+                moves: pendingChanges.filter(c => c.type === 'move').map(c => ({
+                    gene_id: c.gene_id,
+                    new_timeslot_ids: c.new_timeslot_ids
+                }))
+            };
+
+            // Send to server
+            const response = await fetch(saveUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(saveData)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Reset state
+                pendingChanges = [];
+                updateChangesIndicator();
+
+                // Success feedback
+                saveBtn.innerHTML = '<i class="fas fa-check me-1"></i><span class="d-none d-lg-inline">Saved!</span>';
+                saveBtn.classList.add('btn-success');
+                
+                setTimeout(() => {
+                    saveBtn.innerHTML = originalText;
+                    saveBtn.classList.remove('btn-success');
+                    saveBtn.classList.add('btn-primary');
+                    saveBtn.disabled = false;
+                }, 2000);
+
+                showToast(`${result.edits_saved + result.moves_saved} changes saved successfully!`, 'success');
+
+                // Update UI with server response if needed
+                if (result.updated_genes && result.updated_genes.length > 0) {
+                    updateUIFromServer(result.updated_genes);
+                }
+
+            } else {
+                throw new Error(result.message || 'Save failed');
+            }
+
+        } catch (error) {
+            console.error('Save error:', error);
+            
+            // Error feedback
+            saveBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i><span class="d-none d-lg-inline">Error!</span>';
+            saveBtn.classList.add('btn-danger');
+            
+            setTimeout(() => {
+                saveBtn.innerHTML = originalText;
+                saveBtn.classList.remove('btn-danger');
+                saveBtn.classList.add('btn-primary');
+                saveBtn.disabled = false;
+            }, 3000);
+
+            showToast('Failed to save changes: ' + error.message, 'danger');
+        } finally {
+            hideLoadingOverlay();
+        }
+    }
+
+    function performUndoChanges() {
+        const undoCount = pendingChanges.length;
+        let undoneCount = 0;
+
+        const undoInterval = setInterval(() => {
+            if (pendingChanges.length === 0) {
+                clearInterval(undoInterval);
+                updateChangesIndicator();
+                showToast(`${undoneCount} changes undone`, 'warning');
+                return;
+            }
+
+            const change = pendingChanges.pop();
+            undoneCount++;
+
+            if (change.type === 'move') {
+                const course = document.querySelector(`[data-gene-id="${change.gene_id}"]`);
+                if (course) {
+                    course.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                    course.style.left = change.oldPosition.left;
+                    course.style.top = change.oldPosition.top;
+
+                    setTimeout(() => {
+                        course.style.transition = 'all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                    }, 400);
+                }
+            } else if (change.type === 'edit') {
+                const block = document.querySelector(`[data-gene-id="${change.gene_id}"]`);
+                if (block) {
+                    const field = block.querySelector(`[data-field="${change.field}"]`);
+                    if (field) {
+                        const div = createFieldDiv(change.field, change.gene_id, change.oldText, {
+                            currentValue: change.oldValue,
+                            ...field.dataset
+                        });
+                        field.replaceWith(div);
+                    }
+                }
+            }
+
+            updateChangesIndicator();
+        }, 150);
+    }
+
+    function updateUIFromServer(updatedGenes) {
+        updatedGenes.forEach(gene => {
+            const block = document.querySelector(`[data-gene-id="${gene.gene_id}"]`);
+            if (block) {
+                // Update instructor field if changed
+                if (gene.instructor) {
+                    const instructorField = block.querySelector('.course-instructor');
+                    if (instructorField) {
+                        instructorField.innerHTML = `<i class="fas fa-user-tie me-1" style="font-size: 0.5rem;"></i>${gene.instructor.user.name}<i class="fas fa-edit ms-1" style="font-size: 0.45rem; opacity: 0.6;"></i>`;
+                        instructorField.dataset.currentValue = gene.instructor_id;
+                    }
+                }
+
+                // Update room field if changed
+                if (gene.room) {
+                    const roomField = block.querySelector('.course-room');
+                    if (roomField) {
+                        roomField.innerHTML = `<i class="fas fa-door-open me-1" style="font-size: 0.5rem;"></i>${gene.room.room_name}<i class="fas fa-edit ms-1" style="font-size: 0.45rem; opacity: 0.6;"></i>`;
+                        roomField.dataset.currentValue = gene.room_id;
+                    }
+                }
+            }
+        });
     }
 
     function updateChangesIndicator() {
@@ -1790,7 +1624,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const undoCountMobile = document.getElementById('undoCountMobile');
         const changesIndicator = document.getElementById('changesIndicator');
 
-        // Update counts
         if (undoCount) undoCount.textContent = pendingChanges.length;
         if (undoCountMobile) undoCountMobile.textContent = pendingChanges.length;
 
@@ -1803,12 +1636,13 @@ document.addEventListener('DOMContentLoaded', function() {
             undoBtn.classList.remove('btn-warning');
             undoBtn.classList.add('btn-danger');
 
-            // Show changes indicator
             if (changesIndicator) {
                 changesIndicator.classList.remove('d-none');
                 const changesText = document.getElementById('changesText');
                 if (changesText) {
-                    changesText.textContent = `${pendingChanges.length} unsaved change${pendingChanges.length > 1 ? 's' : ''}`;
+                    const editCount = pendingChanges.filter(c => c.type === 'edit').length;
+                    const moveCount = pendingChanges.filter(c => c.type === 'move').length;
+                    changesText.textContent = `${pendingChanges.length} unsaved changes (${editCount} edits, ${moveCount} moves)`;
                 }
             }
         } else {
@@ -1820,7 +1654,6 @@ document.addEventListener('DOMContentLoaded', function() {
             undoBtn.classList.remove('btn-danger');
             undoBtn.classList.add('btn-warning');
 
-            // Hide changes indicator
             if (changesIndicator) {
                 changesIndicator.classList.add('d-none');
             }
@@ -1829,7 +1662,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function initializeKeyboardShortcuts() {
         document.addEventListener('keydown', function(e) {
-            // Only handle shortcuts if not typing in input fields
             if (e.target.tagName.toLowerCase() === 'input' || 
                 e.target.tagName.toLowerCase() === 'textarea' || 
                 e.target.tagName.toLowerCase() === 'select') {
@@ -1866,7 +1698,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // ESC to cancel any ongoing operations
             if (e.key === 'Escape') {
                 if (isDragging && draggedElement) {
                     draggedElement.classList.remove('dragging');
@@ -1876,7 +1707,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     showToast('Drag operation cancelled', 'info');
                 }
 
-                // Close any open dropdowns
                 $('.select2-container--open').each(function() {
                     $(this).prev().select2('close');
                 });
@@ -1885,22 +1715,33 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Helper Functions
-    function getInstructorsForSubject(subjectId) {
+    function getEligibleInstructorsForSubject(subjectId) {
         if (!subjectId || !allInstructors) return [];
-        return allInstructors.filter(i => 
+        
+        // Get instructors who can teach this subject
+        const eligibleInstructors = allInstructors.filter(i => 
             Array.isArray(i.subject_ids) && i.subject_ids.includes(subjectId)
         ).map(i => ({
             id: i.id,
             name: i.name
         }));
+
+        // Also include all instructors as options (for flexibility)
+        const allOptions = allInstructors.map(i => ({
+            id: i.id,
+            name: i.name
+        }));
+
+        // Return eligible first, then others
+        return [...eligibleInstructors, ...allOptions.filter(opt => !eligibleInstructors.find(elig => elig.id === opt.id))];
     }
 
-    function getAvailableRoomsForTimeslots(timeslotIds, blockType, subjectId) {
+    function getAvailableRoomsForTimeslots(timeslotIds, blockType) {
         if (!timeslotIds || !Array.isArray(timeslotIds) || !allRooms) return [];
 
-        // Filter rooms by type
+        // Filter rooms by type first
         let filteredRooms = allRooms.filter(room => {
-            const roomType = room.type.toLowerCase();
+            const roomType = (room.type || '').toLowerCase();
             if (blockType === 'practical') {
                 return roomType.includes('lab') || 
                        roomType.includes('مختبر') || 
@@ -1914,20 +1755,30 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Filter by availability
-        return filteredRooms.filter(room => {
+        // If no rooms match the type, return all rooms
+        if (filteredRooms.length === 0) {
+            filteredRooms = allRooms;
+        }
+
+        // Filter by availability (check conflicts)
+        const availableRooms = filteredRooms.filter(room => {
             for (const tsId of timeslotIds) {
                 if (timeSlotUsage[tsId] && timeSlotUsage[tsId].rooms) {
                     if (timeSlotUsage[tsId].rooms.includes(room.id)) {
-                        return false;
+                        return false; // Room is occupied
                     }
                 }
             }
-            return true;
-        }).map(room => ({
-            id: room.id,
-            name: room.room_name || room.name
-        }));
+            return true; // Room is available
+        });
+
+        // Return available rooms first, then occupied rooms (for flexibility)
+        const occupiedRooms = filteredRooms.filter(room => !availableRooms.includes(room));
+        
+        return [
+            ...availableRooms.map(room => ({ id: room.id, name: room.name })),
+            ...occupiedRooms.map(room => ({ id: room.id, name: room.name + ' (Occupied)' }))
+        ];
     }
 
     function checkRoomConflict(roomId, timeslotIds) {
@@ -1943,13 +1794,20 @@ document.addEventListener('DOMContentLoaded', function() {
         return false;
     }
 
-    function showToast(message, type = 'info') {
-        // Use global toast function if available, otherwise create local one
-        if (typeof window.showToast === 'function') {
-            window.showToast(message, type);
-            return;
+    function showLoadingOverlay(message = 'Loading...') {
+        if (loadingOverlay) {
+            loadingOverlay.querySelector('h5').textContent = message;
+            loadingOverlay.classList.remove('d-none');
         }
+    }
 
+    function hideLoadingOverlay() {
+        if (loadingOverlay) {
+            loadingOverlay.classList.add('d-none');
+        }
+    }
+
+    function showToast(message, type = 'info') {
         let toastContainer = document.getElementById('toastContainer');
         if (!toastContainer) {
             toastContainer = document.createElement('div');
@@ -1997,18 +1855,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         exportBtn.innerHTML = '<i class="fas fa-spinner loading-spinner me-1" style="font-size: 0.65rem;"></i><span class="d-none d-lg-inline">Generating...</span>';
         exportBtn.disabled = true;
+        showLoadingOverlay('Generating PDF...');
 
         try {
-            showToast('Starting PDF generation...', 'info');
-
-            // Get the timetable container
             const timetableContainer = document.getElementById('timetableContainer');
-            
-            // Temporarily adjust for better PDF capture
             const originalTransform = timetableContainer.style.transform;
-            timetableContainer.style.transform = 'scale(0.8)';
+            timetableContainer.style.transform = 'scale(0.7)';
 
-            // Generate PDF using html2canvas and jsPDF
             const canvas = await html2canvas(timetableContainer, {
                 scale: 2,
                 useCORS: true,
@@ -2018,7 +1871,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 height: timetableContainer.scrollHeight
             });
 
-            // Restore original transform
             timetableContainer.style.transform = originalTransform;
 
             const { jsPDF } = window.jspdf;
@@ -2032,13 +1884,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
             
-            const imgWidth = pdfWidth - 20; // 10mm margin on each side
+            const imgWidth = pdfWidth - 20;
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
             let heightLeft = imgHeight;
-            let position = 10; // 10mm top margin
+            let position = 10;
 
-            // Add pages if content is too long
             pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
             heightLeft -= pdfHeight;
 
@@ -2049,16 +1900,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 heightLeft -= pdfHeight;
             }
 
-            // Add metadata
-            pdf.setProperties({
-                title: `Timetable - Chromosome #{{ $chromosome->chromosome_id ?? 'Unknown' }}`,
-                subject: 'Academic Timetable',
-                author: 'Palestine Technical College',
-                creator: 'Timetable Management System'
-            });
-
-            // Save the PDF
-            const filename = `timetable_chromosome_{{ $chromosome->chromosome_id ?? 'export' }}_${new Date().toISOString().split('T')[0]}.pdf`;
+            const filename = `timetable_chromosome_${chromosomeId}_${new Date().toISOString().split('T')[0]}.pdf`;
             pdf.save(filename);
 
             showToast('PDF exported successfully!', 'success');
@@ -2069,13 +1911,14 @@ document.addEventListener('DOMContentLoaded', function() {
         } finally {
             exportBtn.innerHTML = originalText;
             exportBtn.disabled = false;
+            hideLoadingOverlay();
         }
     }
 
-    // Auto-save warning before page unload
+    // Auto-save warning
     window.addEventListener('beforeunload', function(e) {
         if (pendingChanges.length > 0) {
-            const confirmationMessage = `You have ${pendingChanges.length} unsaved change${pendingChanges.length > 1 ? 's' : ''}. Are you sure you want to leave?`;
+            const confirmationMessage = `You have ${pendingChanges.length} unsaved changes. Are you sure you want to leave?`;
             e.returnValue = confirmationMessage;
             return confirmationMessage;
         }
@@ -2088,7 +1931,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 180000); // Every 3 minutes
 
-    // Initialize changes indicator dismiss button
+    // Initialize changes indicator dismiss
     const dismissChanges = document.getElementById('dismissChanges');
     if (dismissChanges) {
         dismissChanges.addEventListener('click', function() {
@@ -2096,21 +1939,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Performance optimization: debounce resize events
-    let resizeTimeout;
-    window.addEventListener('resize', function() {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(() => {
-            // Recalculate positions if needed
-            updateZoom();
-        }, 250);
-    });
-
-    console.log('✅ Enhanced Interactive Timetable Viewer Initialized');
-    console.log(`📊 Initial zoom level: ${Math.round(currentZoom * 100)}%`);
-    console.log(`🎯 Drag & Drop: ${draggableCourses.length} course blocks ready`);
-    console.log('⌨️ Keyboard shortcuts: Ctrl+S (Save), Ctrl+Z (Undo), Ctrl+E (Export), Ctrl+/- (Zoom)');
-    console.log(`💾 Auto-save warnings enabled for ${pendingChanges.length} pending changes`);
+    console.log('✅ Enhanced Interactive Timetable initialized successfully');
+    console.log(`📊 Zoom: ${Math.round(currentZoom * 100)}% | Blocks: ${document.querySelectorAll('.draggable-course').length}`);
+    console.log('🎯 Features: Drag & Drop, Field Editing, Auto-save, PDF Export, Keyboard Shortcuts');
 });
 </script>
 @endpush

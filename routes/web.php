@@ -263,6 +263,8 @@ Route::prefix('dashboard')->group(function () {
         Route::get('/timetable-result/{chromosome}', [TimetableResultController::class, 'show'])->name('timetable.result.show');
         Route::patch('/algorithm-control/timetable/result/set-best/{population}', [TimetableResultController::class, 'setBestChromosome'])
             ->name('timetable.result.set-best');
+        Route::post('timetable/results/save-edits', [TimetableResultController::class, 'saveEdits'])
+            ->name('timetable.results.saveEdits');
         Route::post('/algorithm-control/timetable/result/save-edits', [TimetableResultController::class,'saveEdits'
         ])->name('timetable.result.save-edits');
         // --- End Timetable Results Routes ---
