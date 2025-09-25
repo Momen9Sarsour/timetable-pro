@@ -139,8 +139,8 @@
                                             <td>
                                                 <small class="text-muted">
                                                     <i class="fas fa-calendar-alt me-1"></i>
-                                                    {{ $population->created_at->format('M d, Y') }}
-                                                    <div>{{ $population->created_at->format('H:i') }}</div>
+                                                    {{ $population->created_at }}
+                                                    <div>{{ $population->created_at }}</div>
                                                 </small>
                                             </td>
                                             <td class="text-center">
