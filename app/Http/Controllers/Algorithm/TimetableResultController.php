@@ -141,6 +141,7 @@ class TimetableResultController extends Controller
             $allRooms = $this->getOptimizedRoomData($genes);
             $allInstructors = $this->getOptimizedInstructorData($genes);
             $timeSlotUsage = $this->buildTimeSlotUsage($genes);
+            $totalColumnsOverall = $allTimeslots->count();
 
             return view('dashboard.algorithm.timetable-result.show', compact(
                 'chromosome',
