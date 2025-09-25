@@ -96,7 +96,7 @@ class TimetableResultController extends Controller
 
             // تحسين 4: تجنب تحميل كل البيانات مرة واحدة
             $daysOfWeek = ['1', '2', '3', '4', '5', '6', '7'];
-            $allTimeslots = Timeslot::select('timeslot_id ', 'day', 'start_time', 'end_time')
+            $allTimeslots = Timeslot::select('timeslot_id', 'day', 'start_time', 'end_time')
                 ->orderByRaw("FIELD(day, '" . implode("','", $daysOfWeek) . "')")
                 ->orderBy('start_time')
                 ->get();
