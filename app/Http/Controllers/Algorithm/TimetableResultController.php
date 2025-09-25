@@ -147,7 +147,7 @@ class TimetableResultController extends Controller
                 'scheduleByGroup',
                 'timeslotsByDay',
                 'slotPositions',
-                'totalColumnsOverall' => $allTimeslots->count(),
+                'totalColumnsOverall',
                 'conflicts',
                 'conflictingGeneIds',
                 'conflictChecker',
