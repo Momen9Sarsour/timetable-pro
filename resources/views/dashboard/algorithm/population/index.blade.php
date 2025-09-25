@@ -496,7 +496,7 @@
                                 <i class="fas fa-info-circle me-2 mt-1"></i>
                                 <div>
                                     <strong>Continuing from Population #{{ $population->population_id }}</strong><br>
-                                    <small>Created: {{ $population->created_at->format('M d, Y H:i') }} | Status: {{ ucfirst($population->status) }}</small>
+                                    <small>Created: {{ $population->created_at }} | Status: {{ ucfirst($population->status) }}</small>
                                 </div>
                             </div>
                         </div>
