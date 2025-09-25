@@ -237,7 +237,7 @@
                                         <div class="d-flex justify-content-between text-muted small">
                                             <span>
                                                 <i class="fas fa-calendar-alt me-1"></i>
-                                                {{ $population->created_at->format('M d, Y H:i') }}
+                                                {{ $population->created_at }}
                                             </span>
                                             <span class="text-muted">#{{ $populations->firstItem() + $index }}</span>
                                         </div>
