@@ -2,47 +2,29 @@
 
 @section('content')
 <div class="container-fluid">
-    <!-- Page Header -->
+    <!-- Header -->
     <div class="row mb-3">
-        <div class="col-12">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
-                <div>
-                    <h5 class="page-title mb-1">
-                        <i class="fas fa-calendar-alt text-primary me-2" style="font-size: 1rem;"></i>
-                        Interactive Timetable - Chromosome #{{ $chromosome->chromosome_id }}
-                    </h5>
-                    <div class="text-muted" style="font-size: 0.75rem;">
-                        <span class="badge bg-light text-dark me-1" style="font-size: 0.7rem;">Total Penalty: {{ $conflictStats['total_penalty'] }}</span>
-                        <span class="badge bg-light text-dark me-1" style="font-size: 0.7rem;">Generation: {{ $chromosome->generation_number }}</span>
-                        <span class="badge bg-light text-dark" style="font-size: 0.7rem;">Run ID: {{ $chromosome->population->population_id }}</span>
-                    </div>
+        <div class="col-12 d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
+            <div>
+                <h5 class="page-title mb-1">
+                    <i class="fas fa-calendar-alt text-primary me-2"></i>
+                    Timetable (Read-Only) — Chromosome #{{ $chromosome->chromosome_id }}
+                </h5>
+                <div class="text-muted" style="font-size: .8rem;">
+                    <span class="badge bg-light text-dark me-1">Generation: {{ $chromosome->generation_number }}</span>
+                    <span class="badge bg-light text-dark me-1">Run ID: {{ $chromosome->population_id ?? ($chromosome->population->population_id ?? '-') }}</span>
+                    <span class="badge bg-light text-dark">Penalty: {{ $chromosome->penalty_value ?? 0 }}</span>
                 </div>
+            </div>
 
-                <div class="d-flex gap-1 flex-wrap">
-                    <a href="{{ route('algorithm-control.timetable.results.index') }}" class="btn btn-outline-secondary btn-sm" style="padding: 0.25rem 0.5rem; font-size: 0.7rem;">
-                        <i class="fas fa-arrow-left me-1" style="font-size: 0.65rem;"></i>
-                        <span class="d-none d-lg-inline">Back</span>
-                    </a>
-                    <button class="btn btn-warning btn-sm" id="undoPendingBtn" disabled style="padding: 0.25rem 0.5rem; font-size: 0.7rem;">
-                        <i class="fas fa-undo me-1" style="font-size: 0.65rem;"></i>
-                        <span class="d-none d-lg-inline">Undo (<span id="undoCount">0</span>)</span>
-                        <span class="d-lg-none"><span id="undoCountMobile">0</span></span>
-                    </button>
-                    <button class="btn btn-primary btn-sm" id="saveChangesBtn" style="padding: 0.25rem 0.5rem; font-size: 0.7rem;">
-                        <i class="fas fa-save me-1" style="font-size: 0.65rem;"></i>
-                        <span class="d-none d-lg-inline">Save</span>
-                    </button>
-                    <button class="btn btn-success btn-sm" id="exportPdfBtn" style="padding: 0.25rem 0.5rem; font-size: 0.7rem;">
-                        <i class="fas fa-file-pdf me-1" style="font-size: 0.65rem;"></i>
-                        <span class="d-none d-lg-inline">Export PDF</span>
-                        <span class="d-lg-none">PDF</span>
-                    </button>
-                </div>
+            <div class="d-flex gap-2">
+                <a href="{{ route('algorithm-control.timetable.results.index') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </a>
             </div>
         </div>
     </div>
 
-    <!-- Status Messages -->
     @include('dashboard.data-entry.partials._status_messages')
 
     <!-- Enhanced Conflicts Detection Card -->
@@ -180,28 +162,12 @@
     <div class=" mb-3" style="height: 1400px;">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-transparent border-bottom-0 py-2">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h6 class="card-title mb-0" style="font-size: 0.8rem;">
-                            <i class="fas fa-calendar-week text-primary me-2" style="font-size: 0.7rem;"></i>
-                            Enhanced Interactive Schedule
-                            <span class="badge bg-primary bg-opacity-10 text-primary ms-2" style="font-size: 0.6rem;">
-                                <i class="fas fa-hand-rock me-1" style="font-size: 0.5rem;"></i>
-                                Drag & Drop • Edit Fields
-                            </span>
-                        </h6>
-                        <div class="d-flex gap-1">
-                            <button class="btn btn-outline-primary btn-sm" id="zoomInBtn" title="Zoom In (Ctrl + +)" style="padding: 0.2rem 0.35rem;">
-                                <i class="fas fa-search-plus" style="font-size: 0.6rem;"></i>
-                            </button>
-                            <button class="btn btn-outline-primary btn-sm" id="zoomOutBtn" title="Zoom Out (Ctrl + -)" style="padding: 0.2rem 0.35rem;">
-                                <i class="fas fa-search-minus" style="font-size: 0.6rem;"></i>
-                            </button>
-                            <button class="btn btn-outline-secondary btn-sm" id="resetZoomBtn" title="Reset Zoom (Ctrl + 0)" style="padding: 0.2rem 0.35rem;">
-                                <i class="fas fa-expand-arrows-alt" style="font-size: 0.6rem;"></i>
-                            </button>
-                        </div>
-                    </div>
+                <div class="card-header bg-transparent border-0 py-2 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-calendar-week text-primary me-2"></i>
+                        Read-Only Schedule
+                    </h6>
+                    <span class="text-muted" style="font-size:.8rem">Display only • handles NULL/empty fields safely</span>
                 </div>
 
                 <div class="card-body p-0">
@@ -212,26 +178,37 @@
                                     <tr>
                                         <th class="group-header sticky-start">Student Group</th>
                                         @foreach ($timeslotsByDay as $day => $daySlots)
-                                            <th class="day-header text-center" colspan="{{ $daySlots->count() }}">{{ $day }}</th>
+                                            <th class="day-header text-center" colspan="{{ $daySlots->count() }}">
+                                                {{ $day }}
+                                            </th>
                                         @endforeach
                                     </tr>
                                     <tr>
                                         <th class="group-header sticky-start"></th>
-                                        @foreach (collect($timeslotsByDay)->flatten() as $timeslot)
+                                        @php $flatTimeslots = collect($timeslotsByDay)->flatten(); @endphp
+                                        @foreach ($flatTimeslots as $ts)
                                             <th class="time-header text-center">
-                                                {{ \Carbon\Carbon::parse($timeslot->start_time)->format('H:i') }}
+                                                {{ \Carbon\Carbon::parse($ts->start_time)->format('H:i') }}
                                             </th>
                                         @endforeach
                                     </tr>
                                 </thead>
+
                                 <tbody>
-                                    @php $sortedGroups = collect($scheduleByGroup)->sortBy(fn($g) => explode('|', $g['name'])[0]); @endphp
-                                    @foreach ($sortedGroups as $groupId => $group)
+                                    @php
+                                        // ترتيب المجموعات بالاسم
+                                        $sortedGroups = collect($scheduleByGroup)->sortBy(fn($g) => $g['name'] ?? 'Ungrouped');
+                                    @endphp
+
+                                    @forelse ($sortedGroups as $groupKey => $group)
                                         <tr>
-                                            <th class="group-header sticky-start">{{ $group['name'] }}</th>
-                                            <td class="group-row position-relative schedule-drop-zone" colspan="{{ $totalColumnsOverall }}" data-group-id="{{ $groupId }}">
-                                                <!-- Enhanced Grid Background -->
-                                                <div class="grid-background d-flex position-absolute w-100 h-100" style="top: 0; left: 0; pointer-events: none; z-index: 1;">
+                                            <th class="group-header sticky-start">
+                                                {{ $group['name'] ?? 'Ungrouped' }}
+                                            </th>
+
+                                            <td class="group-row position-relative" colspan="{{ $totalColumnsOverall }}">
+                                                {{-- خلفية الشبكة --}}
+                                                <div class="grid-background d-flex position-absolute w-100 h-100" style="top:0;left:0;pointer-events:none;">
                                                     @for ($i = 0; $i < $totalColumnsOverall; $i++)
                                                         <div class="grid-column flex-fill border-end drop-slot"
                                                              data-slot="{{ $i }}"
@@ -258,9 +235,8 @@
                                                     @endfor
                                                 </div>
 
-                                                <!-- Enhanced Schedule Blocks -->
-                                                @php $slotsForGroup = []; @endphp
-                                                @foreach (collect($group['blocks'])->unique('gene_id') as $block)
+                                                {{-- البلوكات --}}
+                                                @foreach (collect($group['blocks'] ?? [])->unique('gene_id') as $block)
                                                     @php
                                                         $timeslotIds = is_string($block->timeslot_ids) ? json_decode($block->timeslot_ids, true) : $block->timeslot_ids;
                                                         if (empty($timeslotIds)) continue;
@@ -321,63 +297,14 @@
                                                          data-conflict-type="{{ $conflictType }}"
                                                          data-block-type="{{ $blockType }}"
                                                          style="
-                                                            position: absolute;
                                                             top: {{ $top }}px;
                                                             left: {{ $left }}%;
                                                             width: calc({{ $width }}% - 3px);
                                                             height: {{ $height }}px;
-                                                            background: {{ $bgColor }};
-                                                            border: 2px solid {{ $borderColor }};
-                                                            border-radius: 6px;
-                                                            padding: 6px;
-                                                            cursor: grab;
-                                                            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                                                            transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-                                                            z-index: 10;
-                                                            touch-action: none;
-                                                            user-select: none;
-                                                            overflow: hidden;
                                                          ">
-
-                                                        <!-- Enhanced Drag Handle -->
-                                                        <div class="drag-handle" title="Drag to move" style="
-                                                            position: absolute;
-                                                            top: 3px;
-                                                            right: 3px;
-                                                            width: 12px;
-                                                            height: 12px;
-                                                            background: linear-gradient(45deg, {{ $borderColor }}, {{ $borderColor }}dd);
-                                                            border-radius: 3px;
-                                                            opacity: 0.7;
-                                                            cursor: grab;
-                                                            transition: all 0.2s ease;
-                                                            display: flex;
-                                                            align-items: center;
-                                                            justify-content: center;
-                                                        ">
-                                                            <i class="fas fa-grip-vertical" style="font-size: 6px; color: white;"></i>
-                                                        </div>
-
-                                                        <!-- Conflict Status Indicator -->
-                                                        @if ($conflictType)
-                                                            <div class="conflict-badge" style="
-                                                                position: absolute;
-                                                                top: 3px;
-                                                                left: 3px;
-                                                                width: 8px;
-                                                                height: 8px;
-                                                                background: {{ $borderColor }};
-                                                                border-radius: 50%;
-                                                                border: 1px solid white;
-                                                                animation: conflictPulse 2s infinite;
-                                                                z-index: 15;
-                                                            " title="{{ $conflictType }}"></div>
-                                                        @endif
-
                                                         <div class="event-content d-flex flex-column h-100">
-                                                            <div class="course-code fw-bold mb-1 text-truncate" style="font-size: 0.65rem; line-height: 1.2; color: {{ $borderColor }};">
-                                                                {{ optional($block->section->planSubject->subject)->subject_no }} -
-                                                                {{ Str::limit(optional($block->section->planSubject->subject)->subject_name, 20) }}
+                                                            <div class="event-title text-truncate">
+                                                                {{ $label }}
                                                             </div>
 
                                                             <!-- Enhanced Editable Instructor -->
@@ -421,7 +348,14 @@
                                                 @endforeach
                                             </td>
                                         </tr>
-                                    @endforeach
+                                    @empty
+                                        <tr>
+                                            <td colspan="{{ $totalColumnsOverall + 1 }}" class="text-center py-4">
+                                                <i class="fas fa-info-circle text-muted me-1"></i>
+                                                No blocks to display for this chromosome.
+                                            </td>
+                                        </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
@@ -488,357 +422,98 @@
 @endsection
 
 @push('styles')
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
-/* Enhanced Timetable Styling */
-.timetable {
-    border-collapse: separate;
-    border-spacing: 0;
-    font-size: 0.65rem;
-    min-width: 2800px;
-    width: max-content;
-    background: var(--light-bg-secondary);
-    transform: scale(0.8);
-    transform-origin: top left;
+/* ألوان متغيرة بسيطة */
+:root{
+    --primary:#0d6efd;
+    --primary-dark:#0b5ed7;
+    --border:#e7e9ee;
+    --bg:#f8f9fb;
+    --text:#2b2f33;
+    --text-muted:#6c757d;
 }
 
-.timetable th,
-.timetable td {
-    border: 1px solid var(--light-border);
-    padding: 0;
-    vertical-align: top;
+/* الجدول */
+.timetable-wrapper{
+    overflow:auto;
+    border:1px solid var(--border);
+    border-radius:8px;
+    background:var(--bg);
+    height:70vh;
 }
 
-.group-header {
-    background: linear-gradient(135deg, var(--light-bg), #e9ecef);
-    font-weight: 600;
-    padding: 8px 10px;
-    width: 220px;
-    min-width: 220px;
-    font-size: 0.65rem;
-    border-right: 2px solid var(--primary-color) !important;
-    position: sticky;
-    left: 0;
-    z-index: 20;
-    box-shadow: 2px 0 6px rgba(0,0,0,0.08);
-    color: var(--light-text);
+.timetable{
+    border-collapse:separate;
+    border-spacing:0;
+    font-size:.78rem;
+    min-width:1400px; /* يتسع للوقت */
+    width:max-content;
+    background:white;
 }
 
-.day-header {
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-    color: white;
-    font-weight: 700;
-    padding: 8px;
-    font-size: 0.65rem;
-    position: sticky;
-    top: 0;
-    z-index: 18;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+.timetable th, .timetable td{
+    border:1px solid var(--border);
+    padding:0;
+    vertical-align:top;
 }
 
-.time-header {
-    background: linear-gradient(135deg, var(--light-bg), #e9ecef);
-    color: var(--light-text-secondary);
-    font-size: 0.55rem;
-    font-weight: 500;
-    padding: 6px 4px;
-    width: 90px;
-    min-width: 90px;
-    position: sticky;
-    top: 33px;
-    z-index: 17;
+.day-header{
+    background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+    color:#fff; font-weight:700; padding:.5rem; position:sticky; top:0; z-index:10;
 }
 
-.group-row {
-    height: 160px;
-    min-height: 160px;
-    position: relative;
-    background: var(--light-bg);
-    transition: all 0.3s ease;
+.time-header{
+    background:#f2f4f6; color:#65707b; font-weight:600; padding:.35rem; position:sticky; top:36px; z-index:9;
+    min-width:90px; width:90px;
 }
 
-/* Enhanced Event Block Styling */
-.enhanced-block {
-    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    overflow: hidden;
-    user-select: none;
-    cursor: grab;
-    border-radius: 6px !important;
-    backdrop-filter: blur(1px);
+.group-header{
+    background:#f7f9fb; font-weight:700; padding:.5rem .65rem; width:230px; min-width:230px;
+    position:sticky; left:0; z-index:11; border-right:2px solid var(--primary) !important;
 }
 
-.enhanced-block:hover {
-    box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
-    transform: translateY(-2px) scale(1.02);
-    z-index: 25 !important;
+.group-row{
+    height:90px; min-height:90px; position:relative; background:#fff;
 }
 
-.enhanced-block:hover .drag-handle {
-    opacity: 1;
-    transform: scale(1.1);
+/* الشبكة داخل كل صف */
+.grid-column{
+    border-right:1px solid rgba(0,0,0,.04);
+}
+.grid-column:nth-child(5n){
+    border-right:1px solid rgba(0,0,0,.08);
 }
 
-.enhanced-block:hover .editable-field {
-    background: rgba(13,110,253,0.15) !important;
-    border-color: rgba(13,110,253,0.4);
+/* البلوك (العرض فقط) */
+.event-block{
+    position:absolute;
+    background:#ffffff;
+    border:2px solid var(--primary);
+    border-radius:6px;
+    padding:6px;
+    box-shadow:0 2px 8px rgba(13,110,253,.12);
+    overflow:hidden;
 }
 
-.enhanced-block.dragging {
-    opacity: 0.9;
-    transform: rotate(3deg) scale(1.08);
-    z-index: 1000 !important;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.25) !important;
-    cursor: grabbing !important;
+.event-title{
+    font-weight:700;
+    color:var(--primary);
+    font-size:.8rem;
+    line-height:1.2;
 }
 
-.enhanced-block:active {
-    cursor: grabbing;
+.event-meta{
+    font-size:.72rem;
 }
 
-/* Enhanced Grid System */
-.grid-column {
-    border-right: 1px solid rgba(0,0,0,0.02);
-    transition: all 0.2s ease;
-    position: relative;
-}
+/* لزوم الثبات */
+.sticky-top{ position:sticky; top:0; z-index:20; }
+.sticky-start{ position:sticky; left:0; z-index:21; }
 
-.grid-column:nth-child(5n) {
-    border-right: 1px solid rgba(0,0,0,0.06);
-}
-
-.grid-column.drag-over {
-    background: linear-gradient(135deg, rgba(13, 110, 253, 0.08), rgba(13, 110, 253, 0.04)) !important;
-    border-color: var(--primary-color) !important;
-    box-shadow: inset 0 0 8px rgba(13, 110, 253, 0.2);
-}
-
-.grid-column.drag-over .drop-indicator {
-    opacity: 1 !important;
-    transform: translate(-50%, -50%) scale(1.2);
-    animation: dropBounce 0.6s infinite alternate;
-}
-
-@keyframes dropBounce {
-    0% { transform: translate(-50%, -50%) scale(1.2); }
-    100% { transform: translate(-50%, -50%) scale(1.4); }
-}
-
-@keyframes conflictPulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.6; transform: scale(1.3); }
-}
-
-@keyframes animate-bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
-}
-
-.animate-bounce {
-    animation: animate-bounce 1s infinite;
-}
-
-/* Enhanced Editable Fields */
-.editable-field {
-    transition: all 0.2s ease;
-    border: 1px solid transparent;
-    border-radius: 3px;
-    position: relative;
-}
-
-.editable-field:hover {
-    background: rgba(13, 110, 253, 0.15) !important;
-    transform: scale(1.05);
-    border-color: rgba(13, 110, 253, 0.4);
-    box-shadow: 0 2px 4px rgba(13, 110, 253, 0.2);
-}
-
-.editable-field:hover .fa-edit {
-    opacity: 1 !important;
-}
-
-/* Enhanced Drag Handle */
-.drag-handle {
-    opacity: 0.6;
-    transition: all 0.2s ease;
-}
-
-.drag-handle:hover {
-    opacity: 1;
-    transform: scale(1.2);
-    cursor: grab;
-}
-
-.drag-handle:active {
-    cursor: grabbing;
-}
-
-/* Enhanced Zoom Controls */
-.timetable-wrapper {
-    position: relative;
-    border: 1px solid var(--light-border);
-    border-radius: 8px;
-    background: var(--light-bg-secondary);
-}
-
-/* Enhanced Drop Zones */
-.schedule-drop-zone {
-    transition: all 0.2s ease;
-}
-
-.schedule-drop-zone.drag-over {
-    background: linear-gradient(135deg, rgba(13, 110, 253, 0.06), rgba(13, 110, 253, 0.02)) !important;
-    box-shadow: inset 0 0 16px rgba(13, 110, 253, 0.2);
-}
-
-/* Enhanced Select2 Styling */
-.select2-container {
-    z-index: 9999 !important;
-}
-
-.select2-container .select2-selection--single {
-    height: 32px !important;
-    border: 1px solid var(--primary-color) !important;
-    border-radius: 4px !important;
-}
-
-.select2-container .select2-selection--single .select2-selection__rendered {
-    line-height: 30px !important;
-    font-size: 0.6rem !important;
-    padding-left: 8px !important;
-}
-
-.select2-dropdown {
-    border: 2px solid var(--primary-color);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-    font-size: 0.65rem;
-    border-radius: 6px;
-}
-
-.select2-results__option {
-    font-size: 0.65rem;
-    padding: 0.5rem;
-    transition: all 0.15s ease;
-}
-
-.select2-results__option--highlighted {
-    background: var(--primary-color) !important;
-    transform: translateX(3px);
-}
-
-/* Success/Error States */
-.enhanced-block.success {
-    border-color: var(--success-color) !important;
-    box-shadow: 0 0 12px rgba(34, 197, 94, 0.4) !important;
-    animation: successPulse 0.6s ease-out;
-}
-
-.enhanced-block.error {
-    border-color: var(--danger-color) !important;
-    box-shadow: 0 0 12px rgba(239, 68, 68, 0.4) !important;
-    animation: errorShake 0.6s ease-in-out;
-}
-
-@keyframes successPulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-}
-
-@keyframes errorShake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-3px); }
-    75% { transform: translateX(3px); }
-}
-
-/* Loading Animation */
-@keyframes saveSpinner {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.loading-spinner {
-    animation: saveSpinner 1s linear infinite;
-}
-
-/* Enhanced Responsive Design */
-@media (max-width: 768px) {
-    .timetable {
-        transform: scale(0.6);
-        min-width: 2400px;
-    }
-
-    .group-header {
-        width: 180px;
-        min-width: 180px;
-        font-size: 0.6rem;
-        padding: 6px 8px;
-    }
-
-    .time-header {
-        width: 70px;
-        min-width: 70px;
-        font-size: 0.5rem;
-    }
-
-    .enhanced-block {
-        min-height: 60px;
-        padding: 4px;
-    }
-
-    .group-row {
-        height: 140px;
-        min-height: 140px;
-    }
-}
-
-/* Enhanced Accessibility */
-.enhanced-block:focus {
-    outline: 3px solid var(--primary-color);
-    outline-offset: 2px;
-}
-
-.editable-field:focus {
-    outline: 2px solid var(--primary-color);
-    outline-offset: 1px;
-}
-
-/* Enhanced Visual Feedback */
-.zoom-indicator.show {
-    opacity: 1;
-}
-
-/* Enhanced Scrollbars */
-.timetable-wrapper::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-}
-
-.timetable-wrapper::-webkit-scrollbar-track {
-    background: var(--light-bg);
-    border-radius: 5px;
-}
-
-.timetable-wrapper::-webkit-scrollbar-thumb {
-    background: var(--primary-color);
-    border-radius: 5px;
-    transition: background 0.15s ease;
-}
-
-.timetable-wrapper::-webkit-scrollbar-thumb:hover {
-    background: var(--primary-dark);
-}
-
-/* Sticky Elements Enhancement */
-.sticky-start {
-    position: sticky;
-    left: 0;
-    z-index: 15;
-}
-
-.sticky-top {
-    position: sticky;
-    top: 0;
-    z-index: 20;
+@media (max-width: 992px){
+    .group-header{ width:180px; min-width:180px; }
+    .time-header{ min-width:72px; width:72px; font-size:.72rem; }
+    .event-title{ font-size:.76rem; }
 }
 </style>
 @endpush

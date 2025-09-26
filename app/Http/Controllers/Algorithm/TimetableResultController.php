@@ -33,6 +33,8 @@ class TimetableResultController extends Controller
                 $topChromosomes = $latestSuccessfulRun->chromosomes()
                     ->orderBy('penalty_value', 'asc')
                     ->orderBy('chromosome_id', 'desc')
+                    ->orderBy('penalty_value', 'asc')
+                    ->orderBy('chromosome_id', 'desc')
                     ->take(5)
                     ->get();
             }
@@ -508,6 +510,7 @@ class TimetableResultController extends Controller
 
             if ($section->instructor && $section->instructor->id == $instructor->id) {
                 continue;
+                continue;
             }
 
             if (!$instructor->subjects || !$instructor->subjects->contains($subject->id)) {
@@ -711,3 +714,4 @@ class ConflictCheckerService
         };
     }
 }
+

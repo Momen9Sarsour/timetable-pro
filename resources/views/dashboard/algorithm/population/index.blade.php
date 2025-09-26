@@ -139,8 +139,8 @@
                                             <td>
                                                 <small class="text-muted">
                                                     <i class="fas fa-calendar-alt me-1"></i>
-                                                    {{ $population->created_at->format('M d, Y') }}
-                                                    <div>{{ $population->created_at->format('H:i') }}</div>
+                                                    {{ $population->created_at }}
+                                                    <div>{{ $population->created_at }}</div>
                                                 </small>
                                             </td>
                                             <td class="text-center">
@@ -237,7 +237,7 @@
                                         <div class="d-flex justify-content-between text-muted small">
                                             <span>
                                                 <i class="fas fa-calendar-alt me-1"></i>
-                                                {{ $population->created_at->format('M d, Y H:i') }}
+                                                {{ $population->created_at }}
                                             </span>
                                             <span class="text-muted">#{{ $populations->firstItem() + $index }}</span>
                                         </div>
@@ -509,7 +509,7 @@
                                 <i class="fas fa-info-circle me-2 mt-1"></i>
                                 <div>
                                     <strong>Continuing from Population #{{ $population->population_id }}</strong><br>
-                                    <small>Created: {{ $population->created_at->format('M d, Y H:i') }} | Status: {{ ucfirst($population->status) }}</small>
+                                    <small>Created: {{ $population->created_at }} | Status: {{ ucfirst($population->status) }}</small>
                                 </div>
                             </div>
                         </div>
