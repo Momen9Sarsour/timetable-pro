@@ -343,7 +343,7 @@
 
                                                 @if(isset($gene->room))
                                                     <div class="event-room">
-                                                        <i class="fas fa-door-open me-1"></i>{{ $gene->room->room_no }}
+                                                        <i class="fas fa-door-open me-1"></i>{{ $gene->room->room_name }}
                                                     </div>
                                                 @endif
                                             </div>

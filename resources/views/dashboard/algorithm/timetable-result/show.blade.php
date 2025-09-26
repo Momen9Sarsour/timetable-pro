@@ -55,7 +55,7 @@
                             <i class="fas fa-exclamation-triangle text-warning me-2" style="font-size: 0.75rem;"></i>
                             <h6 class="card-title mb-0" style="font-size: 0.8rem;">Conflicts Detection</h6>
                         </div>
-                        <span class="badge {{ $conflictStats['total_conflicts'] > 0 ? 'bg-danger' : 'bg-success' }} bg-opacity-10 text-{{ $conflictStats['total_conflicts'] > 0 ? 'danger' : 'success' }}" style="font-size: 0.65rem; padding: 0.2rem 0.4rem;">
+                        <span class="badge {{ $conflictStats['total_conflicts'] > 0 ? 'bg-danger' : 'bg-success' }} bg-opacity-10 text-{{ $conflictStats['total_conflicts'] > 0 ? 'danger' : 'success' }}" style="font-size: 0.65rem; padding: 0.2rem 0.4rem;" id="conflictsCounter">
                             {{ $conflictStats['total_conflicts'] }} Conflicts Found
                         </span>
                     </div>
@@ -68,43 +68,43 @@
                             <div class="row g-2">
                                 <div class="col-md-2">
                                     <div class="text-center p-2 border rounded" style="background: #e83e8c10;">
-                                        <div class="fw-bold" style="font-size: 0.8rem; color: #e83e8c;">{{ $conflictStats['student_conflicts'] }}</div>
+                                        <div class="fw-bold" style="font-size: 0.8rem; color: #e83e8c;" id="studentConflictsCount">{{ $conflictStats['student_conflicts'] }}</div>
                                         <small style="font-size: 0.6rem;">Students</small>
                                     </div>
                                 </div>
                                 <div class="col-md-2">
                                     <div class="text-center p-2 border rounded" style="background: #dc354510;">
-                                        <div class="fw-bold" style="font-size: 0.8rem; color: #dc3545;">{{ $conflictStats['teacher_conflicts'] }}</div>
+                                        <div class="fw-bold" style="font-size: 0.8rem; color: #dc3545;" id="teacherConflictsCount">{{ $conflictStats['teacher_conflicts'] }}</div>
                                         <small style="font-size: 0.6rem;">Teachers</small>
                                     </div>
                                 </div>
                                 <div class="col-md-2">
                                     <div class="text-center p-2 border rounded" style="background: #fd7e1410;">
-                                        <div class="fw-bold" style="font-size: 0.8rem; color: #fd7e14;">{{ $conflictStats['room_conflicts'] }}</div>
+                                        <div class="fw-bold" style="font-size: 0.8rem; color: #fd7e14;" id="roomConflictsCount">{{ $conflictStats['room_conflicts'] }}</div>
                                         <small style="font-size: 0.6rem;">Rooms</small>
                                     </div>
                                 </div>
                                 <div class="col-md-2">
                                     <div class="text-center p-2 border rounded" style="background: #ffc10710;">
-                                        <div class="fw-bold" style="font-size: 0.8rem; color: #ffc107;">{{ $conflictStats['capacity_conflicts'] }}</div>
+                                        <div class="fw-bold" style="font-size: 0.8rem; color: #ffc107;" id="capacityConflictsCount">{{ $conflictStats['capacity_conflicts'] }}</div>
                                         <small style="font-size: 0.6rem;">Capacity</small>
                                     </div>
                                 </div>
                                 <div class="col-md-2">
                                     <div class="text-center p-2 border rounded" style="background: #ffc10710;">
-                                        <div class="fw-bold" style="font-size: 0.8rem; color: #ffc107;">{{ $conflictStats['room_type_conflicts'] }}</div>
+                                        <div class="fw-bold" style="font-size: 0.8rem; color: #ffc107;" id="roomTypeConflictsCount">{{ $conflictStats['room_type_conflicts'] }}</div>
                                         <small style="font-size: 0.6rem;">Room Type</small>
                                     </div>
                                 </div>
                                 <div class="col-md-2">
                                     <div class="text-center p-2 border rounded" style="background: #6f42c110;">
-                                        <div class="fw-bold" style="font-size: 0.8rem; color: #6f42c1;">{{ $conflictStats['teacher_eligibility_conflicts'] }}</div>
+                                        <div class="fw-bold" style="font-size: 0.8rem; color: #6f42c1;" id="eligibilityConflictsCount">{{ $conflictStats['teacher_eligibility_conflicts'] }}</div>
                                         <small style="font-size: 0.6rem;">Eligibility</small>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="conflicts-container mt-2" style="max-height: 80px; overflow-y: auto;">
+                            <div class="conflicts-container mt-2" style="max-height: 80px; overflow-y: auto;" id="conflictsList">
                                 @if (!empty($conflicts))
                                     <div class="list-group list-group-flush">
                                         @foreach ($conflicts as $c)
@@ -174,9 +174,10 @@
             </div>
         </div>
     </div>
+</div>
 
     <!-- Enhanced Timetable Schedule Card -->
-    <div class="row">
+    <div class=" mb-3" style="height: 1400px;">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-transparent border-bottom-0 py-2">
@@ -204,7 +205,7 @@
                 </div>
 
                 <div class="card-body p-0">
-                    <div class="timetable-wrapper" style="height: 70vh; overflow: auto; position: relative;">
+                    <div class="timetable-wrapper" style="height: 180vh; overflow: auto; position: relative;">
                         <div class="timetable-container" id="timetableContainer" style="transform-origin: top left;">
                             <table class="timetable table-bordered mb-0">
                                 <thead class="sticky-top">
@@ -232,16 +233,16 @@
                                                 <!-- Enhanced Grid Background -->
                                                 <div class="grid-background d-flex position-absolute w-100 h-100" style="top: 0; left: 0; pointer-events: none; z-index: 1;">
                                                     @for ($i = 0; $i < $totalColumnsOverall; $i++)
-                                                        <div class="grid-column flex-fill border-end drop-slot" 
-                                                             data-slot="{{ $i }}" 
+                                                        <div class="grid-column flex-fill border-end drop-slot"
+                                                             data-slot="{{ $i }}"
                                                              style="border-color: rgba(0,0,0,0.04); min-height: 100%; position: relative;">
                                                             <div class="drop-indicator" style="
-                                                                position: absolute; 
-                                                                top: 50%; 
-                                                                left: 50%; 
+                                                                position: absolute;
+                                                                top: 50%;
+                                                                left: 50%;
                                                                 transform: translate(-50%, -50%);
-                                                                width: 16px; 
-                                                                height: 16px; 
+                                                                width: 16px;
+                                                                height: 16px;
                                                                 border: 2px dashed var(--primary-color);
                                                                 border-radius: 50%;
                                                                 background: rgba(13, 110, 253, 0.1);
@@ -296,12 +297,16 @@
                                                         $borderColor = $conflictChecker->getGeneConflictColor($block->gene_id);
                                                         $bgColor = match ($conflictType) {
                                                             'Instructor Conflict' => '#fff0f1',
-                                                            'Room Conflict' => '#fff4e6',  
+                                                            'Room Conflict' => '#fff4e6',
                                                             'Student Conflict' => '#fce8f3',
                                                             'Room Capacity', 'Room Type' => '#fffaeb',
                                                             'Instructor Qualification' => '#f8f3fc',
-                                                            default => '#ffffff',
+                                                            default => '#f8faff', // خلفية زرقاء فاتحة للبلوكات بدون تعارض
                                                         };
+
+                                                        // تحديد نوع البلوك
+                                                        $blockType = str_contains(strtolower($block->lecture_unique_id), 'practical') ? 'practical' : 'theoretical';
+                                                        $blockTypeArabic = $blockType === 'practical' ? 'عملي' : 'نظري';
                                                     @endphp
 
                                                     <div class="event-block draggable-course enhanced-block"
@@ -314,6 +319,7 @@
                                                          data-start-column="{{ $startColumn }}"
                                                          data-span="{{ $span }}"
                                                          data-conflict-type="{{ $conflictType }}"
+                                                         data-block-type="{{ $blockType }}"
                                                          style="
                                                             position: absolute;
                                                             top: {{ $top }}px;
@@ -393,7 +399,7 @@
                                                                  data-gene-id="{{ $block->gene_id }}"
                                                                  data-timeslot-ids='@json($timeslotIds)'
                                                                  data-current-value="{{ $block->room_id }}"
-                                                                 data-block-type="{{ $block->block_type }}"
+                                                                 data-block-type="{{ $blockType }}"
                                                                  title="Click to change room"
                                                                  style="font-size: 0.55rem; cursor: pointer; padding: 2px 4px; border-radius: 3px; background: rgba(13,110,253,0.08); border: 1px solid transparent; transition: all 0.2s ease;">
                                                                 <i class="fas fa-door-open me-1" style="font-size: 0.5rem;"></i>
@@ -403,8 +409,8 @@
 
                                                             <div class="course-type text-muted mt-auto d-flex justify-content-between align-items-center" style="font-size: 0.45rem; line-height: 1;">
                                                                 <span>
-                                                                    <i class="fas fa-clock me-1" style="font-size: 0.4rem;"></i>
-                                                                    {{ ucfirst($block->block_type) }} | {{ $block->block_duration }}min
+                                                                    <i class="fas fa-{{ $blockType === 'practical' ? 'flask' : 'book' }} me-1" style="font-size: 0.4rem;"></i>
+                                                                    {{ $blockTypeArabic }} | {{ $block->block_duration }}min
                                                                 </span>
                                                                 <span class="timeslot-count text-primary" style="font-size: 0.4rem;">
                                                                     {{ count($timeslotIds) }} slots
@@ -422,10 +428,10 @@
 
                         <!-- Enhanced Drop Zone Indicator -->
                         <div id="dropIndicator" class="position-absolute d-none" style="
-                            background: linear-gradient(135deg, rgba(13, 110, 253, 0.2), rgba(13, 110, 253, 0.1)); 
-                            border: 3px dashed #0d6efd; 
-                            border-radius: 8px; 
-                            z-index: 9999; 
+                            background: linear-gradient(135deg, rgba(13, 110, 253, 0.2), rgba(13, 110, 253, 0.1));
+                            border: 3px dashed #0d6efd;
+                            border-radius: 8px;
+                            z-index: 9999;
                             pointer-events: none;
                             backdrop-filter: blur(2px);
                             box-shadow: 0 4px 16px rgba(13, 110, 253, 0.3);
@@ -440,15 +446,15 @@
 
                         <!-- Zoom Indicator -->
                         <div class="zoom-indicator position-absolute" style="
-                            top: 15px; 
-                            right: 15px; 
-                            background: rgba(0,0,0,0.8); 
-                            color: white; 
-                            padding: 4px 8px; 
-                            border-radius: 4px; 
-                            font-size: 0.6rem; 
-                            z-index: 100; 
-                            opacity: 0; 
+                            top: 15px;
+                            right: 15px;
+                            background: rgba(0,0,0,0.8);
+                            color: white;
+                            padding: 4px 8px;
+                            border-radius: 4px;
+                            font-size: 0.6rem;
+                            z-index: 100;
+                            opacity: 0;
                             transition: opacity 0.3s ease;
                         ">80%</div>
                     </div>
@@ -456,7 +462,7 @@
             </div>
         </div>
     </div>
-</div>
+
 
 <!-- Enhanced Changes Indicator -->
 <div id="changesIndicator" class="position-fixed bottom-0 start-50 translate-middle-x mb-3 d-none" style="z-index: 1050;">
@@ -847,7 +853,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const chromosomeId = {{ $chromosome->chromosome_id }};
     const allRooms = @json($allRooms);
     const allInstructors = @json($allInstructors);
-    const timeSlotUsage = @json($timeSlotUsage);
+    const timeSlotUsage = @json($timeSlotUsage ?? []);
     const totalColumns = {{ $totalColumnsOverall }};
     const saveUrl = "{{ route('algorithm-control.timetable.results.saveEdits') }}";
     const csrfToken = "{{ csrf_token() }}";
@@ -868,13 +874,13 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeEditableFields();
     initializeButtons();
     initializeKeyboardShortcuts();
-    
+
     updateZoom();
 
     function initializeElements() {
         dropIndicator = document.getElementById('dropIndicator');
         loadingOverlay = document.getElementById('loadingOverlay');
-        
+
         // Store original positions for all course blocks
         document.querySelectorAll('.draggable-course').forEach(course => {
             originalPositions.set(course.dataset.geneId, {
@@ -889,13 +895,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const draggableCourses = document.querySelectorAll('.draggable-course');
         const dropZones = document.querySelectorAll('.schedule-drop-zone');
 
-        // Enhanced drag and drop functionality
         draggableCourses.forEach(course => {
-            // Mouse/Touch events
             course.addEventListener('dragstart', handleCourseDragStart);
             course.addEventListener('dragend', handleCourseDragEnd);
-            
-            // Enhanced visual feedback
+
             course.addEventListener('mouseenter', () => {
                 if (!isDragging) {
                     course.style.transform = 'translateY(-2px) scale(1.02)';
@@ -910,20 +913,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            // Accessibility
             course.setAttribute('aria-grabbed', 'false');
             course.setAttribute('role', 'button');
             course.setAttribute('tabindex', '0');
         });
 
-        // Enhanced drop zones
         dropZones.forEach(zone => {
             zone.addEventListener('dragover', handleScheduleDragOver);
             zone.addEventListener('dragenter', handleScheduleDragEnter);
             zone.addEventListener('dragleave', handleScheduleDragLeave);
             zone.addEventListener('drop', handleScheduleDrop);
 
-            // Enhanced grid columns
             const gridColumns = zone.querySelectorAll('.grid-column');
             gridColumns.forEach((column, index) => {
                 column.addEventListener('dragover', (e) => handleColumnDragOver(e, index));
@@ -969,11 +969,10 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.remove('dragging');
             this.setAttribute('aria-grabbed', 'false');
 
-            // Clean up visual indicators
             document.querySelectorAll('.schedule-drop-zone').forEach(zone => {
                 zone.classList.remove('drag-target', 'drag-over');
                 zone.setAttribute('aria-dropeffect', 'none');
-                
+
                 zone.querySelectorAll('.grid-column').forEach(col => {
                     col.classList.remove('drag-over');
                 });
@@ -1021,7 +1020,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         function handleColumnDragOver(e, columnIndex) {
             if (!isDragging || !draggedElement) return;
-            
+
             const currentGroupId = draggedElement.dataset.groupId;
             const dropZoneGroupId = e.target.closest('.schedule-drop-zone').dataset.groupId;
 
@@ -1033,7 +1032,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         function handleColumnDragEnter(e, columnIndex) {
             if (!isDragging || !draggedElement) return;
-            
+
             const currentGroupId = draggedElement.dataset.groupId;
             const dropZoneGroupId = e.target.closest('.schedule-drop-zone').dataset.groupId;
 
@@ -1102,38 +1101,32 @@ document.addEventListener('DOMContentLoaded', function() {
         const containerWidth = container.offsetWidth;
         const newLeft = Math.max(0, Math.min(95, (x / containerWidth) * 100));
 
-        // Enhanced grid snapping
         const gridSize = 100 / totalColumns;
         const spanWidth = gridSize * dragData.span;
         const maxLeft = 100 - spanWidth;
         let snappedLeft = Math.round(newLeft / gridSize) * gridSize;
         snappedLeft = Math.min(snappedLeft, maxLeft);
 
-        // Smart vertical positioning
         const newTop = Math.max(3, Math.min(130, y - 35));
         const stackHeight = 75;
         const stackLevel = Math.floor(newTop / stackHeight);
         const finalTop = stackLevel * stackHeight + 3;
 
-        // Overlap detection and resolution
         const finalPosition = checkAndResolveOverlap(course, snappedLeft, finalTop, container);
 
-        // Smooth animation
         course.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
         course.style.left = finalPosition.left + '%';
         course.style.top = finalPosition.top + 'px';
 
-        // Visual feedback
         course.classList.add('success');
         setTimeout(() => {
             course.classList.remove('success');
             course.style.transition = 'all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
         }, 800);
 
-        // Update data and add to pending changes
         const startColumn = Math.round(finalPosition.left / gridSize);
         const newTimeslotIds = calculateNewTimeslotIds(startColumn, dragData.span);
-        
+
         course.dataset.startColumn = startColumn;
 
         pendingChanges.push({
@@ -1141,8 +1134,8 @@ document.addEventListener('DOMContentLoaded', function() {
             gene_id: dragData.geneId,
             new_timeslot_ids: newTimeslotIds,
             oldPosition: dragData.currentPosition,
-            newPosition: { 
-                left: finalPosition.left, 
+            newPosition: {
+                left: finalPosition.left,
                 top: finalPosition.top,
                 column: startColumn
             },
@@ -1150,6 +1143,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         updateChangesIndicator();
+
+        // Update conflicts after drag & drop
+        updateBlockConflictAfterMove(course, newTimeslotIds);
+
         showToast('Course repositioned successfully!', 'success');
 
         if (dropIndicator) {
@@ -1158,17 +1155,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function calculateNewTimeslotIds(startColumn, span) {
-        // Convert column positions back to timeslot IDs
         const timeslotArray = @json(collect($timeslotsByDay)->flatten()->pluck('id'));
         const newTimeslotIds = [];
-        
+
         for (let i = 0; i < span; i++) {
             const columnIndex = startColumn + i;
             if (columnIndex < timeslotArray.length) {
                 newTimeslotIds.push(timeslotArray[columnIndex]);
             }
         }
-        
+
         return newTimeslotIds;
     }
 
@@ -1178,16 +1174,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const movingRight = targetLeft + (movingSpan * gridSize);
 
         const otherBlocks = container.querySelectorAll('.event-block:not([data-gene-id="' + movingElement.dataset.geneId + '"])');
-        
+
         let finalLeft = targetLeft;
         let finalTop = targetTop;
-        
+
         for (const block of otherBlocks) {
             const blockLeft = parseFloat(block.style.left);
             const blockSpan = parseInt(block.dataset.span) || 1;
             const blockRight = blockLeft + (blockSpan * gridSize);
             const blockTop = parseFloat(block.style.top);
-            
+
             if (Math.abs(blockTop - finalTop) < 70) {
                 if (finalLeft < blockRight && movingRight > blockLeft) {
                     finalTop += 75;
@@ -1196,6 +1192,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         return { left: finalLeft, top: finalTop };
+    }
+
+    function updateBlockConflictAfterMove(block, newTimeslotIds) {
+        const roomId = block.querySelector('.course-room').dataset.currentValue;
+        const instructorId = block.querySelector('.course-instructor').dataset.currentValue;
+        const geneId = block.dataset.geneId;
+
+        // Check for conflicts with new position
+        let hasConflict = false;
+        let conflictType = '';
+
+        // Check room conflicts
+        if (roomId && checkRoomConflict(roomId, newTimeslotIds)) {
+            hasConflict = true;
+            conflictType = 'Room Conflict';
+        }
+
+        // Update block appearance based on conflicts
+        updateBlockVisualState(block, hasConflict, conflictType);
     }
 
     function initializeZoomControls() {
@@ -1298,7 +1313,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         field.replaceWith(select);
-        
+
         // Initialize Select2
         $(select).select2({
             width: '100%',
@@ -1348,7 +1363,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         updateChangesIndicator();
-        updateBlockConflictStatus(div.closest('.enhanced-block'), fieldType, newValue);
+
+        // Update block conflict status after edit
+        const block = div.closest('.enhanced-block');
+        updateBlockConflictStatus(block, fieldType, newValue);
+
         showToast(`${fieldType.charAt(0).toUpperCase() + fieldType.slice(1)} updated successfully`, 'success');
     }
 
@@ -1358,7 +1377,7 @@ document.addEventListener('DOMContentLoaded', function() {
         div.className = `course-${fieldType} editable-field text-truncate mb-1`;
         div.dataset.field = fieldType;
         div.dataset.geneId = geneId;
-        div.dataset.currentValue = dataAttrs.currentValue;
+        div.dataset.currentValue = dataAttrs.newValueId || dataAttrs.currentValue;
         div.title = `Click to change ${fieldType}`;
         div.style.cssText = 'font-size: 0.55rem; cursor: pointer; padding: 2px 4px; border-radius: 3px; background: rgba(13,110,253,0.08); border: 1px solid transparent; transition: all 0.2s ease;';
         div.innerHTML = `<i class="fas ${icon} me-1" style="font-size: 0.5rem;"></i>${text}<i class="fas fa-edit ms-1" style="font-size: 0.45rem; opacity: 0.6;"></i>`;
@@ -1385,57 +1404,97 @@ document.addEventListener('DOMContentLoaded', function() {
             const hasConflict = checkRoomConflict(newValue, timeslotIds);
 
             if (hasConflict) {
-                block.style.borderColor = '#fd7e14';
-                block.style.backgroundColor = '#fff4e6';
-                block.dataset.conflictType = 'Room Conflict';
-                addConflictIndicator(block, 'room');
-                block.classList.add('error');
-                setTimeout(() => block.classList.remove('error'), 1000);
+                updateBlockVisualState(block, true, 'Room Conflict');
             } else {
-                block.style.borderColor = '#0d6efd';
-                block.style.backgroundColor = '#ffffff';
-                block.dataset.conflictType = '';
-                removeConflictIndicator(block);
-                block.classList.add('success');
-                setTimeout(() => block.classList.remove('success'), 1000);
+                updateBlockVisualState(block, false, '');
+            }
+        } else if (fieldType === 'instructor') {
+            // Check instructor conflicts
+            const instructorField = block.querySelector('.course-instructor');
+            const timeslotIds = JSON.parse(instructorField.dataset.timeslotIds || '[]');
+            const hasConflict = checkInstructorConflict(newValue, timeslotIds);
+
+            if (hasConflict) {
+                updateBlockVisualState(block, true, 'Instructor Conflict');
+            } else {
+                updateBlockVisualState(block, false, '');
             }
         }
     }
 
-    function addConflictIndicator(block, type) {
-        let indicator = block.querySelector('.conflict-badge');
-        if (!indicator) {
-            indicator = document.createElement('div');
-            indicator.className = 'conflict-badge';
-            indicator.style.cssText = `
-                position: absolute;
-                top: 3px;
-                left: 3px;
-                width: 8px;
-                height: 8px;
-                border-radius: 50%;
-                border: 1px solid white;
-                animation: conflictPulse 2s infinite;
-                z-index: 15;
-            `;
-            block.appendChild(indicator);
+    function updateBlockVisualState(block, hasConflict, conflictType) {
+        // Remove existing conflict indicator
+        const existingIndicator = block.querySelector('.conflict-badge');
+        if (existingIndicator) {
+            existingIndicator.remove();
         }
 
-        const colors = {
-            room: '#fd7e14',
-            instructor: '#dc3545',
-            qualification: '#6f42c1'
-        };
+        if (hasConflict) {
+            // Set conflict colors
+            const colors = {
+                'Room Conflict': '#0d6efd',
+                'Instructor Conflict': '#0d6efd',
+                'Student Conflict': '#0d6efd',
+                'Room Capacity': '#0d6efd',
+                'Room Type': '#0d6efd',
+                'Instructor Qualification': '#0d6efd'
+                // 'Room Conflict': '#fd7e14',
+                // 'Instructor Conflict': '#dc3545',
+                // 'Student Conflict': '#e83e8c',
+                // 'Room Capacity': '#ffc107',
+                // 'Room Type': '#ffc107',
+                // 'Instructor Qualification': '#6f42c1'
+            };
 
-        indicator.style.backgroundColor = colors[type] || '#dc3545';
-        indicator.title = `${type} conflict detected`;
+            const bgColors = {
+                'Room Conflict': '#0d6efd',
+                'Instructor Conflict': '#0d6efd',
+                'Student Conflict': '#0d6efd',
+                'Room Capacity': '#0d6efd',
+                'Room Type': '#0d6efd',
+                'Instructor Qualification': '#0d6efd'
+            };
+
+            const borderColor = colors[conflictType] || '#0d6efd';
+            const bgColor = bgColors[conflictType] || '#0d6efd';
+
+            block.style.borderColor = borderColor;
+            block.style.backgroundColor = bgColor;
+            block.dataset.conflictType = conflictType;
+
+            // Add conflict indicator
+            addConflictIndicator(block, conflictType, borderColor);
+
+            block.classList.add('error');
+            setTimeout(() => block.classList.remove('error'), 1000);
+        } else {
+            // No conflict - blue theme
+            block.style.borderColor = '#0d6efd';
+            block.style.backgroundColor = '#f8faff';
+            block.dataset.conflictType = '';
+
+            block.classList.add('success');
+            setTimeout(() => block.classList.remove('success'), 1000);
+        }
     }
 
-    function removeConflictIndicator(block) {
-        const indicator = block.querySelector('.conflict-badge');
-        if (indicator) {
-            indicator.remove();
-        }
+    function addConflictIndicator(block, conflictType, color) {
+        const indicator = document.createElement('div');
+        indicator.className = 'conflict-badge';
+        indicator.style.cssText = `
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 8px;
+            height: 8px;
+            background: ${color};
+            border-radius: 50%;
+            border: 1px solid white;
+            animation: conflictPulse 2s infinite;
+            z-index: 15;
+        `;
+        indicator.title = conflictType;
+        block.appendChild(indicator);
     }
 
     function initializeButtons() {
@@ -1506,10 +1565,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 pendingChanges = [];
                 updateChangesIndicator();
 
+                // Update conflict statistics
+                if (result.updated_chromosome) {
+                    updateConflictStatistics(result.updated_chromosome);
+                }
+
+                // Update conflicts list
+                if (result.new_conflicts) {
+                    updateConflictsList(result.new_conflicts);
+                }
+
                 // Success feedback
                 saveBtn.innerHTML = '<i class="fas fa-check me-1"></i><span class="d-none d-lg-inline">Saved!</span>';
                 saveBtn.classList.add('btn-success');
-                
+
                 setTimeout(() => {
                     saveBtn.innerHTML = originalText;
                     saveBtn.classList.remove('btn-success');
@@ -1530,11 +1599,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         } catch (error) {
             console.error('Save error:', error);
-            
+
             // Error feedback
             saveBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i><span class="d-none d-lg-inline">Error!</span>';
             saveBtn.classList.add('btn-danger');
-            
+
             setTimeout(() => {
                 saveBtn.innerHTML = originalText;
                 saveBtn.classList.remove('btn-danger');
@@ -1545,6 +1614,62 @@ document.addEventListener('DOMContentLoaded', function() {
             showToast('Failed to save changes: ' + error.message, 'danger');
         } finally {
             hideLoadingOverlay();
+        }
+    }
+
+    function updateConflictStatistics(updatedChromosome) {
+        document.getElementById('studentConflictsCount').textContent = updatedChromosome.student_conflict_penalty;
+        document.getElementById('teacherConflictsCount').textContent = updatedChromosome.teacher_conflict_penalty;
+        document.getElementById('roomConflictsCount').textContent = updatedChromosome.room_conflict_penalty;
+        document.getElementById('capacityConflictsCount').textContent = updatedChromosome.capacity_conflict_penalty;
+        document.getElementById('roomTypeConflictsCount').textContent = updatedChromosome.room_type_conflict_penalty;
+        document.getElementById('eligibilityConflictsCount').textContent = updatedChromosome.teacher_eligibility_conflict_penalty;
+
+        // Update total conflicts counter
+        const totalConflicts = updatedChromosome.student_conflict_penalty +
+                             updatedChromosome.teacher_conflict_penalty +
+                             updatedChromosome.room_conflict_penalty +
+                             updatedChromosome.capacity_conflict_penalty +
+                             updatedChromosome.room_type_conflict_penalty +
+                             updatedChromosome.teacher_eligibility_conflict_penalty;
+
+        const conflictsCounter = document.getElementById('conflictsCounter');
+        conflictsCounter.textContent = `${totalConflicts} Conflicts Found`;
+
+        // Update counter styling
+        if (totalConflicts > 0) {
+            conflictsCounter.className = 'badge bg-danger bg-opacity-10 text-danger';
+        } else {
+            conflictsCounter.className = 'badge bg-success bg-opacity-10 text-success';
+        }
+    }
+
+    function updateConflictsList(newConflicts) {
+        const conflictsList = document.getElementById('conflictsList');
+
+        if (newConflicts.length === 0) {
+            conflictsList.innerHTML = `
+                <div class="text-center py-2">
+                    <i class="fas fa-check-circle text-success mb-1" style="font-size: 1.2rem;"></i>
+                    <h6 class="text-success mb-0" style="font-size: 0.7rem;">Perfect Schedule!</h6>
+                    <small class="text-muted" style="font-size: 0.55rem;">No conflicts detected</small>
+                </div>
+            `;
+        } else {
+            const conflictsHtml = newConflicts.map(conflict => `
+                <div class="list-group-item border-start border-2 py-1 px-2 mb-1 rounded-end"
+                     style="border-start-color: ${conflict.color} !important; background-color: ${conflict.color}10; font-size: 0.65rem;">
+                    <div class="d-flex align-items-start">
+                        <i class="fas fa-exclamation-circle me-2 mt-1" style="color: ${conflict.color}; font-size: 0.5rem;"></i>
+                        <div>
+                            <strong style="font-size: 0.65rem;">${conflict.type}:</strong>
+                            <span class="text-muted d-block" style="font-size: 0.6rem;">${conflict.description}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            conflictsList.innerHTML = `<div class="list-group list-group-flush">${conflictsHtml}</div>`;
         }
     }
 
@@ -1570,6 +1695,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     course.style.left = change.oldPosition.left;
                     course.style.top = change.oldPosition.top;
 
+                    // Restore original visual state
+                    updateBlockVisualState(course, false, '');
+
                     setTimeout(() => {
                         course.style.transition = 'all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
                     }, 400);
@@ -1585,6 +1713,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                         field.replaceWith(div);
                     }
+
+                    // Restore original visual state
+                    updateBlockVisualState(block, false, '');
                 }
             }
 
@@ -1662,8 +1793,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function initializeKeyboardShortcuts() {
         document.addEventListener('keydown', function(e) {
-            if (e.target.tagName.toLowerCase() === 'input' || 
-                e.target.tagName.toLowerCase() === 'textarea' || 
+            if (e.target.tagName.toLowerCase() === 'input' ||
+                e.target.tagName.toLowerCase() === 'textarea' ||
                 e.target.tagName.toLowerCase() === 'select') {
                 return;
             }
@@ -1717,13 +1848,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Helper Functions
     function getEligibleInstructorsForSubject(subjectId) {
         if (!subjectId || !allInstructors) return [];
-        
+
         // Get instructors who can teach this subject
-        const eligibleInstructors = allInstructors.filter(i => 
+        const eligibleInstructors = allInstructors.filter(i =>
             Array.isArray(i.subject_ids) && i.subject_ids.includes(subjectId)
         ).map(i => ({
             id: i.id,
-            name: i.name
+            name: i.name + ' ✓'
         }));
 
         // Also include all instructors as options (for flexibility)
@@ -1743,14 +1874,14 @@ document.addEventListener('DOMContentLoaded', function() {
         let filteredRooms = allRooms.filter(room => {
             const roomType = (room.type || '').toLowerCase();
             if (blockType === 'practical') {
-                return roomType.includes('lab') || 
-                       roomType.includes('مختبر') || 
-                       roomType.includes('workshop') || 
+                return roomType.includes('lab') ||
+                       roomType.includes('مختبر') ||
+                       roomType.includes('workshop') ||
                        roomType.includes('ورشة');
             } else {
-                return !roomType.includes('lab') && 
-                       !roomType.includes('مختبر') && 
-                       !roomType.includes('workshop') && 
+                return !roomType.includes('lab') &&
+                       !roomType.includes('مختبر') &&
+                       !roomType.includes('workshop') &&
                        !roomType.includes('ورشة');
             }
         });
@@ -1774,19 +1905,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Return available rooms first, then occupied rooms (for flexibility)
         const occupiedRooms = filteredRooms.filter(room => !availableRooms.includes(room));
-        
+
         return [
-            ...availableRooms.map(room => ({ id: room.id, name: room.name })),
+            ...availableRooms.map(room => ({ id: room.id, name: room.name + ' ✓' })),
             ...occupiedRooms.map(room => ({ id: room.id, name: room.name + ' (Occupied)' }))
         ];
     }
 
     function checkRoomConflict(roomId, timeslotIds) {
         if (!timeslotIds || !Array.isArray(timeslotIds)) return false;
-        
+
         for (const tsId of timeslotIds) {
             if (timeSlotUsage[tsId] && timeSlotUsage[tsId].rooms) {
                 if (timeSlotUsage[tsId].rooms.includes(parseInt(roomId))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    function checkInstructorConflict(instructorId, timeslotIds) {
+        if (!timeslotIds || !Array.isArray(timeslotIds)) return false;
+
+        for (const tsId of timeslotIds) {
+            if (timeSlotUsage[tsId] && timeSlotUsage[tsId].instructors) {
+                if (timeSlotUsage[tsId].instructors.includes(parseInt(instructorId))) {
                     return true;
                 }
             }
@@ -1883,7 +2027,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const imgData = canvas.toDataURL('image/png');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
-            
+
             const imgWidth = pdfWidth - 20;
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
 

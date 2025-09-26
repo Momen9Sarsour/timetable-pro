@@ -19,8 +19,8 @@
                             <i class="fas fa-info-circle me-2 mt-1"></i>
                             <div>
                                 <strong>Continuing from Population #{{ $population->population_id }}</strong><br>
-                                <small>Created: {{ $population->created_at->format('M d, Y H:i') }} | 
-                                Status: {{ ucfirst($population->status) }} | 
+                                <small>Created: {{ $population->created_at->format('M d, Y H:i') }} |
+                                Status: {{ ucfirst($population->status) }} |
                                 Size: {{ $population->population_size }} chromosomes</small>
                             </div>
                         </div>
@@ -34,7 +34,7 @@
                                 Academic Year <span class="text-danger">*</span>
                             </label>
                             <input type="number" class="form-control"
-                                id="continue_academic_year_{{ $population->population_id }}" name="academic_year" 
+                                id="continue_academic_year_{{ $population->population_id }}" name="academic_year"
                                 value="{{ $population->academic_year }}"
                                 required placeholder="e.g., 2025">
                             <div class="form-text">Current academic year</div>
@@ -60,7 +60,7 @@
                     <div class="row mb-4">
                         <div class="col-md-4">
                             <label for="continue_population_size_{{ $population->population_id }}" class="form-label fw-medium">Population Size</label>
-                            <input type="number" class="form-control" 
+                            <input type="number" class="form-control"
                                 id="continue_population_size_{{ $population->population_id }}"
                                 name="population_size" value="{{ $population->population_size }}"
                                 required min="10" step="10">
@@ -68,7 +68,7 @@
                         </div>
                         <div class="col-md-4">
                             <label for="continue_max_generations_{{ $population->population_id }}" class="form-label fw-medium">Max Generations</label>
-                            <input type="number" class="form-control" 
+                            <input type="number" class="form-control"
                                 id="continue_max_generations_{{ $population->population_id }}"
                                 name="max_generations" value="{{ $population->max_generations }}"
                                 required min="10" step="10">
@@ -76,7 +76,7 @@
                         </div>
                         <div class="col-md-4">
                             <label for="continue_elitism_count_{{ $population->population_id }}" class="form-label fw-medium">Elite Count</label>
-                            <input type="number" class="form-control" 
+                            <input type="number" class="form-control"
                                 id="continue_elitism_count_{{ $population->population_id }}"
                                 name="elitism_count_chromosomes" value="{{ $population->elitism_count }}"
                                 required min="1" step="1">
@@ -88,7 +88,7 @@
                     <div class="row mb-4">
                         <div class="col-md-4">
                             <label for="continue_mutation_rate_{{ $population->population_id }}" class="form-label fw-medium">Mutation Rate</label>
-                            <input type="number" class="form-control" 
+                            <input type="number" class="form-control"
                                 id="continue_mutation_rate_{{ $population->population_id }}"
                                 name="mutation_rate" value="{{ $population->mutation_rate }}"
                                 required min="0" max="1" step="0.01">
@@ -96,7 +96,7 @@
                         </div>
                         <div class="col-md-4">
                             <label for="continue_crossover_rate_{{ $population->population_id }}" class="form-label fw-medium">Crossover Rate</label>
-                            <input type="number" class="form-control" 
+                            <input type="number" class="form-control"
                                 id="continue_crossover_rate_{{ $population->population_id }}" name="crossover_rate"
                                 value="{{ $population->crossover_rate }}"
                                 step="0.1" min="0" max="1" required>
@@ -104,7 +104,7 @@
                         </div>
                         <div class="col-md-4">
                             <label for="continue_selection_size_{{ $population->population_id }}" class="form-label fw-medium">Tournament Size</label>
-                            <input type="number" class="form-control" 
+                            <input type="number" class="form-control"
                                 id="continue_selection_size_{{ $population->population_id }}"
                                 name="selection_size" value="{{ $population->selection_size }}"
                                 required min="2" max="10">

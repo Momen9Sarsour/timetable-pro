@@ -328,38 +328,6 @@
                         </div>
                     </div>
 
-                    <!-- Algorithm Parameters -->
-                    <h6 class="mb-3">
-                        <i class="fas fa-sliders-h text-primary me-1"></i>
-                        Algorithm Parameters
-                    </h6>
-                    <div class="row mb-4">
-                        <div class="col-md-4">
-                            <label for="population_size" class="form-label fw-medium">Population Size</label>
-                            <input type="number" class="form-control" id="population_size"
-                                name="population_size" value="{{ config('algorithm.settings.population_size', 10) }}"
-                                required min="10" step="10">
-                            <div class="form-text">Number of schedules per generation</div>
-                        </div>
-                        <input type="number" class="form-control" id="max_generations"
-                            name="max_generations" value="{{ config('algorithm.settings.max_generations', 10) }}"
-                            required min="10" step="10">
-                        <div class="col-md-4">
-                            <label for="elitism_count_chromosomes" class="form-label fw-medium">Elite Count</label>
-                            <input type="number" class="form-control" id="elitism_count_chromosomes"
-                                name="elitism_count_chromosomes" value="{{ config('algorithm.settings.elitism_count_chromosomes', 5) }}"
-                                required min="1" step="1">
-                            <div class="form-text">Best chromosomes to preserve</div>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="mutation_rate" class="form-label fw-medium">Mutation Rate</label>
-                            <input type="number" class="form-control" id="mutation_rate"
-                                name="mutation_rate" value="{{ config('algorithm.settings.mutation_rate', 0.05) }}"
-                                required min="0" max="1" step="0.01">
-                            <div class="form-text">e.g., 0.05 for 5%</div>
-                        </div>
-                    </div>
-
                     <!-- Duration Settings -->
                     <h6 class="mb-3">
                         <i class="fas fa-clock text-primary me-1"></i>
@@ -388,13 +356,50 @@
                         </div>
                     </div>
 
+                    <!-- Algorithm Parameters -->
+                    <h6 class="mb-3">
+                        <i class="fas fa-sliders-h text-primary me-1"></i>
+                        Algorithm Parameters
+                    </h6>
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <label for="population_size" class="form-label fw-medium">Population Size</label>
+                            <input type="number" class="form-control" id="population_size"
+                                name="population_size" value="{{ config('algorithm.settings.population_size', 10) }}"
+                                required min="10" step="10">
+                            <div class="form-text">Number of schedules per generation</div>
+                        </div>
+                        {{-- <input type="number" class="form-control" id="max_generations"
+                            name="max_generations" value="{{ config('algorithm.settings.max_generations', 10) }}"
+                            required min="10" step="10"> --}}
+
+                        <div class="col-md-4">
+                        <label for="max_generations" class="form-label fw-medium">Max Generations</label>
+                        <input type="number" class="form-control" id="max_generations"
+                            name="max_generations" value="{{ config('algorithm.settings.max_generations', 10) }}"
+                            required min="10" step="10">
+                        <div class="form-text">Maximum evolution cycles</div>
+                        </div>
+
+
+                        <div class="col-md-4">
+                            <label for="elitism_count_chromosomes" class="form-label fw-medium">Elite Count</label>
+                            <input type="number" class="form-control" id="elitism_count_chromosomes"
+                                name="elitism_count_chromosomes" value="{{ config('algorithm.settings.elitism_count_chromosomes', 5) }}"
+                                required min="1" step="1">
+                            <div class="form-text">Best chromosomes to preserve</div>
+                        </div>
+
+
+                    </div>
+
                     <!-- Method Selection -->
                     <h6 class="mb-3">
                         <i class="fas fa-cogs text-primary me-1"></i>
                         Algorithm Methods
                     </h6>
                     <div class="row mb-4">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label for="crossover_type_id" class="form-label fw-medium">Crossover Method</label>
                             <select class="form-select" id="crossover_type_id" name="crossover_type_id" required>
                                 @foreach (\App\Models\CrossoverType::where('is_active', true)->get() as $type)
@@ -405,7 +410,18 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
+                            <label for="mutation_type_id" class="form-label fw-medium">Mutation Type</label>
+                            <select class="form-select" id="mutation_type_id" name="mutation_type_id" required>
+                                @foreach (\App\Models\MutationType::where('is_active', true)->get() as $type)
+                                    <option value="{{ $type->mutation_id }}" title="{{ $type->description }}"
+                                        {{ config('algorithm.settings.mutation_type_id') == $type->mutation_id ? 'selected' : '' }}>
+                                        {{ $type->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4">
                             <label for="selection_type_id" class="form-label fw-medium">Selection Method</label>
                             <select class="form-select" id="selection_type_id" name="selection_type_id" required>
                                 @foreach (\App\Models\SelectionType::where('is_active', true)->get() as $type)
@@ -420,6 +436,7 @@
 
                     <!-- Advanced Settings -->
                     <div class="row mb-4">
+
                         <div class="col-md-4">
                             <label for="crossover_rate" class="form-label fw-medium">Crossover Rate</label>
                             <input type="number" class="form-control" id="crossover_rate" name="crossover_rate"
@@ -428,15 +445,11 @@
                             <div class="form-text">Probability of crossover</div>
                         </div>
                         <div class="col-md-4">
-                            <label for="mutation_type_id" class="form-label fw-medium">Mutation Type</label>
-                            <select class="form-select" id="mutation_type_id" name="mutation_type_id" required>
-                                @foreach (\App\Models\MutationType::where('is_active', true)->get() as $type)
-                                    <option value="{{ $type->mutation_id }}" title="{{ $type->description }}"
-                                        {{ config('algorithm.settings.mutation_type_id') == $type->mutation_id ? 'selected' : '' }}>
-                                        {{ $type->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <label for="mutation_rate" class="form-label fw-medium">Mutation Rate</label>
+                            <input type="number" class="form-control" id="mutation_rate"
+                                name="mutation_rate" value="{{ config('algorithm.settings.mutation_rate', 0.05) }}"
+                                required min="0" max="1" step="0.01">
+                            <div class="form-text">e.g., 0.05 for 5%</div>
                         </div>
                         <div class="col-md-4">
                             <label for="selection_size" class="form-label fw-medium">Tournament Size</label>
@@ -518,23 +531,6 @@
                             </div>
                         </div>
 
-                        <!-- Algorithm Parameters -->
-                        <div class="row mb-4">
-                            <div class="col-md-4">
-                                <label class="form-label fw-medium">Population Size</label>
-                                <input type="number" class="form-control" name="population_size" value="{{ $population->population_size }}" required min="10">
-                            </div>
-                            <input type="number" name="max_generations" value="{{ $population->max_generations }}">
-                            <div class="col-md-4">
-                                <label class="form-label fw-medium">Elite Count</label>
-                                <input type="number" class="form-control" name="elitism_count_chromosomes" value="{{ $population->elitism_count }}" required min="1">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-medium">Mutation Rate</label>
-                                <input type="number" class="form-control" name="mutation_rate" value="{{ $population->mutation_rate }}" required min="0" max="1" step="0.01">
-                            </div>
-                        </div>
-
                         <!-- Duration Settings -->
                         <div class="row mb-4">
                             <div class="col-md-6">
@@ -545,6 +541,23 @@
                                 <label class="form-label fw-medium">Practical Credit Slots</label>
                                 <input type="number" class="form-control" name="practical_credit_to_slots" value="{{ $population->practical_credit_to_slots }}" required min="1" max="4">
                             </div>
+                        </div>
+
+                        <!-- Algorithm Parameters -->
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label fw-medium">Population Size</label>
+                                <input type="number" class="form-control" name="population_size" value="{{ $population->population_size }}" required min="10">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-medium">Max Generations</label>
+                                <input type="number" class="form-control" name="max_generations" value="{{ $population->max_generations }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-medium">Elite Count</label>
+                                <input type="number" class="form-control" name="elitism_count_chromosomes" value="{{ $population->elitism_count }}" required min="1">
+                            </div>
+
                         </div>
 
                         <!-- Method Selection -->
@@ -560,34 +573,38 @@
                                 </select>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label fw-medium">Selection Method</label>
-                                <select class="form-select" name="selection_type_id" required>
-                                    @foreach (\App\Models\SelectionType::where('is_active', true)->get() as $type)
-                                        <option value="{{ $type->selection_type_id }}" {{ $population->selection_id == $type->selection_type_id ? 'selected' : '' }}>
-                                            {{ $type->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-4">
                                 <label class="form-label fw-medium">Mutation Type</label>
                                 <select class="form-select" name="mutation_type_id" required>
                                     @foreach (\App\Models\MutationType::where('is_active', true)->get() as $type)
                                         <option value="{{ $type->mutation_id }}" {{ $population->mutation_id == $type->mutation_id ? 'selected' : '' }}>
                                             {{ $type->name }}
                                         </option>
-                                    @endforeach
-                                </select>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-medium">Selection Method</label>
+                                    <select class="form-select" name="selection_type_id" required>
+                                        @foreach (\App\Models\SelectionType::where('is_active', true)->get() as $type)
+                                        <option value="{{ $type->selection_type_id }}" {{ $population->selection_id == $type->selection_type_id ? 'selected' : '' }}>
+                                            {{ $type->name }}
+                                        </option>
+                                        @endforeach
+                                    </select>
+                                </div>
                             </div>
-                        </div>
 
                         <!-- Advanced Settings -->
                         <div class="row mb-4">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label fw-medium">Crossover Rate</label>
                                 <input type="number" class="form-control" name="crossover_rate" value="{{ $population->crossover_rate }}" step="0.1" min="0" max="1" required>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <label class="form-label fw-medium">Mutation Rate</label>
+                                <input type="number" class="form-control" name="mutation_rate" value="{{ $population->mutation_rate }}" required min="0" max="1" step="0.01">
+                            </div>
+                            <div class="col-md-4">
                                 <label class="form-label fw-medium">Tournament Size</label>
                                 <input type="number" class="form-control" name="selection_size" value="{{ $population->selection_size }}" required min="2" max="10">
                             </div>
