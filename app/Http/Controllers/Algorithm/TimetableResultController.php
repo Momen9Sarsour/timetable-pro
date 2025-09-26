@@ -53,118 +53,175 @@ class TimetableResultController extends Controller
     /**
      * عرض تفاصيل الكروموسوم مع تحسين استهلاك الذاكرة
      */
-    public function show(Chromosome $chromosome)
-    {
-        try {
-            // تحسين 1: تحميل البيانات الأساسية فقط
-            $chromosome->load('population');
+    // TimetableResultController.php
 
-            // تحسين 2: استخدام chunk loading للجينات الكبيرة
-            $geneCount = $chromosome->genes()->count();
-            
-            if ($geneCount > 1000) {
-                return $this->showLargeChromosome($chromosome);
-            }
+public function show(Chromosome $chromosome)
+{
+    try {
+        // 1) السلوطات — انتبه للاسم الصحيح للـ PK
+        $daysOfWeek = ['1','2','3','4','5','6','7'];
+        $allTimeslots = Timeslot::select('timeslot_id','day','start_time','end_time')
+            ->orderByRaw("FIELD(day, '".implode("','",$daysOfWeek)."')")
+            ->orderBy('start_time')
+            ->get();
 
-            // تحسين 3: تحديد الحقول المطلوبة فقط
-            $genes = $chromosome->genes()
-                ->select([
-                    'gene_id',
-                    'chromosome_id',
-                    'section_id',
-                    'instructor_id',
-                    'room_id',
-                    'timeslot_ids',
-                    'lecture_unique_id',
-                    'student_group_id'
-                ])
-                ->with([
-                    'section:id,student_count,activity_type,academic_year,branch,plan_subject_id,section_number,instructor_id',
-                    'section.planSubject:id,subject_id,plan_id,plan_level,plan_semester',
-                    'section.planSubject.subject:id,subject_name',
-                    'section.planSubject.plan:id,plan_no',
-                    'instructor:id,user_id',
-                    'instructor.user:id,name',
-                    'room:id,room_name,room_size,room_type_id',
-                    'room.roomType:id,room_type_name',
-                ])
-                ->get();
-
-            if ($genes->isEmpty()) {
-                throw new Exception("No schedule data found for this chromosome.");
-            }
-
-            // تحسين 4: تجنب تحميل كل البيانات مرة واحدة
-            $daysOfWeek = ['1', '2', '3', '4', '5', '6', '7'];
-            $allTimeslots = Timeslot::select('timeslot_id', 'day', 'start_time', 'end_time')
-                ->orderByRaw("FIELD(day, '" . implode("','", $daysOfWeek) . "')")
-                ->orderBy('start_time')
-                ->get();
-
-            if ($allTimeslots->isEmpty()) {
-                throw new Exception("No timeslots defined in the system.");
-            }
-
-            $timeslotsByDay = $allTimeslots->groupBy('day');
-            $slotPositions = $this->buildSlotPositions($timeslotsByDay);
-
-            // تحسين 5: تحميل الأقسام المطلوبة فقط
-            $sectionIds = $genes->pluck('section_id')->unique();
-            $sections = Section::whereIn('id', $sectionIds)
-                ->select('id', 'activity_type', 'section_number', 'plan_subject_id', 'academic_year', 'branch')
-                ->with([
-                    'planSubject:id,plan_id,plan_level,plan_semester',
-                    'planSubject.plan:id,plan_no'
-                ])
-                ->get();
-
-            $studentGroupMap = $this->buildStudentGroupMap($sections);
-            $scheduleByGroup = $this->buildScheduleByGroup($studentGroupMap, $genes);
-
-            // تحسين 6: فحص التعارضات بكفاءة أكبر
-            $conflictChecker = new OptimizedConflictCheckerService($genes);
-            $conflicts = $conflictChecker->getConflicts();
-            $conflictingGeneIds = $conflictChecker->getConflictingGeneIds();
-
-            $conflictStats = [
-                'total_conflicts' => count($conflicts),
-                'total_penalty' => $chromosome->penalty_value ?? 0,
-                'student_conflicts' => $chromosome->student_conflict_penalty ?? 0,
-                'teacher_conflicts' => $chromosome->teacher_conflict_penalty ?? 0,
-                'room_conflicts' => $chromosome->room_conflict_penalty ?? 0,
-                'capacity_conflicts' => $chromosome->capacity_conflict_penalty ?? 0,
-                'room_type_conflicts' => $chromosome->room_type_conflict_penalty ?? 0,
-                'teacher_eligibility_conflicts' => $chromosome->teacher_eligibility_conflict_penalty ?? 0,
-            ];
-
-            // تحسين 7: تحميل البيانات المرجعية عند الحاجة فقط
-            $allRooms = $this->getOptimizedRoomData($genes);
-            $allInstructors = $this->getOptimizedInstructorData($genes);
-            $timeSlotUsage = $this->buildTimeSlotUsage($genes);
-            $totalColumnsOverall = $allTimeslots->count();
-
-            return view('dashboard.algorithm.timetable-result.show', compact(
-                'chromosome',
-                'scheduleByGroup',
-                'timeslotsByDay',
-                'slotPositions',
-                'totalColumnsOverall',
-                'conflicts',
-                'conflictingGeneIds',
-                'conflictChecker',
-                'conflictStats',
-                'allRooms',
-                'allInstructors',
-                'timeSlotUsage'
-            ));
-
-        } catch (Exception $e) {
-            Log::error("Error displaying timetable: " . $e->getMessage() . "\n" . $e->getTraceAsString());
-            return redirect()
-                ->route('algorithm-control.timetable.results.index')
-                ->with('error', 'Could not load the timetable: ' . $e->getMessage());
+        if ($allTimeslots->isEmpty()) {
+            throw new \Exception("No timeslots defined.");
         }
+
+        $timeslotsByDay = $allTimeslots->groupBy('day');
+
+        // خريطة مواضع الأعمدة لكل timeslot_id
+        $slotPositions = [];
+        $dayOffset = 0;
+        foreach ($timeslotsByDay as $day => $daySlots) {
+            foreach ($daySlots->values() as $index => $slot) {
+                $slotPositions[$slot->timeslot_id] = $dayOffset + $index;
+            }
+            $dayOffset += $daySlots->count();
+        }
+        $totalColumnsOverall = $allTimeslots->count();
+
+        // 2) الجينات — حقول بسيطة فقط، بدون with()
+        $genes = Gene::where('chromosome_id', $chromosome->chromosome_id)
+            ->get([
+                'gene_id',
+                'chromosome_id',
+                'section_id',
+                'instructor_id',
+                'room_id',
+                'timeslot_ids',
+                'lecture_unique_id',
+                'block_type',
+                'block_duration',
+                'student_group_id'
+            ]);
+
+        if ($genes->isEmpty()) {
+            return view('dashboard.algorithm.timetable-result.show', [
+                'chromosome' => $chromosome,
+                'scheduleByGroup' => [],
+                'timeslotsByDay' => $timeslotsByDay,
+                'slotPositions' => $slotPositions,
+                'totalColumnsOverall' => $totalColumnsOverall,
+                'conflicts' => [],
+                'conflictingGeneIds' => [],
+                'conflictChecker' => null,
+                'conflictStats' => [
+                    'total_conflicts' => 0,
+                    'total_penalty' => $chromosome->penalty_value ?? 0,
+                    'student_conflicts' => 0,
+                    'teacher_conflicts' => 0,
+                    'room_conflicts' => 0,
+                    'capacity_conflicts' => 0,
+                    'room_type_conflicts' => 0,
+                    'teacher_eligibility_conflicts' => 0,
+                ],
+                'allRooms' => [],
+                'allInstructors' => [],
+                'timeSlotUsage' => []
+            ]);
+        }
+
+        // 3) دالة صغيرة آمنة لتفريغ timeslot_ids
+        $parseTimeslotIds = function ($value) {
+            if (is_array($value)) return array_values(array_filter($value));
+            if (is_null($value) || $value === '') return [];
+            if (is_numeric($value)) return [(int)$value];
+            // جرّب JSON
+            if (is_string($value)) {
+                $decoded = json_decode($value, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    return array_values(array_filter($decoded));
+                }
+            }
+            return [];
+        };
+
+        // 4) حوّل كل Gene إلى Block خفيف (بدون موديلات)
+        $blocks = [];
+        foreach ($genes as $g) {
+            $ts = $parseTimeslotIds($g->timeslot_ids);
+            // تخلّص من أي IDs مش موجودة فعلاً
+            $ts = array_values(array_filter($ts, fn($id) => isset($slotPositions[$id])));
+
+            if (empty($ts)) continue;
+
+            $startId = $ts[0];
+            $startColumn = $slotPositions[$startId];
+
+            $blocks[] = [
+                'gene_id'        => (int)$g->gene_id,
+                'section_id'     => (int)$g->section_id,
+                'instructor_id'  => (int)($g->instructor_id ?? 0),
+                'room_id'        => (int)($g->room_id ?? 0),
+                'timeslot_ids'   => $ts,
+                'start_column'   => $startColumn,
+                'span'           => count($ts),
+                'block_type'     => (string)($g->block_type ?? ''),
+                'block_duration' => (int)($g->block_duration ?? 0),
+                'label'          => sprintf(
+                    'S%s • I%s • R%s',
+                    $g->section_id ?? '—',
+                    $g->instructor_id ?? '—',
+                    $g->room_id ?? '—'
+                ),
+                // مفتاح التجميع: لو عندك student_group_id خليه، وإلا بالقسم، وإلا "ungrouped"
+                'group_key'      => $g->student_group_id ? ('group-'.$g->student_group_id)
+                                  : ($g->section_id ? ('section-'.$g->section_id) : 'ungrouped'),
+                'group_name'     => $g->student_group_id ? ('Group '.$g->student_group_id)
+                                  : ($g->section_id ? ('Section '.$g->section_id) : 'Ungrouped'),
+            ];
+        }
+
+        // 5) بنية الجدول حسب المجموعة (بـ DTOs فقط)
+        $scheduleByGroup = [];
+        foreach ($blocks as $b) {
+            $k = $b['group_key'];
+            if (!isset($scheduleByGroup[$k])) {
+                $scheduleByGroup[$k] = [
+                    'name'   => $b['group_name'],
+                    'blocks' => []
+                ];
+            }
+            $scheduleByGroup[$k]['blocks'][] = $b;
+        }
+
+        // ما في تشيك تعارض الآن (عرض فقط)
+        $conflictStats = [
+            'total_conflicts' => 0,
+            'total_penalty' => $chromosome->penalty_value ?? 0,
+            'student_conflicts' => 0,
+            'teacher_conflicts' => 0,
+            'room_conflicts' => 0,
+            'capacity_conflicts' => 0,
+            'room_type_conflicts' => 0,
+            'teacher_eligibility_conflicts' => 0,
+        ];
+
+        return view('dashboard.algorithm.timetable-result.show', [
+            'chromosome'          => $chromosome,
+            'scheduleByGroup'     => $scheduleByGroup,
+            'timeslotsByDay'      => $timeslotsByDay,
+            'slotPositions'       => $slotPositions,
+            'totalColumnsOverall' => $totalColumnsOverall,
+            'conflicts'           => [],
+            'conflictingGeneIds'  => [],
+            'conflictChecker'     => null,
+            'conflictStats'       => $conflictStats,
+            // لو بدك لاحقًا تختار قاعات/مدرّسين، مرّر قوائم خفيفة أو خلّيها فاضية الآن:
+            'allRooms'            => [],
+            'allInstructors'      => [],
+            'timeSlotUsage'       => [],
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error("Lite show failed: ".$e->getMessage());
+        return redirect()
+            ->route('algorithm-control.timetable.results.index')
+            ->with('error', 'Could not load timetable: '.$e->getMessage());
     }
+}
 
     /**
      * معالجة الكروموسومات الكبيرة جداً
