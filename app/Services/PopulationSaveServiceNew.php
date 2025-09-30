@@ -229,19 +229,19 @@ class PopulationSaveServiceNew
                 }
 
                 // 4️⃣ Clone population row
-                DB::insert("
-                INSERT INTO populations (
-                    population_id, academic_year, semester, theory_credit_to_slots, practical_credit_to_slots,
-                    population_size, crossover_id, selection_id, mutation_rate, max_generations,
-                    elitism_count, elite_chromosome_ids, crossover_rate, selection_size,
-                    mutation_id, stop_at_first_valid, status, created_at, updated_at
+          //      DB::insert("
+           //     INSERT INTO populations (
+         //           population_id, academic_year, semester, theory_credit_to_slots, practical_credit_to_slots,
+         //           population_size, crossover_id, selection_id, mutation_rate, max_generations,
+        //            elitism_count, elite_chromosome_ids, crossover_rate, selection_size,
+         //           mutation_id, stop_at_first_valid, status, created_at, updated_at
                 )
-                SELECT ?, academic_year, semester, theory_credit_to_slots, practical_credit_to_slots,
-                       population_size, crossover_id, selection_id, mutation_rate, max_generations,
-                       elitism_count, elite_chromosome_ids, crossover_rate, selection_size,
-                       mutation_id, stop_at_first_valid, status, ?, ?
-                FROM populations WHERE population_id = ?
-            ", [$newPopulationId, now(), now(), $populationId]);
+       //         SELECT ?, academic_year, semester, theory_credit_to_slots, practical_credit_to_slots,
+          //             population_size, crossover_id, selection_id, mutation_rate, max_generations,
+         //              elitism_count, elite_chromosome_ids, crossover_rate, selection_size,
+        //               mutation_id, stop_at_first_valid, status, ?, ?
+        //        FROM populations WHERE population_id = ?
+         //   ", [$newPopulationId, now(), now(), $populationId]);
 
                 // 5️⃣ Insert chromosomes
                 foreach (array_chunk($chromosomesData, 100) as $chunk) {
