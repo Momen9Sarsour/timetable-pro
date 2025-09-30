@@ -113,4 +113,15 @@ class Population extends Model
     {
         return $this->children()->exists();
     }
+
+    public function crossoverType()
+    {
+        return $this->belongsTo(CrossoverType::class, 'crossover_id', 'crossover_id');
+    }
+
+    public function parentPopulation()
+    {
+        return $this->belongsTo(Population::class, 'parent_id', 'population_id');
+    }
+
 }

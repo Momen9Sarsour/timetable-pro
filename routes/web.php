@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Algorithm\NewGeneticController;
+use App\Http\Controllers\Algorithm\NewPopulationController;
 use App\Http\Controllers\Algorithm\TimetableGenerationController;
 use App\Http\Controllers\Algorithm\TimetableResultController;
 use App\Http\Controllers\Algorithm\TimetableViewController;
@@ -265,7 +267,9 @@ Route::prefix('dashboard')->group(function () {
             ->name('timetable.result.set-best');
         Route::post('timetable/results/save-edits', [TimetableResultController::class, 'saveEdits'])
             ->name('timetable.results.saveEdits');
-        Route::post('/algorithm-control/timetable/result/save-edits', [TimetableResultController::class,'saveEdits'
+        Route::post('/algorithm-control/timetable/result/save-edits', [
+            TimetableResultController::class,
+            'saveEdits'
         ])->name('timetable.result.save-edits');
         // --- End Timetable Results Routes ---
 
@@ -284,5 +288,75 @@ Route::prefix('dashboard')->group(function () {
         // Route::get('/export/section/{sectionId}', [TimetableViewController::class, 'exportSectionTimetable'])->name('export.section');
         // Route::get('/export/instructor/{instructorId}', [TimetableViewController::class, 'exportInstructorTimetable'])->name('export.instructor');
         // Route::get('/export/room/{roomId}', [TimetableViewController::class, 'exportRoomTimetable'])->name('export.room');
+    });
+
+
+
+    // New Genetic Algorithm Routes
+    Route::prefix('new-algorithm')->name('new-algorithm.')->group(function () {
+
+        // Section Generation
+        Route::get('/sections', [NewGeneticController::class, 'sectionsIndex'])
+            ->name('sections.index');
+        Route::post('/sections/generate', [NewGeneticController::class, 'generateSections'])
+            ->name('sections.generate');
+
+        // Plan Groups
+        Route::get('/plan-groups', [NewGeneticController::class, 'planGroupsIndex'])
+            ->name('plan-groups.index');
+        Route::post('/plan-groups/generate', [NewGeneticController::class, 'generatePlanGroups'])
+            ->name('plan-groups.generate');
+
+        // Population Management
+        Route::get('/populations', [NewPopulationController::class, 'index'])
+            ->name('populations.index');
+        Route::get('/populations/create', [NewPopulationController::class, 'create'])
+            ->name('populations.create');
+        Route::post('/populations/generate', [NewPopulationController::class, 'generatePopulation'])
+            ->name('populations.generate');
+
+        // Genetic Algorithm Execution
+        Route::post('/populations/{id}/run-ga', [NewPopulationController::class, 'runGA'])
+            ->name('populations.run-ga');
+        Route::get('/populations/{id}/results', [NewPopulationController::class, 'showResults'])
+            ->name('populations.results');
+
+        // Fitness Calculation
+        Route::post('/populations/{id}/calculate-fitness', [NewPopulationController::class, 'calculateFitness'])
+            ->name('populations.calculate-fitness');
+
+        // **Routes مطلوبة إضافية للـ AJAX والعمليات الأخرى:**
+
+        // AJAX Routes
+        Route::get('/sections/stats', [NewGeneticController::class, 'getSectionsStats'])
+            ->name('sections.stats');
+        Route::get('/plan-groups/stats', [NewGeneticController::class, 'getPlanGroupsStats'])
+            ->name('plan-groups.stats');
+        Route::post('/plan-groups/by-context', [NewGeneticController::class, 'getPlanGroupsByContext'])
+            ->name('plan-groups.by-context');
+
+        // Clear Operations
+        Route::delete('/sections/clear', [NewGeneticController::class, 'clearSections'])
+            ->name('sections.clear');
+        Route::delete('/plan-groups/clear', [NewGeneticController::class, 'clearPlanGroups'])
+            ->name('plan-groups.clear');
+
+        // Validation
+        Route::get('/validate-requirements', [NewGeneticController::class, 'validateRequirements'])
+            ->name('validate-requirements');
+
+        // Population Operations
+        Route::post('/populations/{id}/clone', [NewPopulationController::class, 'clonePopulation'])
+            ->name('populations.clone');
+        Route::delete('/populations/{id}', [NewPopulationController::class, 'deletePopulation'])
+            ->name('populations.delete');
+
+        // Population AJAX
+        Route::get('/populations/{id}/stats', [NewPopulationController::class, 'getPopulationStats'])
+            ->name('populations.stats');
+        Route::post('/generation-stats', [NewPopulationController::class, 'getGenerationStats'])
+            ->name('generation-stats');
+        Route::post('/validate-params', [NewPopulationController::class, 'validateParams'])
+            ->name('validate-params');
     });
 });

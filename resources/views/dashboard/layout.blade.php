@@ -245,12 +245,45 @@
                     </li>
 
                     <!-- القيود -->
-                    <li class="nav-item">
+                    {{-- <li class="nav-item">
                         <a href="#" class="nav-link">
                             <i class="fas fa-sliders-h nav-icon"></i>
                             <span class="nav-text">Constraints</span>
                         </a>
+                    </li> --}}
+
+                    <!-- التحكم بالخوارزمية -->
+                    @php
+                        $isActiveAlgorithm = request()->routeIs('new-algorithm*');
+                    @endphp
+                    <li class="nav-item has-dropdown {{ $isActiveAlgorithm ? 'active' : '' }}">
+                        <a href="#algorithmControl" class="nav-link dropdown-toggle" data-bs-toggle="collapse"
+                           aria-expanded="{{ $isActiveAlgorithm ? 'true' : 'false' }}">
+                            <i class="fas fa-cogs nav-icon"></i>
+                            <span class="nav-text">New Algorithm Control</span>
+                            <i class="fas fa-chevron-down dropdown-icon"></i>
+                        </a>
+                        <div class="collapse submenu {{ $isActiveAlgorithm ? 'show' : '' }}" id="algorithmControl">
+                            <ul class="submenu-list">
+                                <li class="{{ request()->routeIs('new-algorithm.sections.*') ? 'active' : '' }}">
+                                    <a href="{{ route('new-algorithm.sections.index') }}">
+                                        <i class="fas fa-code-branch"></i> Section Control
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('new-algorithm.plan-groups.*') ? 'active' : '' }}">
+                                    <a href="{{ route('new-algorithm.plan-groups.index') }}">
+                                        <i class="fas fa-code-branch"></i> Plan Groups Control
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('new-algorithm.populations.*') ? 'active' : '' }}">
+                                    <a href="{{ route('new-algorithm.populations.index') }}">
+                                        <i class="fas fa-code-branch"></i> populations Control
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </li>
+
 
                     <!-- التحكم بالخوارزمية -->
                     @php
