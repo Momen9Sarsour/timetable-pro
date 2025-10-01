@@ -2,11 +2,12 @@
 
 namespace App\Services;
 
+use Exception;
+use App\Models\Room;
+use App\Models\Chromosome;
+use App\Models\Population;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Models\Population;
-use App\Models\Room;
-use Exception;
 
 class PopulationGeneratorServiceNew
 {
@@ -264,11 +265,17 @@ class PopulationGeneratorServiceNew
             $saveService = new PopulationSaveServiceNew();
             $saveService->savePopulation($population->population_id, $populationData);
 
+            $bestChromosome = Chromosome::where('population_id', $population->population_id)
+                ->orderByDesc('fitness_value')
+                ->orderBy('penalty_value') // أقل عقوبة أولًا لو نفس الـ fitness
+                ->first();
             // تحديث الحالة لـ ready (جاهز لحساب fitness)
             DB::table('populations')
                 ->where('population_id', $population->population_id)
                 ->update([
-                    'status' => 'running',
+                    'status' => 'completed',
+                    'best_chromosome_id' => $bestChromosome->chromosome_id,
+                    'end_time' => now(),
                     'updated_at' => now()
                 ]);
 
