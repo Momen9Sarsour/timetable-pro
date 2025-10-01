@@ -27,16 +27,13 @@ class NewPopulationController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->paginate(15);
 
-                // Load operator types for create modal
-            $crossoverTypes = CrossoverType::where('is_active', true)->get();
+                $crossoverTypes = CrossoverType::where('is_active', true)->get();
             $selectionTypes = SelectionType::where('is_active', true)->get();
             $mutationTypes = MutationType::where('is_active', true)->get();
 
-            return view('algorithm.new-system.populations.index', compact('populations',
-            'crossoverTypes',
+            return view('algorithm.new-system.populations.index', compact('populations','crossoverTypes',
                 'selectionTypes',
                 'mutationTypes'));
-
         } catch (Exception $e) {
             Log::error("Error loading populations page: " . $e->getMessage());
             return redirect()->back()->with('error', 'Error loading populations page: ' . $e->getMessage());
@@ -59,7 +56,6 @@ class NewPopulationController extends Controller
                 'mutationTypes',
                 'validation'
             ));
-
         } catch (Exception $e) {
             Log::error("Error loading create population page: " . $e->getMessage());
             return redirect()->back()->with('error', 'Error loading create population page: ' . $e->getMessage());
@@ -129,7 +125,6 @@ class NewPopulationController extends Controller
 
             return redirect()->route('new-algorithm.populations.index')
                 ->with('success', "Population {$population->population_id} generated successfully with {$request->population_size} chromosomes");
-
         } catch (Exception $e) {
             Log::error("Error generating population: " . $e->getMessage());
             return redirect()->back()
@@ -153,7 +148,6 @@ class NewPopulationController extends Controller
 
             return redirect()->route('new-algorithm.populations.results', $id)
                 ->with('success', 'Genetic Algorithm completed successfully');
-
         } catch (Exception $e) {
             Log::error("Error running GA: " . $e->getMessage());
             return redirect()->back()->with('error', 'Error running Genetic Algorithm: ' . $e->getMessage());
@@ -183,7 +177,6 @@ class NewPopulationController extends Controller
                 'bestChromosomes',
                 'saveStats'
             ));
-
         } catch (Exception $e) {
             Log::error("Error loading results: " . $e->getMessage());
             return redirect()->back()->with('error', 'Error loading results: ' . $e->getMessage());
@@ -199,7 +192,6 @@ class NewPopulationController extends Controller
             $this->performFitnessCalculation($id);
 
             return redirect()->back()->with('success', 'Fitness calculation completed successfully');
-
         } catch (Exception $e) {
             Log::error("Error calculating fitness: " . $e->getMessage());
             return redirect()->back()->with('error', 'Error calculating fitness: ' . $e->getMessage());
@@ -231,7 +223,6 @@ class NewPopulationController extends Controller
                 'success' => true,
                 'data' => $stats
             ]);
-
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -268,7 +259,6 @@ class NewPopulationController extends Controller
                 'success' => true,
                 'data' => $stats
             ]);
-
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -290,7 +280,6 @@ class NewPopulationController extends Controller
                 'success' => $validation['valid'],
                 'data' => $validation
             ]);
-
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -298,4 +287,109 @@ class NewPopulationController extends Controller
             ], 500);
         }
     }
+
+    public function showBestChromosomes($id)
+    {
+        try {
+            $population = Population::findOrFail($id);
+
+            // جلب أفضل 10 كروموسومات
+            $bestChromosomes = Chromosome::where('population_id', $id)
+                ->orderByDesc('fitness_value')
+                ->orderBy('penalty_value', 'asc')
+                ->take(10)
+                ->get();
+
+            return view('algorithm.new-system.populations.best-chromosomes', compact(
+                'population',
+                'bestChromosomes'
+            ));
+        } catch (Exception $e) {
+            Log::error("Error loading best chromosomes: " . $e->getMessage());
+            return redirect()->back()->with('error', 'Error loading best chromosomes: ' . $e->getMessage());
+        }
+    }
+
+   public function showChromosomeSchedule($populationId, $chromosomeId)
+{
+    try {
+        $population = Population::findOrFail($populationId);
+        $chromosome = Chromosome::where('population_id', $populationId)
+            ->where('chromosome_id', $chromosomeId)
+            ->firstOrFail();
+
+        $sessions = DB::table('genes as g')
+            ->join('chromosomes as c', 'g.chromosome_id', '=', 'c.chromosome_id')
+            ->join('timeslots as t', 'g.gene_id', '=', 't.gene_id')
+            ->join('sections as s', 'g.section_id', '=', 's.id')
+            ->join('plan_subjects as ps', 's.plan_subject_id', '=', 'ps.id')
+            ->join('subjects as sub', 'ps.subject_id', '=', 'sub.id')
+            ->join('instructors as i', 'g.instructor_id', '=', 'i.id')
+            ->join('rooms as r', 'g.room_id', '=', 'r.id')
+            ->leftJoin('plan_groups as pg', function($join) {
+                $join->on('pg.section_id', '=', 's.id')
+                     ->on('pg.plan_id', '=', 'ps.plan_id')
+                     ->on('pg.plan_level', '=', 'ps.plan_level')
+                     ->on('pg.semester', '=', 'ps.plan_semester');
+            })
+            ->leftJoin('plans as p', 'ps.plan_id', '=', 'p.id')
+            ->where('c.chromosome_id', $chromosomeId)
+            ->where('c.population_id', $populationId)
+            ->select(
+                'pg.group_no',
+                'pg.plan_id',
+                'pg.plan_level',
+                'pg.semester as plan_semester',
+                'p.plan_name',
+                'sub.subject_name',
+                'sub.subject_no',
+                'i.instructor_name',
+                'r.room_no',
+                't.timeslot_day',
+                't.start_time',
+                't.end_time',
+                't.duration_hours',
+                's.activity_type',
+                's.student_count',
+                'g.gene_id'
+            )
+            ->orderBy('pg.plan_id')
+            ->orderBy('pg.plan_level')
+            ->orderBy('pg.group_no')
+            ->get();
+
+        $groups = $sessions->groupBy(function($item) {
+            return "{$item->plan_id}_{$item->plan_level}_{$item->group_no}";
+        })->map(function($groupSessions) {
+            $first = $groupSessions->first();
+            return [
+                'name' => "{$first->plan_name} - Level {$first->plan_level} - Group {$first->group_no}",
+                'students' => $first->student_count,
+                'sessions' => $groupSessions
+            ];
+        });
+
+        $days = [
+            // 0 => 'Saturday',
+            1 => 'Sunday',
+            2 => 'Monday',
+            3 => 'Tuesday',
+            4 => 'Wednesday',
+            5 => 'Thursday',
+            // 6 => 'Friday'
+        ];
+
+        return view('algorithm.new-system.populations.chromosome-schedule', compact(
+            'population',
+            'chromosome',
+            'groups',
+            'days'
+        ));
+    } catch (Exception $e) {
+        Log::error("Error loading chromosome schedule: " . $e->getMessage());
+        return redirect()->back()->with('error', 'Error loading chromosome schedule: ' . $e->getMessage());
+    }
+}
+
+
 }

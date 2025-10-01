@@ -132,7 +132,7 @@ class PopulationGeneratorServiceNew
     // ✅ التعديل الأساسي: استخدام room_category_id فقط
     private function getRandomRoom($subject_category_id, $roomsList)
     {
-        $filteredRooms = $roomsList->filter(function($room) use ($subject_category_id) {
+        $filteredRooms = $roomsList->filter(function ($room) use ($subject_category_id) {
             return $room->room_category_id == $subject_category_id;
         });
 
@@ -223,6 +223,34 @@ class PopulationGeneratorServiceNew
     }
 
     // ✅ التعديل: إزالة تحديث best_chromosome_id من هنا
+    // public function generateAndSavePopulation($populationConfig)
+    // {
+    //     try {
+    //         $population = Population::create($populationConfig);
+
+    //         $populationData = $this->generatePopulation(
+    //             $population->population_id,
+    //             $populationConfig['population_size']
+    //         );
+
+    //         $saveService = new PopulationSaveServiceNew();
+    //         $saveService->savePopulation($population->population_id, $populationData);
+
+    //         // ✅ تحديث الحالة فقط بدون best_chromosome_id
+    //         DB::table('populations')
+    //             ->where('population_id', $population->population_id)
+    //             ->update([
+    //                 'status' => 'running',
+    //                 'updated_at' => now()
+    //             ]);
+
+    //         Log::info("Population {$population->population_id} generated and saved successfully");
+    //         return $population;
+    //     } catch (Exception $e) {
+    //         Log::error("Error generating and saving population: " . $e->getMessage());
+    //         throw new Exception('Error generating and saving population: ' . $e->getMessage());
+    //     }
+    // }
     public function generateAndSavePopulation($populationConfig)
     {
         try {
@@ -236,7 +264,7 @@ class PopulationGeneratorServiceNew
             $saveService = new PopulationSaveServiceNew();
             $saveService->savePopulation($population->population_id, $populationData);
 
-            // ✅ تحديث الحالة فقط بدون best_chromosome_id
+            // تحديث الحالة لـ ready (جاهز لحساب fitness)
             DB::table('populations')
                 ->where('population_id', $population->population_id)
                 ->update([
@@ -262,7 +290,7 @@ class PopulationGeneratorServiceNew
 
         if ($populationSize > 1000) {
             $errors[] = "Population size too large (max: 1000)";
-            }
+        }
 
         if ($maxGenerations !== null && $maxGenerations <= 0) {
             $errors[] = "Max generations must be greater than 0";

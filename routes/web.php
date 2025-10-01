@@ -358,5 +358,11 @@ Route::prefix('dashboard')->group(function () {
             ->name('generation-stats');
         Route::post('/validate-params', [NewPopulationController::class, 'validateParams'])
             ->name('validate-params');
+
+        Route::get('/populations/{id}/best-chromosomes', [NewPopulationController::class, 'showBestChromosomes'])
+            ->name('populations.best-chromosomes');
+
+        Route::get('/populations/{populationId}/chromosome/{chromosomeId}', [NewPopulationController::class, 'showChromosomeSchedule'])
+            ->name('populations.chromosome-schedule');
     });
 });
