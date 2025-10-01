@@ -250,11 +250,11 @@
                                                 </button>
                                             @endif
 
-                                            <button class="btn btn-sm btn-warning"
+                                            {{-- <button class="btn btn-sm btn-warning"
                                                 onclick="clonePopulation({{ $population->population_id }})"
                                                 title="Clone">
                                                 <i class="fas fa-clone"></i>
-                                            </button>
+                                            </button> --}}
 
                                             @if ($population->status !== 'running')
                                                 <button class="btn btn-sm btn-danger"
