@@ -133,26 +133,71 @@ class NewPopulationController extends Controller
         }
     }
 
+   // public function runGA(Request $request, $id)
+//    {
+ //       try {
+//            $population = Population::findOrFail($id);
+
+//            if ($population->status === 'running') {
+ //               return redirect()->back()->with('warning', 'Population is already running');
+ //           }
+
+//            set_time_limit(1800);
+ //           $gaService = new GeneticAlgorithmServiceNew();
+//            $result = $gaService->applyGA($id);
+
+ //           return redirect()->route('new-algorithm.populations.results', $id)
+  //              ->with('success', 'Genetic Algorithm completed successfully');
+
+//        } catch (Exception $e) {
+  //          Log::error("Error running GA: " . $e->getMessage());
+//            return redirect()->back()->with('error', 'Error running Genetic Algorithm: ' . $e->getMessage());
+//        }
+//    }
     public function runGA(Request $request, $id)
-    {
-        try {
-            $population = Population::findOrFail($id);
+{
+    try {
+        $population = Population::findOrFail($id);
 
-            if ($population->status === 'running') {
-                return redirect()->back()->with('warning', 'Population is already running');
-            }
-
-            set_time_limit(1800);
-            $gaService = new GeneticAlgorithmServiceNew();
-            $result = $gaService->applyGA($id);
-
-            return redirect()->route('new-algorithm.populations.results', $id)
-                ->with('success', 'Genetic Algorithm completed successfully');
-        } catch (Exception $e) {
-            Log::error("Error running GA: " . $e->getMessage());
-            return redirect()->back()->with('error', 'Error running Genetic Algorithm: ' . $e->getMessage());
+        if ($population->status === 'running') {
+            return redirect()->back()->with('warning', 'Population is already running');
         }
+
+        set_time_limit(1800);
+        $gaService = new GeneticAlgorithmServiceNew();
+        $result = $gaService->applyGA($id);
+
+        // ✅ بعد انتهاء GA، نحدّث الحالة وأفضل كروموسوم
+        $bestChromosome = Chromosome::where('population_id', $id)
+            ->orderByDesc('fitness_value')
+            ->orderBy('penalty_value') // أقل عقوبة أولًا لو نفس الـ fitness
+            ->first();
+
+        $updateData = [
+            'status' => 'completed',
+            'end_time' => now()
+        ];
+
+        if ($bestChromosome) {
+            $updateData['best_chromosome_id'] = $bestChromosome->chromosome_id;
+        }
+
+        Population::where('population_id', $id)->update($updateData);
+
+        return redirect()->route('new-algorithm.populations.results', $id)
+            ->with('success', 'Genetic Algorithm completed successfully');
+
+    } catch (Exception $e) {
+        // في حال فشل GA، نحدّث الحالة إلى 'failed'
+        Population::where('population_id', $id)->update([
+            'status' => 'failed',
+            'end_time' => now()
+        ]);
+
+        Log::error("Error running GA: " . $e->getMessage());
+        return redirect()->back()->with('error', 'Error running Genetic Algorithm: ' . $e->getMessage());
     }
+}
 
     public function showResults($id)
     {
