@@ -162,7 +162,7 @@ class GeneticAlgorithmServiceNew
         return DB::table('sections as s')
             ->join('plan_subjects as ps', 's.plan_subject_id', '=', 'ps.id')
             ->join('subjects as sub', 'ps.subject_id', '=', 'sub.id')
-            ->select('s.*', 'sub.subject_category_id')
+            ->select('s.*', 'sub.subject_category_id','sub.subject_hours')
             ->get();
     }
 

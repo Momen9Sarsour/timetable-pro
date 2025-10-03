@@ -27,13 +27,16 @@ class NewPopulationController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->paginate(15);
 
-                $crossoverTypes = CrossoverType::where('is_active', true)->get();
+            $crossoverTypes = CrossoverType::where('is_active', true)->get();
             $selectionTypes = SelectionType::where('is_active', true)->get();
             $mutationTypes = MutationType::where('is_active', true)->get();
 
-            return view('algorithm.new-system.populations.index', compact('populations','crossoverTypes',
+            return view('algorithm.new-system.populations.index', compact(
+                'populations',
+                'crossoverTypes',
                 'selectionTypes',
-                'mutationTypes'));
+                'mutationTypes'
+            ));
         } catch (Exception $e) {
             Log::error("Error loading populations page: " . $e->getMessage());
             return redirect()->back()->with('error', 'Error loading populations page: ' . $e->getMessage());
@@ -133,71 +136,70 @@ class NewPopulationController extends Controller
         }
     }
 
-   // public function runGA(Request $request, $id)
-//    {
- //       try {
-//            $population = Population::findOrFail($id);
+    // public function runGA(Request $request, $id)
+    //    {
+    //       try {
+    //            $population = Population::findOrFail($id);
 
-//            if ($population->status === 'running') {
- //               return redirect()->back()->with('warning', 'Population is already running');
- //           }
+    //            if ($population->status === 'running') {
+    //               return redirect()->back()->with('warning', 'Population is already running');
+    //           }
 
-//            set_time_limit(1800);
- //           $gaService = new GeneticAlgorithmServiceNew();
-//            $result = $gaService->applyGA($id);
+    //            set_time_limit(1800);
+    //           $gaService = new GeneticAlgorithmServiceNew();
+    //            $result = $gaService->applyGA($id);
 
- //           return redirect()->route('new-algorithm.populations.results', $id)
-  //              ->with('success', 'Genetic Algorithm completed successfully');
+    //           return redirect()->route('new-algorithm.populations.results', $id)
+    //              ->with('success', 'Genetic Algorithm completed successfully');
 
-//        } catch (Exception $e) {
-  //          Log::error("Error running GA: " . $e->getMessage());
-//            return redirect()->back()->with('error', 'Error running Genetic Algorithm: ' . $e->getMessage());
-//        }
-//    }
+    //        } catch (Exception $e) {
+    //          Log::error("Error running GA: " . $e->getMessage());
+    //            return redirect()->back()->with('error', 'Error running Genetic Algorithm: ' . $e->getMessage());
+    //        }
+    //    }
     public function runGA(Request $request, $id)
-{
-    try {
-        $population = Population::findOrFail($id);
+    {
+        try {
+            $population = Population::findOrFail($id);
 
-        if ($population->status === 'running') {
-            return redirect()->back()->with('warning', 'Population is already running');
+            if ($population->status === 'running') {
+                return redirect()->back()->with('warning', 'Population is already running');
+            }
+
+            set_time_limit(1800);
+            $gaService = new GeneticAlgorithmServiceNew();
+            $result = $gaService->applyGA($id);
+
+            // ✅ بعد انتهاء GA، نحدّث الحالة وأفضل كروموسوم
+            $bestChromosome = Chromosome::where('population_id', $id)
+                ->orderByDesc('fitness_value')
+                ->orderBy('penalty_value') // أقل عقوبة أولًا لو نفس الـ fitness
+                ->first();
+
+            $updateData = [
+                'status' => 'completed',
+                'end_time' => now()
+            ];
+
+            if ($bestChromosome) {
+                $updateData['best_chromosome_id'] = $bestChromosome->chromosome_id;
+            }
+
+            Population::where('population_id', $id)->update($updateData);
+
+            return redirect()->route('new-algorithm.populations.results', $id)
+                ->with('success', 'Genetic Algorithm completed successfully');
+        } catch (Exception $e) {
+            // في حال فشل GA، نحدّث الحالة إلى 'failed'
+            Population::where('population_id', $id)->update([
+                'status' => 'failed',
+                'end_time' => now()
+            ]);
+
+            Log::error("Error running GA: " . $e->getMessage());
+            return redirect()->back()->with('error', 'Error running Genetic Algorithm: ' . $e->getMessage());
         }
-
-        set_time_limit(1800);
-        $gaService = new GeneticAlgorithmServiceNew();
-        $result = $gaService->applyGA($id);
-
-        // ✅ بعد انتهاء GA، نحدّث الحالة وأفضل كروموسوم
-        $bestChromosome = Chromosome::where('population_id', $id)
-            ->orderByDesc('fitness_value')
-            ->orderBy('penalty_value') // أقل عقوبة أولًا لو نفس الـ fitness
-            ->first();
-
-        $updateData = [
-            'status' => 'completed',
-            'end_time' => now()
-        ];
-
-        if ($bestChromosome) {
-            $updateData['best_chromosome_id'] = $bestChromosome->chromosome_id;
-        }
-
-        Population::where('population_id', $id)->update($updateData);
-
-        return redirect()->route('new-algorithm.populations.results', $id)
-            ->with('success', 'Genetic Algorithm completed successfully');
-
-    } catch (Exception $e) {
-        // في حال فشل GA، نحدّث الحالة إلى 'failed'
-        Population::where('population_id', $id)->update([
-            'status' => 'failed',
-            'end_time' => now()
-        ]);
-
-        Log::error("Error running GA: " . $e->getMessage());
-        return redirect()->back()->with('error', 'Error running Genetic Algorithm: ' . $e->getMessage());
     }
-}
 
     public function showResults($id)
     {
@@ -216,7 +218,8 @@ class NewPopulationController extends Controller
             $saveService = new PopulationSaveServiceNew();
             $saveStats = $saveService->getPopulationStats($id);
 
-            return view('algorithm.new-system.populations.results', compact(
+            // return view('algorithm.new-system.populations.results', compact(
+            return view('algorithm.new-system.populations.best-chromosomes', compact(
                 'population',
                 'stats',
                 'bestChromosomes',
@@ -355,86 +358,148 @@ class NewPopulationController extends Controller
         }
     }
 
-   public function showChromosomeSchedule($populationId, $chromosomeId)
-{
-    try {
-        $population = Population::findOrFail($populationId);
-        $chromosome = Chromosome::where('population_id', $populationId)
-            ->where('chromosome_id', $chromosomeId)
-            ->firstOrFail();
+    public function showChromosomeSchedule($populationId, $chromosomeId)
+    {
+        try {
+            $population = Population::findOrFail($populationId);
+            $chromosome = Chromosome::where('population_id', $populationId)
+                ->where('chromosome_id', $chromosomeId)
+                ->firstOrFail();
 
-        $sessions = DB::table('genes as g')
-            ->join('chromosomes as c', 'g.chromosome_id', '=', 'c.chromosome_id')
-            ->join('timeslots as t', 'g.gene_id', '=', 't.gene_id')
-            ->join('sections as s', 'g.section_id', '=', 's.id')
-            ->join('plan_subjects as ps', 's.plan_subject_id', '=', 'ps.id')
-            ->join('subjects as sub', 'ps.subject_id', '=', 'sub.id')
-            ->join('instructors as i', 'g.instructor_id', '=', 'i.id')
-            ->join('rooms as r', 'g.room_id', '=', 'r.id')
-            ->leftJoin('plan_groups as pg', function($join) {
-                $join->on('pg.section_id', '=', 's.id')
-                     ->on('pg.plan_id', '=', 'ps.plan_id')
-                     ->on('pg.plan_level', '=', 'ps.plan_level')
-                     ->on('pg.semester', '=', 'ps.plan_semester');
-            })
-            ->leftJoin('plans as p', 'ps.plan_id', '=', 'p.id')
-            ->where('c.chromosome_id', $chromosomeId)
-            ->where('c.population_id', $populationId)
-            ->select(
-                'pg.group_no',
-                'pg.plan_id',
-                'pg.plan_level',
-                'pg.semester as plan_semester',
-                'p.plan_name',
-                'sub.subject_name',
-                'sub.subject_no',
-                'i.instructor_name',
-                'r.room_no',
-                't.timeslot_day',
-                't.start_time',
-                't.end_time',
-                't.duration_hours',
-                's.activity_type',
-                's.student_count',
-                'g.gene_id'
-            )
-            ->orderBy('pg.plan_id')
-            ->orderBy('pg.plan_level')
-            ->orderBy('pg.group_no')
-            ->get();
+            $sessions = DB::table('genes as g')
+                ->join('chromosomes as c', 'g.chromosome_id', '=', 'c.chromosome_id')
+                ->join('timeslots as t', 'g.gene_id', '=', 't.gene_id')
+                ->join('sections as s', 'g.section_id', '=', 's.id')
+                ->join('plan_subjects as ps', 's.plan_subject_id', '=', 'ps.id')
+                ->join('subjects as sub', 'ps.subject_id', '=', 'sub.id')
+                ->join('instructors as i', 'g.instructor_id', '=', 'i.id')
+                ->join('rooms as r', 'g.room_id', '=', 'r.id')
+                ->leftJoin('plan_groups as pg', function ($join) {
+                    $join->on('pg.section_id', '=', 's.id')
+                        ->on('pg.plan_id', '=', 'ps.plan_id')
+                        ->on('pg.plan_level', '=', 'ps.plan_level')
+                        ->on('pg.semester', '=', 'ps.plan_semester');
+                })
+                ->leftJoin('plans as p', 'ps.plan_id', '=', 'p.id')
+                ->where('c.chromosome_id', $chromosomeId)
+                ->where('c.population_id', $populationId)
+                ->select(
+                    'pg.group_no',
+                    'pg.plan_id',
+                    'pg.plan_level',
+                    'pg.semester as plan_semester',
+                    'p.plan_name',
+                    'sub.subject_name',
+                    'sub.subject_no',
+                    'i.instructor_name',
+                    'r.room_no',
+                    'r.room_name',
+                    't.timeslot_day',
+                    't.start_time',
+                    't.end_time',
+                    't.duration_hours',
+                    's.activity_type',
+                    's.student_count',
+                    'g.gene_id'
+                )
+                ->orderBy('pg.plan_id')
+                ->orderBy('pg.plan_level')
+                ->orderBy('pg.group_no')
+                ->get();
 
-        $groups = $sessions->groupBy(function($item) {
-            return "{$item->plan_id}_{$item->plan_level}_{$item->group_no}";
-        })->map(function($groupSessions) {
-            $first = $groupSessions->first();
-            return [
-                'name' => "{$first->plan_name} - Level {$first->plan_level} - Group {$first->group_no}",
-                'students' => $first->student_count,
-                'sessions' => $groupSessions
+            $groups = $sessions->groupBy(function ($item) {
+                return "{$item->plan_id}_{$item->plan_level}_{$item->group_no}";
+            })->map(function ($groupSessions) {
+                $first = $groupSessions->first();
+                return [
+                    'name' => "{$first->plan_name} - Level {$first->plan_level} - Group {$first->group_no}",
+                    'students' => $first->student_count,
+                    'sessions' => $groupSessions
+                ];
+            });
+
+            $days = [
+                // 0 => 'Saturday',
+                1 => 'Sunday',
+                2 => 'Monday',
+                3 => 'Tuesday',
+                4 => 'Wednesday',
+                5 => 'Thursday',
+                // 6 => 'Friday'
             ];
-        });
 
-        $days = [
-            // 0 => 'Saturday',
-            1 => 'Sunday',
-            2 => 'Monday',
-            3 => 'Tuesday',
-            4 => 'Wednesday',
-            5 => 'Thursday',
-            // 6 => 'Friday'
-        ];
-
-        return view('algorithm.new-system.populations.chromosome-schedule', compact(
-            'population',
-            'chromosome',
-            'groups',
-            'days'
-        ));
-    } catch (Exception $e) {
-        Log::error("Error loading chromosome schedule: " . $e->getMessage());
-        return redirect()->back()->with('error', 'Error loading chromosome schedule: ' . $e->getMessage());
+            return view('algorithm.new-system.populations.chromosome-schedule', compact(
+                'population',
+                'chromosome',
+                'groups',
+                'days'
+            ));
+        } catch (Exception $e) {
+            Log::error("Error loading chromosome schedule: " . $e->getMessage());
+            return redirect()->back()->with('error', 'Error loading chromosome schedule: ' . $e->getMessage());
+        }
     }
-}
 
+    public function deletePopulation($id)
+    {
+        try {
+            DB::beginTransaction();
 
+            $population = Population::findOrFail($id);
+
+            // التحقق من أن Population ليس قيد التشغيل
+            if ($population->status === 'running') {
+                return redirect()->back()->with('error', 'Cannot delete a running population. Please wait until it completes or fails.');
+            }
+
+            Log::info("Starting deletion of population {$id}");
+
+            // حذف Timeslots أولاً
+            $timeslotsDeleted = DB::table('timeslots')
+                ->whereIn('gene_id', function ($query) use ($id) {
+                    $query->select('gene_id')
+                        ->from('genes')
+                        ->whereIn('chromosome_id', function ($subQuery) use ($id) {
+                            $subQuery->select('chromosome_id')
+                                ->from('chromosomes')
+                                ->where('population_id', $id);
+                        });
+                })
+                ->delete();
+
+            Log::info("Deleted {$timeslotsDeleted} timeslots");
+
+            // حذف Genes
+            $genesDeleted = DB::table('genes')
+                ->whereIn('chromosome_id', function ($query) use ($id) {
+                    $query->select('chromosome_id')
+                        ->from('chromosomes')
+                        ->where('population_id', $id);
+                })
+                ->delete();
+
+            Log::info("Deleted {$genesDeleted} genes");
+
+            // حذف Chromosomes
+            $chromosomesDeleted = DB::table('chromosomes')
+                ->where('population_id', $id)
+                ->delete();
+
+            Log::info("Deleted {$chromosomesDeleted} chromosomes");
+
+            // حذف Population
+            $population->delete();
+
+            DB::commit();
+
+            Log::info("Population {$id} and all its dependencies deleted successfully");
+
+            return redirect()->route('new-algorithm.populations.index')
+                ->with('success', "Population #{$id} deleted successfully. Removed: {$chromosomesDeleted} chromosomes, {$genesDeleted} genes, {$timeslotsDeleted} timeslots.");
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error("Error deleting population {$id}: " . $e->getMessage());
+            return redirect()->back()->with('error', 'Error deleting population: ' . $e->getMessage());
+        }
+    }
 }
