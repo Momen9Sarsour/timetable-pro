@@ -55,13 +55,18 @@ class PopulationSaveServiceNew
                         'generation_number' => 1,
                         'fitness_value' => $ch['fitness'],
                         'is_best_of_generation' => $ch['is_fittest'],
-                        'student_conflict_penalty' => 0,
-                        'teacher_conflict_penalty' => 0,
-                        'room_conflict_penalty' => 0,
-                        'capacity_conflict_penalty' => 0,
+                        'student_conflict_penalty' => $ch['penalties']['student_conflict_penalty'] ?? 0,
+                        'teacher_conflict_penalty' => $ch['penalties']['teacher_conflict_penalty'] ?? 0,
+                        'room_conflict_penalty' => $ch['penalties']['room_conflict_penalty'] ?? 0,
+                        'capacity_conflict_penalty' => $ch['penalties']['capacity_conflict_penalty'] ?? 0,
+                        'penalty_value' => $ch['penalties']['penalty_value'] ?? 0,
+                        // 'student_conflict_penalty' => 0,
+                        // 'teacher_conflict_penalty' => 0,
+                        // 'room_conflict_penalty' => 0,
+                        // 'capacity_conflict_penalty' => 0,
                         'room_type_conflict_penalty' => 0,
                         'teacher_eligibility_conflict_penalty' => 0,
-                        'penalty_value' => 0,
+                        // 'penalty_value' => 0,
                         'created_at' => now(),
                         'updated_at' => now()
                     ];
@@ -105,19 +110,19 @@ class PopulationSaveServiceNew
                 }
 
                 // 4️⃣ Clone population row
-            //     DB::insert("
-            //     INSERT INTO populations (
-            //         population_id, academic_year, semester, theory_credit_to_slots, practical_credit_to_slots,
-            //         population_size, crossover_id, selection_id, mutation_rate, max_generations,
-            //         elitism_count, elite_chromosome_ids, crossover_rate, selection_size,
-            //         mutation_id, stop_at_first_valid, status, created_at, updated_at
-            //     )
-            //     SELECT ?, academic_year, semester, theory_credit_to_slots, practical_credit_to_slots,
-            //            population_size, crossover_id, selection_id, mutation_rate, max_generations,
-            //            elitism_count, elite_chromosome_ids, crossover_rate, selection_size,
-            //            mutation_id, stop_at_first_valid, status, ?, ?
-            //     FROM populations WHERE population_id = ?
-            // ", [$newPopulationId, now(), now(), $populationId]);
+                //     DB::insert("
+                //     INSERT INTO populations (
+                //         population_id, academic_year, semester, theory_credit_to_slots, practical_credit_to_slots,
+                //         population_size, crossover_id, selection_id, mutation_rate, max_generations,
+                //         elitism_count, elite_chromosome_ids, crossover_rate, selection_size,
+                //         mutation_id, stop_at_first_valid, status, created_at, updated_at
+                //     )
+                //     SELECT ?, academic_year, semester, theory_credit_to_slots, practical_credit_to_slots,
+                //            population_size, crossover_id, selection_id, mutation_rate, max_generations,
+                //            elitism_count, elite_chromosome_ids, crossover_rate, selection_size,
+                //            mutation_id, stop_at_first_valid, status, ?, ?
+                //     FROM populations WHERE population_id = ?
+                // ", [$newPopulationId, now(), now(), $populationId]);
 
                 // 5️⃣ Insert chromosomes
                 foreach (array_chunk($chromosomesData, 100) as $chunk) {

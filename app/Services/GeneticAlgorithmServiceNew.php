@@ -43,7 +43,10 @@ class GeneticAlgorithmServiceNew
             $population = $this->loadPopulation($population_id);
 
             foreach ($population as &$chromosome) {
-                $chromosome['fitness'] = $this->fitnessCalculator->calculateFitness($chromosome);
+                // $chromosome['fitness'] = $this->fitnessCalculator->calculateFitness($chromosome);
+                $result = $this->fitnessCalculator->calculateFitness($chromosome);
+                $chromosome['fitness'] = $result['fitness'];
+                $chromosome['penalties'] = $result; // نحتفظ بالتفاصيل
             }
 
             $bestFitness = max(array_map(fn($c) => $c['fitness'], $population));
@@ -71,14 +74,17 @@ class GeneticAlgorithmServiceNew
                     'eliteIds' => $eliteIds
                 ]);
 
-                $newPopulation = array_map(function($c) use ($eliteIds, $mutation_rate, $sectionsRoomsList) {
+                $newPopulation = array_map(function ($c) use ($eliteIds, $mutation_rate, $sectionsRoomsList) {
                     return in_array($c['chromosome_id'], $eliteIds)
                         ? $c
                         : $this->applyMutation($c, $mutation_rate, $sectionsRoomsList);
                 }, $newPopulation);
 
                 foreach ($newPopulation as &$chromosome) {
-                    $chromosome['fitness'] = $this->fitnessCalculator->calculateFitness($chromosome);
+                    // $chromosome['fitness'] = $this->fitnessCalculator->calculateFitness($chromosome);
+                    $result = $this->fitnessCalculator->calculateFitness($chromosome);
+                    $chromosome['fitness'] = $result['fitness'];
+                    $chromosome['penalties'] = $result;
                 }
 
                 $bestFitness = max(array_map(fn($c) => $c['fitness'], $newPopulation));
@@ -99,7 +105,6 @@ class GeneticAlgorithmServiceNew
             Log::info("Final population saved after $generation generations with best fitness: " . number_format($bestFitness, 6));
 
             return $population;
-
         } catch (Exception $e) {
             DB::table('populations')->where('population_id', $populationId)->update([
                 'status' => 'failed',
@@ -162,7 +167,7 @@ class GeneticAlgorithmServiceNew
         return DB::table('sections as s')
             ->join('plan_subjects as ps', 's.plan_subject_id', '=', 'ps.id')
             ->join('subjects as sub', 'ps.subject_id', '=', 'sub.id')
-            ->select('s.*', 'sub.subject_category_id','sub.subject_hours')
+            ->select('s.*', 'sub.subject_category_id', 'sub.subject_hours')
             ->get();
     }
 
@@ -174,7 +179,7 @@ class GeneticAlgorithmServiceNew
 
         foreach ($sectionsList as $section) {
             // ✅ التعديل الأساسي: استخدام room_category_id بدلاً من room_size
-            $filteredRooms = $rooms->filter(function($room) use ($section) {
+            $filteredRooms = $rooms->filter(function ($room) use ($section) {
                 return $room->room_category_id == $section->subject_category_id;
             });
 
@@ -212,11 +217,22 @@ class GeneticAlgorithmServiceNew
             ->join('subjects as sub', 'ps.subject_id', '=', 'sub.id')
             ->where('c.population_id', $populationId)
             ->select(
-                'c.population_id', 'c.chromosome_id', 'c.fitness_value', 'c.is_best_of_generation',
-                'g.gene_id', 'g.section_id', 'g.instructor_id', 'g.room_id',
-                't.timeslot_id', 't.timeslot_day', 't.start_time', 't.end_time',
-                't.duration_hours', 't.session_no',
-                'sub.subject_hours', 'sub.subject_category_id'
+                'c.population_id',
+                'c.chromosome_id',
+                'c.fitness_value',
+                'c.is_best_of_generation',
+                'g.gene_id',
+                'g.section_id',
+                'g.instructor_id',
+                'g.room_id',
+                't.timeslot_id',
+                't.timeslot_day',
+                't.start_time',
+                't.end_time',
+                't.duration_hours',
+                't.session_no',
+                'sub.subject_hours',
+                'sub.subject_category_id'
             )
             ->get()
             ->toArray();
@@ -267,7 +283,7 @@ class GeneticAlgorithmServiceNew
             }
         }
 
-        return array_map(function($chromosome) {
+        return array_map(function ($chromosome) {
             $chromosome['genes'] = array_values($chromosome['genes']);
             return $chromosome;
         }, array_values($populationMap));
@@ -320,7 +336,7 @@ class GeneticAlgorithmServiceNew
         $crossoverPoint = rand(0, count($parent1['genes']) - 1);
         $applyGeneOptionsFlag = ($options['swapTimeslots'] ?? false) || ($options['swapRoom'] ?? false);
 
-        $offspringGenes = array_map(function($gene, $i) use ($crossoverPoint, $applyGeneOptionsFlag, $parent2, $options) {
+        $offspringGenes = array_map(function ($gene, $i) use ($crossoverPoint, $applyGeneOptionsFlag, $parent2, $options) {
             if ($i < $crossoverPoint || !$applyGeneOptionsFlag) {
                 return array_merge([], $gene);
             } else {
@@ -349,7 +365,7 @@ class GeneticAlgorithmServiceNew
 
         $applyGeneOptionsFlag = ($options['swapTimeslots'] ?? false) || ($options['swapRoom'] ?? false);
 
-        $offspringGenes = array_map(function($gene, $i) use ($point1, $point2, $applyGeneOptionsFlag, $parent2, $options) {
+        $offspringGenes = array_map(function ($gene, $i) use ($point1, $point2, $applyGeneOptionsFlag, $parent2, $options) {
             if ($i >= $point1 && $i < $point2) {
                 return $applyGeneOptionsFlag
                     ? $this->applyGeneOptions($gene, $parent2['genes'][$i], $options)
@@ -372,7 +388,7 @@ class GeneticAlgorithmServiceNew
     {
         $applyGeneOptionsFlag = ($options['swapTimeslots'] ?? false) || ($options['swapRoom'] ?? false);
 
-        $offspringGenes = array_map(function($gene, $i) use ($applyGeneOptionsFlag, $parent2, $options) {
+        $offspringGenes = array_map(function ($gene, $i) use ($applyGeneOptionsFlag, $parent2, $options) {
             $swap = (mt_rand() / mt_getrandmax()) < 0.5;
 
             if ($swap) {
@@ -398,7 +414,7 @@ class GeneticAlgorithmServiceNew
         $newGene = array_merge([], $parentGene);
 
         if ($options['swapTimeslots'] ?? false) {
-            $newGene['timeslots'] = array_map(function($timeslot) use ($parentGene) {
+            $newGene['timeslots'] = array_map(function ($timeslot) use ($parentGene) {
                 return array_merge($timeslot, ['gene_id' => $parentGene['gene_id']]);
             }, $donorGene['timeslots']);
         }
@@ -418,7 +434,7 @@ class GeneticAlgorithmServiceNew
         }
 
         $mutated = array_merge([], $chromosome);
-        $mutated['genes'] = array_map(function($gene) use ($mutationRate, $sectionInfoMap) {
+        $mutated['genes'] = array_map(function ($gene) use ($mutationRate, $sectionInfoMap) {
             $sectionInfo = $sectionInfoMap[$gene['section_id']] ?? null;
 
             if ((mt_rand() / mt_getrandmax()) < $mutationRate && $sectionInfo) {

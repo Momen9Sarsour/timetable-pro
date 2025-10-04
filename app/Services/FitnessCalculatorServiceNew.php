@@ -26,8 +26,16 @@ class FitnessCalculatorServiceNew
             $conflicts = $instructorConflicts + $roomConflicts + $roomCapacityViolations + $planGroupConflicts;
             $fitness = 1 / (1 + $conflicts);
 
-            return $fitness;
-
+            // return $fitness;
+            return [
+                'fitness' => $fitness,
+                'teacher_conflict_penalty' => $instructorConflicts,
+                'room_conflict_penalty' => $roomConflicts,
+                'capacity_conflict_penalty' => $roomCapacityViolations,
+                'student_conflict_penalty' => $planGroupConflicts,
+                'penalty_value' => $conflicts
+            ];
+            
         } catch (Exception $e) {
             Log::error("Error calculating fitness: " . $e->getMessage());
             return 0;
@@ -193,7 +201,7 @@ class FitnessCalculatorServiceNew
         foreach ($this->planGroupsSections as $groupRow) {
             $sectionIds = array_map('intval', explode(',', $groupRow->plan_sections));
 
-            $genesInGroup = array_filter($chromosome['genes'], function($gene) use ($sectionIds) {
+            $genesInGroup = array_filter($chromosome['genes'], function ($gene) use ($sectionIds) {
                 return in_array($gene['section_id'], $sectionIds);
             });
 
