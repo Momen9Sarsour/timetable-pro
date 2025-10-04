@@ -368,7 +368,7 @@ class NewPopulationController extends Controller
 
             $sessions = DB::table('genes as g')
                 ->join('chromosomes as c', 'g.chromosome_id', '=', 'c.chromosome_id')
-                ->join('timeslots as t', 'g.gene_id', '=', 't.gene_id')
+                ->leftJoin('timeslots as t', 'g.gene_id', '=', 't.gene_id')
                 ->join('sections as s', 'g.section_id', '=', 's.id')
                 ->join('plan_subjects as ps', 's.plan_subject_id', '=', 'ps.id')
                 ->join('subjects as sub', 'ps.subject_id', '=', 'sub.id')
@@ -394,13 +394,28 @@ class NewPopulationController extends Controller
                     'i.instructor_name',
                     'r.room_no',
                     'r.room_name',
-                    't.timeslot_day',
-                    't.start_time',
-                    't.end_time',
-                    't.duration_hours',
+                    DB::raw('MIN(t.timeslot_day) as timeslot_day'),
+                    DB::raw('MIN(t.start_time) as start_time'),
+                    DB::raw('MAX(t.end_time) as end_time'),
+                    DB::raw('SUM(t.duration_hours) as duration_hours'),
                     's.activity_type',
                     's.student_count',
                     'g.gene_id'
+                )
+                ->groupBy(
+                    'g.gene_id',
+                    'pg.group_no',
+                    'pg.plan_id',
+                    'pg.plan_level',
+                    'pg.semester',
+                    'p.plan_name',
+                    'sub.subject_name',
+                    'sub.subject_no',
+                    'i.instructor_name',
+                    'r.room_no',
+                    'r.room_name',
+                    's.activity_type',
+                    's.student_count'
                 )
                 ->orderBy('pg.plan_id')
                 ->orderBy('pg.plan_level')

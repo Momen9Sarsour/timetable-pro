@@ -25,8 +25,9 @@ cp .env.example .env
 # Run migrations
 php artisan migrate
 
-# Seed database (if seeders exist)
+# Seed database with sample data
 php artisan db:seed
+# Available seeders: Departments, Roles, Users, Rooms, RoomTypes, Subjects, SubjectTypes, SubjectCategories, Instructors, Plans, PlanSubjects, Timeslots
 ```
 
 ### Development Server
@@ -82,13 +83,26 @@ The system uses a normalized relational database with the following key entity r
 - `TimetableGenerationController`: Initiates algorithm runs via background jobs
 - `TimetableResultController`: Displays and manages generated schedules
 - `TimetableViewController`: Provides different timetable views (by section, instructor, room)
+- `NewGeneticController`, `NewPopulationController`: Controllers for the newer modular algorithm implementation
 
 **Data Entry Controllers**: Comprehensive CRUD operations for all academic entities in `DataEntry/` namespace
 
+**Background Jobs:**
+- `GenerateTimetableJob`: Main job for running genetic algorithm in background
+- `ContinueEvolutionJob`: Resume evolution from existing population
+- `GenerateInitialPopulationJob`: Create initial population separately
+
 ### Job Queue System
-The genetic algorithm runs as background jobs (`GenerateTimetableJob`) to prevent blocking the web interface. Configure queue workers in production:
+The genetic algorithm runs as background jobs to prevent blocking the web interface.
+
+**Production setup:**
+1. Set `QUEUE_CONNECTION=database` in `.env`
+2. Run migrations to create jobs table (included)
+3. Start queue worker:
 ```bash
 php artisan queue:work --daemon
+# Or with supervisor for auto-restart
+php artisan queue:listen
 ```
 
 ## Key Models and Relationships
@@ -107,7 +121,7 @@ php artisan queue:work --daemon
 ### Environment Variables
 Key settings in `.env`:
 - Database connection (MySQL recommended)
-- Queue connection for background jobs
+- **Queue connection**: Set `QUEUE_CONNECTION=database` (or `redis`) in production for background jobs. Default is `sync` for development.
 - Application timezone and locale
 
 ### Algorithm Settings
@@ -131,22 +145,39 @@ Configurable through the web interface:
 - `dashboard/timetables/`: Timetable viewing interfaces
 
 ### Services
-- `GeneticAlgorithmService.php`: Core genetic algorithm implementation (~960 lines)
+- `GeneticAlgorithmService.php`: Core genetic algorithm implementation (~1330 lines)
 - Contains sophisticated optimization including resource conflict detection and intelligent mutation strategies
+- **New Modular Architecture**: The system has a newer implementation split into specialized services:
+  - `GeneticAlgorithmServiceNew.php`: Refactored main algorithm controller
+  - `FitnessCalculatorServiceNew.php`: Dedicated fitness evaluation
+  - `PopulationGeneratorServiceNew.php`: Initial population creation
+  - `SectionGeneratorServiceNew.php`: Section scheduling logic
+  - `PopulationSaveServiceNew.php`: Database persistence
+  - `InitialPopulationService.php`, `ContinueEvolutionService.php`: Job-specific services
 
 ## Development Guidelines
 
+### Algorithm Architecture Notes
+The codebase contains **two implementations**:
+1. **Original**: `GeneticAlgorithmService` - Monolithic service with all logic
+2. **New/Modular**: `*ServiceNew.php` files - Separated concerns for better maintainability
+
+Both implementations coexist. The newer modular approach is recommended for new features.
+
 ### Adding New Algorithm Features
-- Extend `GeneticAlgorithmService` for new genetic operators
+- Extend `GeneticAlgorithmService` (or corresponding `*ServiceNew` module) for new genetic operators
 - Add corresponding database types in `CrossoverTypes`, `SelectionTypes`, or `MutationTypes`
 - Update the settings interface accordingly
+- New controllers: `NewGeneticController` and `NewPopulationController`
 
 ### Data Model Extensions
 - Follow the existing pattern of CRUD controllers in `DataEntry/`
 - Maintain consistent validation rules and bulk upload capabilities
+- All data entry controllers support bulk Excel upload via `maatwebsite/excel`
 - Update database relationships carefully as they impact algorithm performance
 
 ### Performance Considerations
 - The genetic algorithm heavily uses database transactions and bulk operations
 - Resource usage caching is implemented to improve fitness evaluation performance
 - Consider database indexing on frequently queried fields (population_id, chromosome_id, etc.)
+- Long-running algorithms must use queue workers to avoid timeouts
