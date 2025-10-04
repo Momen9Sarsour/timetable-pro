@@ -164,7 +164,8 @@ class FitnessCalculatorServiceNew
         $startB = $this->toMinutes($b['startTime']);
         $endB = $this->toMinutes($b['endTime']);
 
-        return ($startA < $endB) && ($startB < $endA);
+        // True overlap: one starts before the other ends (excluding touching boundaries)
+        return ($startA < $endB) && ($endA > $startB);
     }
 
     private function toMinutes($timeStr)
