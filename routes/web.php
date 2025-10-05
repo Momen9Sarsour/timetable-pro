@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Algorithm\NewGeneticController;
 use App\Http\Controllers\Algorithm\NewPopulationController;
+use App\Http\Controllers\Algorithm\ScheduleViewController;
 use App\Http\Controllers\Algorithm\TimetableGenerationController;
 use App\Http\Controllers\Algorithm\TimetableResultController;
 use App\Http\Controllers\Algorithm\TimetableViewController;
@@ -364,5 +365,17 @@ Route::prefix('dashboard')->group(function () {
 
         Route::get('/populations/{populationId}/chromosome/{chromosomeId}', [NewPopulationController::class, 'showChromosomeSchedule'])
             ->name('populations.chromosome-schedule');
+
+
+
+        // Schedule Views Routes
+        Route::get('/schedules/groups', [ScheduleViewController::class, 'showGroupsSchedule'])
+            ->name('schedules.groups');
+
+        Route::get('/schedules/instructors', [ScheduleViewController::class, 'showInstructorsSchedule'])
+            ->name('schedules.instructors');
+
+        Route::get('/schedules/rooms', [ScheduleViewController::class, 'showRoomsSchedule'])
+            ->name('schedules.rooms');
     });
 });

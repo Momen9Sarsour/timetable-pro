@@ -254,6 +254,48 @@
 
                     <!-- التحكم بالخوارزمية -->
                     @php
+                        $isActiveAlgorithm = request()->routeIs('algorithm-control*');
+                    @endphp
+                    <li class="nav-item has-dropdown {{ $isActiveAlgorithm ? 'active' : '' }}">
+                        <a href="#algorithmControl" class="nav-link dropdown-toggle" data-bs-toggle="collapse"
+                           aria-expanded="{{ $isActiveAlgorithm ? 'true' : 'false' }}">
+                            <i class="fas fa-cogs nav-icon"></i>
+                            <span class="nav-text">Algorithm Control</span>
+                            <i class="fas fa-chevron-down dropdown-icon"></i>
+                        </a>
+                        <div class="collapse submenu {{ $isActiveAlgorithm ? 'show' : '' }}" id="algorithmControl">
+                            <ul class="submenu-list">
+                                <li class="{{ request()->routeIs('algorithm-control.crossover-types.*') ? 'active' : '' }}">
+                                    <a href="{{ route('algorithm-control.crossover-types.index') }}">
+                                        <i class="fas fa-code-branch"></i> Crossover Methods
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('algorithm-control.selection-types.*') ? 'active' : '' }}">
+                                    <a href="{{ route('algorithm-control.selection-types.index') }}">
+                                        <i class="fas fa-check-double"></i> Selection Methods
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('algorithm-control.mutation-types.*') ? 'active' : '' }}">
+                                    <a href="{{ route('algorithm-control.mutation-types.index') }}">
+                                        <i class="fas fa-random"></i> Mutation Methods
+                                    </a>
+                                </li>
+                                {{-- <li class="{{ request()->routeIs('algorithm-control.populations.*') ? 'active' : '' }}">
+                                    <a href="{{ route('algorithm-control.populations.index') }}">
+                                        <i class="fas fa-dna"></i> Population Management
+                                    </a>
+                                </li>
+                                <li class="{{ request()->routeIs('algorithm-control.timetable.results.index') || request()->routeIs('algorithm-control.timetable.result.show') ? 'active' : '' }}">
+                                    <a href="{{ route('algorithm-control.timetable.results.index') }}">
+                                        <i class="fas fa-calendar-check"></i> Generation Results
+                                    </a>
+                                </li> --}}
+                            </ul>
+                        </div>
+                    </li>
+
+                    <!-- التحكم بالخوارزمية -->
+                    @php
                         $isActiveAlgorithm = request()->routeIs('new-algorithm*');
                     @endphp
                     <li class="nav-item has-dropdown {{ $isActiveAlgorithm ? 'active' : '' }}">
@@ -285,51 +327,9 @@
                     </li>
 
 
-                    <!-- التحكم بالخوارزمية -->
-                    @php
-                        $isActiveAlgorithm = request()->routeIs('algorithm-control*');
-                    @endphp
-                    <li class="nav-item has-dropdown {{ $isActiveAlgorithm ? 'active' : '' }}">
-                        <a href="#algorithmControl" class="nav-link dropdown-toggle" data-bs-toggle="collapse"
-                           aria-expanded="{{ $isActiveAlgorithm ? 'true' : 'false' }}">
-                            <i class="fas fa-cogs nav-icon"></i>
-                            <span class="nav-text">Algorithm Control</span>
-                            <i class="fas fa-chevron-down dropdown-icon"></i>
-                        </a>
-                        <div class="collapse submenu {{ $isActiveAlgorithm ? 'show' : '' }}" id="algorithmControl">
-                            <ul class="submenu-list">
-                                <li class="{{ request()->routeIs('algorithm-control.crossover-types.*') ? 'active' : '' }}">
-                                    <a href="{{ route('algorithm-control.crossover-types.index') }}">
-                                        <i class="fas fa-code-branch"></i> Crossover Methods
-                                    </a>
-                                </li>
-                                <li class="{{ request()->routeIs('algorithm-control.selection-types.*') ? 'active' : '' }}">
-                                    <a href="{{ route('algorithm-control.selection-types.index') }}">
-                                        <i class="fas fa-check-double"></i> Selection Methods
-                                    </a>
-                                </li>
-                                <li class="{{ request()->routeIs('algorithm-control.mutation-types.*') ? 'active' : '' }}">
-                                    <a href="{{ route('algorithm-control.mutation-types.index') }}">
-                                        <i class="fas fa-random"></i> Mutation Methods
-                                    </a>
-                                </li>
-                                <li class="{{ request()->routeIs('algorithm-control.populations.*') ? 'active' : '' }}">
-                                    <a href="{{ route('algorithm-control.populations.index') }}">
-                                        <i class="fas fa-dna"></i> Population Management
-                                    </a>
-                                </li>
-                                <li class="{{ request()->routeIs('algorithm-control.timetable.results.index') || request()->routeIs('algorithm-control.timetable.result.show') ? 'active' : '' }}">
-                                    <a href="{{ route('algorithm-control.timetable.results.index') }}">
-                                        <i class="fas fa-calendar-check"></i> Generation Results
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                    </li>
-
                     <!-- عرض الجداول -->
                     @php
-                        $isViewTimetables = request()->routeIs('dashboard.timetables.*');
+                        $isViewTimetables = request()->routeIs('schedules.*');
                     @endphp
                     <li class="nav-item has-dropdown {{ $isViewTimetables ? 'active' : '' }}">
                         <a href="#viewTimetables" class="nav-link dropdown-toggle" data-bs-toggle="collapse"
@@ -340,18 +340,18 @@
                         </a>
                         <div class="collapse submenu {{ $isViewTimetables ? 'show' : '' }}" id="viewTimetables">
                             <ul class="submenu-list">
-                                <li class="{{ request()->routeIs('dashboard.timetables.sections') ? 'active' : '' }}">
-                                    <a href="{{ route('dashboard.timetables.sections') }}">
-                                        <i class="fas fa-users-class"></i> Section Timetables
+                                <li class="{{ request()->routeIs('new-algorithm.schedules.sections') ? 'active' : '' }}">
+                                    <a href="{{ route('new-algorithm.schedules.groups') }}">
+                                        <i class="fas fa-users-class"></i> Groups Timetables
                                     </a>
                                 </li>
-                                <li class="{{ request()->routeIs('dashboard.timetables.instructors') ? 'active' : '' }}">
-                                    <a href="{{ route('dashboard.timetables.instructors') }}">
+                                <li class="{{ request()->routeIs('new-algorithm.schedules.instructors') ? 'active' : '' }}">
+                                    <a href="{{ route('new-algorithm.schedules.instructors') }}">
                                         <i class="fas fa-chalkboard-teacher"></i> Instructor Timetables
                                     </a>
                                 </li>
-                                <li class="{{ request()->routeIs('dashboard.timetables.rooms') ? 'active' : '' }}">
-                                    <a href="{{ route('dashboard.timetables.rooms') }}">
+                                <li class="{{ request()->routeIs('new-algorithm.schedules.rooms') ? 'active' : '' }}">
+                                    <a href="{{ route('new-algorithm.schedules.rooms') }}">
                                         <i class="fas fa-door-open"></i> Room Timetables
                                     </a>
                                 </li>

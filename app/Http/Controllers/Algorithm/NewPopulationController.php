@@ -136,27 +136,6 @@ class NewPopulationController extends Controller
         }
     }
 
-    // public function runGA(Request $request, $id)
-    //    {
-    //       try {
-    //            $population = Population::findOrFail($id);
-
-    //            if ($population->status === 'running') {
-    //               return redirect()->back()->with('warning', 'Population is already running');
-    //           }
-
-    //            set_time_limit(1800);
-    //           $gaService = new GeneticAlgorithmServiceNew();
-    //            $result = $gaService->applyGA($id);
-
-    //           return redirect()->route('new-algorithm.populations.results', $id)
-    //              ->with('success', 'Genetic Algorithm completed successfully');
-
-    //        } catch (Exception $e) {
-    //          Log::error("Error running GA: " . $e->getMessage());
-    //            return redirect()->back()->with('error', 'Error running Genetic Algorithm: ' . $e->getMessage());
-    //        }
-    //    }
     public function runGA(Request $request, $id)
     {
         try {
