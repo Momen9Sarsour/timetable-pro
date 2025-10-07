@@ -135,12 +135,12 @@
                     </li>
 
                     <!-- البرامج الأكاديمية -->
-                    <li class="nav-item">
+                    {{-- <li class="nav-item">
                         <a href="#" class="nav-link">
                             <i class="fas fa-graduation-cap nav-icon"></i>
                             <span class="nav-text">Academic Programs</span>
                         </a>
-                    </li>
+                    </li> --}}
 
                     <!-- إدارة البيانات -->
                     @php
@@ -296,7 +296,7 @@
 
                     <!-- التحكم بالخوارزمية -->
                     @php
-                        $isActiveAlgorithm = request()->routeIs('new-algorithm*');
+                        $isActiveAlgorithm = request()->routeIs('new-algorithm.*');
                     @endphp
                     <li class="nav-item has-dropdown {{ $isActiveAlgorithm ? 'active' : '' }}">
                         <a href="#algorithmControl" class="nav-link dropdown-toggle" data-bs-toggle="collapse"
@@ -329,7 +329,7 @@
 
                     <!-- عرض الجداول -->
                     @php
-                        $isViewTimetables = request()->routeIs('schedules.*');
+                        $isViewTimetables = request()->routeIs('new-algorithm.schedules*');
                     @endphp
                     <li class="nav-item has-dropdown {{ $isViewTimetables ? 'active' : '' }}">
                         <a href="#viewTimetables" class="nav-link dropdown-toggle" data-bs-toggle="collapse"

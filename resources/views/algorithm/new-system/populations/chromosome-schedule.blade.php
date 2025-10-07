@@ -29,37 +29,36 @@
                     </div>
                 </div>
                 <div class="d-flex flex-column flex-sm-row gap-2 flex-shrink-0">
-                    <button onclick="window.print()" class="btn btn-success btn-sm">
-                        <i class="fas fa-print me-2"></i>
-                        <span class="d-none d-sm-inline">Print</span>
-                        <span class="d-inline d-sm-none">Print</span>
+                    <button class="btn btn-warning btn-sm" id="undoPendingBtn" disabled>
+                        <i class="fas fa-undo me-1"></i>
+                        Undo (<span id="undoCount">0</span>)
                     </button>
-                    <a href="{{ route('new-algorithm.populations.best-chromosomes', $population->population_id) }}"
+                    <button class="btn btn-primary btn-sm" id="saveChangesBtn">
+                        <i class="fas fa-save me-1"></i>
+                        Save
+                    </button>
+                    <button onclick="window.print()" class="btn btn-success btn-sm">
+                        <i class="fas fa-print me-1"></i>
+                        Print
+                    </button>
+                    <a href="{{ route('new-algorithm.populations.results', $population->population_id) }}"
                        class="btn btn-secondary btn-sm">
-                        <i class="fas fa-arrow-left me-2"></i>
-                        <span class="d-none d-sm-inline">Back</span>
-                        <span class="d-inline d-sm-none">Back</span>
+                        <i class="fas fa-arrow-left me-1"></i>
+                        Back
                     </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Conflict Summary -->
-    <div id="conflictSummary" class="alert alert-info d-none mb-4">
-        <i class="fas fa-info-circle me-2"></i>
-        <strong>Conflicts Detected:</strong> <span id="conflictCount">0</span> time slot conflicts found in this schedule.
-    </div>
-
     <!-- Schedule Container -->
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body p-0">
-            <div class="schedule-wrapper">
+            <div class="schedule-wrapper" style="overflow: auto; max-height: 90vh;">
                 <!-- Header: Days and Times -->
                 <div class="schedule-header">
                     <div class="group-header-cell">
-                        <span class="d-none d-lg-inline">Group / Time</span>
-                        <span class="d-inline d-lg-none">Groups</span>
+                        <span>Group / Time</span>
                     </div>
                     @foreach($days as $dayIndex => $dayName)
                         <div class="day-column">
@@ -84,15 +83,14 @@
                             <div class="group-name-cell">
                                 <strong>{{ $group['name'] }}</strong>
                                 <small class="text-muted d-block mt-1">
-                                    <i class="fas fa-users me-1"></i>{{ $group['students'] }} Students
+                                    <i class="fas fa-users me-1"></i>{{ $group['students'] ?? 0 }} Students
                                 </small>
-                                <span class="conflict-indicator badge bg-danger d-none mt-2">
-                                    <i class="fas fa-exclamation-triangle"></i> Conflicts
-                                </span>
                             </div>
 
                             @foreach($days as $dayIndex => $dayName)
-                                <div class="day-sessions-container" data-day="{{ $dayIndex }}">
+                                <div class="day-sessions-container schedule-drop-zone"
+                                     data-day="{{ $dayIndex }}"
+                                     data-group-key="{{ $groupKey }}">
                                     @php
                                         $daySessions = $group['sessions']->where('timeslot_day', $dayIndex);
                                     @endphp
@@ -114,23 +112,47 @@
                                             $width = $duration / 30;
                                         @endphp
 
-                                        <div class="session-block {{ $session->activity_type === 'Theory' ? 'theory' : 'practical' }}"
+                                        <div class="session-block draggable-course {{ $session->activity_type === 'Theory' ? 'theory' : 'practical' }}"
+                                             draggable="true"
                                              style="left: {{ $leftPosition * 60 }}px; width: {{ $width * 60 }}px;"
                                              data-gene-id="{{ $session->gene_id }}"
+                                             data-group-key="{{ $groupKey }}"
                                              data-start="{{ $startOffset }}"
                                              data-end="{{ $endOffset }}"
                                              data-subject="{{ $session->subject_name }}"
-                                             data-instructor="{{ $session->instructor_name }}"
-                                             {{-- data-room="{{ $session->room_no }}" --}}
-                                             data-room="{{ $session->room_name }}"
-                                             data-time="{{ $session->start_time }} - {{ $session->end_time }}">
+                                             data-activity-type="{{ $session->activity_type }}">
+
+                                            <!-- Drag Handle -->
+                                            <div class="drag-handle" title="Drag to move">
+                                                <i class="fas fa-grip-vertical"></i>
+                                            </div>
+
                                             <div class="session-subject" title="{{ $session->subject_name }}">
                                                 {{ $session->subject_name }}
                                             </div>
                                             <div class="session-info">
-                                                <div><i class="fas fa-user"></i> {{ $session->instructor_name }}</div>
-                                                <div><i class="fas fa-door-open"></i> {{ $session->room_name }}</div>
-                                                <div><i class="fas fa-clock"></i> {{ $session->start_time }} <br>- {{ $session->end_time }}</div>
+                                                <!-- Editable Instructor -->
+                                                <div class="editable-field"
+                                                     data-field="instructor"
+                                                     data-gene-id="{{ $session->gene_id }}"
+                                                     data-current-value="{{ $session->instructor_id }}"
+                                                     title="Click to change instructor">
+                                                    <i class="fas fa-user"></i> {{ $session->instructor_name }}
+                                                    <i class="fas fa-edit"></i>
+                                                </div>
+
+                                                <!-- Editable Room -->
+                                                <div class="editable-field"
+                                                     data-field="room"
+                                                     data-gene-id="{{ $session->gene_id }}"
+                                                     data-current-value="{{ $session->room_id }}"
+                                                     data-activity-type="{{ $session->activity_type }}"
+                                                     title="Click to change room">
+                                                    <i class="fas fa-door-open"></i> {{ $session->room_name }}
+                                                    <i class="fas fa-edit"></i>
+                                                </div>
+
+                                                <div><i class="fas fa-clock"></i> {{ $session->start_time }} - {{ $session->end_time }}</div>
                                             </div>
                                         </div>
                                     @endforeach
@@ -142,41 +164,32 @@
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Legend -->
-    <div class="card shadow-sm border-0">
-        <div class="card-body">
-            <h6 class="text-primary mb-3 d-flex align-items-center">
-                <i class="fas fa-info-circle me-2"></i>Legend & Information
-            </h6>
-            <div class="row g-3">
-                <div class="col-md-4 col-12">
-                    <div class="d-flex align-items-center">
-                        <div class="legend-box theory me-2"></div>
-                        <span class="small">Theory Lectures</span>
-                    </div>
-                </div>
-                <div class="col-md-4 col-12">
-                    <div class="d-flex align-items-center">
-                        <div class="legend-box practical me-2"></div>
-                        <span class="small">Practical/Lab Sessions</span>
-                    </div>
-                </div>
-                <div class="col-md-4 col-12">
-                    <div class="alert alert-warning mb-0 py-2">
-                        <small>
-                            <i class="fas fa-exclamation-triangle me-1"></i>
-                            <strong>Note:</strong> Overlapping sessions shown vertically
-                        </small>
-                    </div>
-                </div>
+<!-- Changes Indicator -->
+<div id="changesIndicator" class="position-fixed bottom-0 start-50 translate-middle-x mb-3 d-none" style="z-index: 1050;">
+    <div class="toast show align-items-center text-white bg-warning border-0 shadow-lg">
+        <div class="d-flex">
+            <div class="toast-body fw-bold">
+                <i class="fas fa-edit me-2"></i>
+                <span id="changesText">You have unsaved changes</span>
             </div>
+            <button type="button" class="btn-close btn-close-white me-2" id="dismissChanges"></button>
         </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(255,255,255,0.95); z-index: 10000;">
+    <div class="d-flex align-items-center justify-content-center h-100 flex-column">
+        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+        <h5 class="text-muted">Processing Changes...</h5>
     </div>
 </div>
 @endsection
 
 @push('styles')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
 /* Container */
 .schedule-wrapper {
@@ -211,7 +224,6 @@
     position: sticky;
     left: 0;
     z-index: 101;
-    font-size: 14px;
 }
 
 .day-column {
@@ -225,7 +237,6 @@
     text-align: center;
     padding: 10px;
     font-weight: bold;
-    font-size: 14px;
 }
 
 .time-grid {
@@ -251,11 +262,6 @@
     display: flex;
     border-bottom: 1px solid #dee2e6;
     min-height: 120px;
-    transition: min-height 0.3s ease;
-}
-
-body.dark-mode .group-row {
-    border-bottom-color: var(--dark-border);
 }
 
 .group-name-cell {
@@ -267,68 +273,19 @@ body.dark-mode .group-row {
     position: sticky;
     left: 0;
     z-index: 10;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-body.dark-mode .group-name-cell {
-    background: var(--dark-bg);
-    border-right-color: var(--dark-border);
-}
-
-.group-name-cell strong {
-    color: #2c3e50;
-    font-size: 13px;
-    display: block;
-    margin-bottom: 5px;
-}
-
-body.dark-mode .group-name-cell strong {
-    color: var(--dark-text-secondary);
-}
-
-.conflict-indicator {
-    font-size: 10px;
 }
 
 .day-sessions-container {
     min-width: 1080px;
     position: relative;
     border-right: 1px solid #dee2e6;
-    background:
-        repeating-linear-gradient(
-            to right,
-            transparent,
-            transparent 59px,
-            #e9ecef 59px,
-            #e9ecef 60px
-        ),
-        repeating-linear-gradient(
-            to right,
-            transparent,
-            transparent 119px,
-            #dee2e6 119px,
-            #dee2e6 120px
-        );
-}
-
-body.dark-mode .day-sessions-container {
-    background:
-        repeating-linear-gradient(
-            to right,
-            transparent,
-            transparent 59px,
-            rgba(255,255,255,0.05) 59px,
-            rgba(255,255,255,0.05) 60px
-        ),
-        repeating-linear-gradient(
-            to right,
-            transparent,
-            transparent 119px,
-            rgba(255,255,255,0.1) 119px,
-            rgba(255,255,255,0.1) 120px
-        );
+    background: repeating-linear-gradient(
+        to right,
+        transparent,
+        transparent 59px,
+        #e9ecef 59px,
+        #e9ecef 60px
+    );
 }
 
 /* Session Blocks */
@@ -339,9 +296,8 @@ body.dark-mode .day-sessions-container {
     padding: 10px;
     border-radius: 6px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-    cursor: pointer;
+    cursor: grab;
     transition: all 0.3s ease;
-    overflow: hidden;
     z-index: 1;
 }
 
@@ -349,6 +305,13 @@ body.dark-mode .day-sessions-container {
     transform: translateY(-3px) scale(1.02);
     box-shadow: 0 8px 16px rgba(0,0,0,0.25);
     z-index: 50;
+}
+
+.session-block.dragging {
+    opacity: 0.9;
+    transform: rotate(3deg) scale(1.08);
+    z-index: 1000 !important;
+    cursor: grabbing !important;
 }
 
 .session-block.theory {
@@ -363,16 +326,28 @@ body.dark-mode .day-sessions-container {
     border-left: 5px solid #e53e3e;
 }
 
-.session-block.has-conflict {
-    border: 2px solid #ffc107;
-    box-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+.drag-handle {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 12px;
+    height: 12px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 3px;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.drag-handle i {
+    font-size: 6px;
 }
 
 .session-subject {
     font-weight: bold;
     font-size: 13px;
     margin-bottom: 6px;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -381,7 +356,6 @@ body.dark-mode .day-sessions-container {
 .session-info {
     font-size: 10px;
     line-height: 1.6;
-    opacity: 0.95;
 }
 
 .session-info div {
@@ -391,207 +365,513 @@ body.dark-mode .day-sessions-container {
     margin-bottom: 2px;
 }
 
-.session-info i {
-    width: 14px;
-    margin-right: 3px;
+/* Editable Fields */
+.editable-field {
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
 }
 
-/* Legend */
-.legend-box {
-    width: 35px;
-    height: 22px;
-    border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    flex-shrink: 0;
+.editable-field:hover {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.4);
 }
 
-.legend-box.theory {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.editable-field .fa-edit {
+    font-size: 8px;
+    opacity: 0.6;
+    margin-left: 4px;
 }
 
-.legend-box.practical {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+/* Drop Zones */
+.schedule-drop-zone.drag-over {
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.08), rgba(13, 110, 253, 0.04)) !important;
+    box-shadow: inset 0 0 16px rgba(13, 110, 253, 0.2);
 }
 
-/* Scrollbar */
-.schedule-wrapper::-webkit-scrollbar {
-    height: 12px;
+/* Select2 */
+.select2-container {
+    z-index: 9999 !important;
 }
 
-.schedule-wrapper::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 6px;
+.select2-dropdown {
+    border: 2px solid #0d6efd;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    font-size: 11px;
 }
 
-.schedule-wrapper::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 6px;
-}
-
-.schedule-wrapper::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-}
-
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-    .group-header-cell,
-    .group-name-cell {
-        min-width: 200px;
-        width: 200px;
-        padding: 10px;
-    }
-
-    .group-name-cell strong {
-        font-size: 12px;
-    }
-
-    .group-name-cell small {
-        font-size: 10px;
-    }
-
-    .session-block {
-        min-height: 90px;
-        padding: 8px;
-    }
-
-    .session-subject {
-        font-size: 11px;
-    }
-
-    .session-info {
-        font-size: 9px;
-    }
-}
-
-/* Print Styles */
 @media print {
-    .btn, .breadcrumb, .alert {
+    .btn {
         display: none !important;
-    }
-
-    .schedule-wrapper {
-        overflow: visible;
-        border: 1px solid #000;
-    }
-
-    .group-header-cell,
-    .group-name-cell {
-        position: static;
-    }
-
-    .session-block {
-        page-break-inside: avoid;
-    }
-
-    .card {
-        box-shadow: none !important;
-        border: 1px solid #dee2e6 !important;
     }
 }
 </style>
 @endpush
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-$(document).ready(function() {
-    let totalConflicts = 0;
+document.addEventListener('DOMContentLoaded', function() {
+    // Server Data
+    const chromosomeId = {{ $chromosome->chromosome_id }};
+    const populationId = {{ $population->population_id }};
+    const saveUrl = "{{ route('new-algorithm.schedule.save-edits') }}"; // يجب إنشاء هذا الـ route
+    const csrfToken = "{{ csrf_token() }}";
 
-    // معالجة كل يوم في كل قروب
-    $('.day-sessions-container').each(function() {
-        const container = $(this);
-        const sessions = container.find('.session-block').toArray();
+    // Server data from Controller (pass from backend)
+    const allRooms = @json($allRooms ?? []);
+    const allInstructors = @json($allInstructors ?? []);
 
-        if (sessions.length === 0) return;
+    // State
+    let pendingChanges = [];
+    let draggedElement = null;
+    let isDragging = false;
 
-        // ترتيب الجلسات حسب وقت البداية
-        sessions.sort((a, b) => {
-            return parseInt($(a).data('start')) - parseInt($(b).data('start'));
+    // Initialize
+    initializeDragAndDrop();
+    initializeEditableFields();
+    initializeButtons();
+
+    // ===== DRAG & DROP =====
+    function initializeDragAndDrop() {
+        const draggableCourses = document.querySelectorAll('.draggable-course');
+        const dropZones = document.querySelectorAll('.schedule-drop-zone');
+
+        draggableCourses.forEach(course => {
+            course.addEventListener('dragstart', handleDragStart);
+            course.addEventListener('dragend', handleDragEnd);
         });
 
-        // كشف التعارضات وترتيب الجلسات عمودياً
-        let layers = []; // كل layer يحتوي على جلسات لا تتعارض
-
-        sessions.forEach(session => {
-            const $session = $(session);
-            const start = parseInt($session.data('start'));
-            const end = parseInt($session.data('end'));
-
-            // البحث عن layer مناسب (لا يوجد تعارض)
-            let placed = false;
-            for (let i = 0; i < layers.length; i++) {
-                let hasConflict = false;
-
-                for (let existingSession of layers[i]) {
-                    const exStart = parseInt($(existingSession).data('start'));
-                    const exEnd = parseInt($(existingSession).data('end'));
-
-                    // فحص التداخل
-                    if (start < exEnd && end > exStart) {
-                        hasConflict = true;
-                        break;
-                    }
-                }
-
-                if (!hasConflict) {
-                    layers[i].push(session);
-                    $session.css('top', (i * 120 + 5) + 'px');
-                    placed = true;
-                    break;
-                }
-            }
-
-            // إذا لم نجد layer مناسب، نضيف layer جديد
-            if (!placed) {
-                const newLayerIndex = layers.length;
-                layers.push([session]);
-                $session.css('top', (newLayerIndex * 120 + 5) + 'px');
-
-                // تمييز كـ conflict
-                $session.addClass('has-conflict');
-                totalConflicts++;
-            }
+        dropZones.forEach(zone => {
+            zone.addEventListener('dragover', handleDragOver);
+            zone.addEventListener('dragenter', handleDragEnter);
+            zone.addEventListener('dragleave', handleDragLeave);
+            zone.addEventListener('drop', handleDrop);
         });
 
-        // تعديل ارتفاع الـ container حسب عدد الـ layers
-        if (layers.length > 1) {
-            const newHeight = layers.length * 120 + 10;
-            container.css('min-height', newHeight + 'px');
-            container.closest('.group-row').css('min-height', newHeight + 'px');
+        function handleDragStart(e) {
+            isDragging = true;
+            draggedElement = this;
+            this.classList.add('dragging');
 
-            // إظهار مؤشر التعارض
-            container.closest('.group-row').find('.conflict-indicator').removeClass('d-none');
+            const currentGroup = this.dataset.groupKey;
+
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('application/json', JSON.stringify({
+                geneId: this.dataset.geneId,
+                groupKey: currentGroup,
+                start: parseInt(this.dataset.start),
+                end: parseInt(this.dataset.end)
+            }));
         }
-    });
 
-    // عرض ملخص التعارضات
-    if (totalConflicts > 0) {
-        $('#conflictCount').text(totalConflicts);
-        $('#conflictSummary').removeClass('d-none alert-info').addClass('alert-danger');
+        function handleDragEnd(e) {
+            isDragging = false;
+            this.classList.remove('dragging');
+
+            document.querySelectorAll('.schedule-drop-zone').forEach(zone => {
+                zone.classList.remove('drag-over');
+            });
+
+            draggedElement = null;
+        }
+
+        function handleDragOver(e) {
+            if (!isDragging || !draggedElement) return;
+
+            const currentGroup = draggedElement.dataset.groupKey;
+            const dropZoneGroup = this.dataset.groupKey;
+
+            if (currentGroup === dropZoneGroup) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+            }
+        }
+
+        function handleDragEnter(e) {
+            if (!isDragging || !draggedElement) return;
+
+            const currentGroup = draggedElement.dataset.groupKey;
+            const dropZoneGroup = this.dataset.groupKey;
+
+            if (currentGroup === dropZoneGroup) {
+                this.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            if (!this.contains(e.relatedTarget)) {
+                this.classList.remove('drag-over');
+            }
+        }
+
+        function handleDrop(e) {
+            if (!isDragging || !draggedElement) return;
+
+            try {
+                const dragData = JSON.parse(e.dataTransfer.getData('application/json'));
+                const currentGroup = dragData.groupKey;
+                const dropZoneGroup = this.dataset.groupKey;
+
+                if (currentGroup !== dropZoneGroup) {
+                    showToast('Can only move within the same row', 'warning');
+                    return;
+                }
+
+                e.preventDefault();
+                this.classList.remove('drag-over');
+
+                const rect = this.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+
+                handleBlockDrop(dragData, x, this);
+
+            } catch (error) {
+                console.error('Drop error:', error);
+                showToast('Failed to move block', 'danger');
+            }
+        }
     }
 
-    // Tooltip للجلسات
-    $('.session-block').hover(
-        function() {
-            $(this).css('z-index', '100');
-        },
-        function() {
-            $(this).css('z-index', '1');
+    function handleBlockDrop(dragData, x, container) {
+        const block = document.querySelector(`[data-gene-id="${dragData.geneId}"]`);
+        if (!block) return;
+
+        // Calculate new position (snap to 30min intervals)
+        const newStart = Math.round(x / 60) * 30;
+        const duration = dragData.end - dragData.start;
+        const newEnd = newStart + duration;
+
+        // Update block position
+        block.style.left = (newStart / 30) * 60 + 'px';
+        block.dataset.start = newStart;
+        block.dataset.end = newEnd;
+
+        // Add to pending changes
+        pendingChanges.push({
+            type: 'move',
+            gene_id: dragData.geneId,
+            new_start: newStart,
+            new_end: newEnd,
+            timestamp: Date.now()
+        });
+
+        updateChangesIndicator();
+        showToast('Block repositioned', 'success');
+    }
+
+    // ===== EDITABLE FIELDS =====
+    function initializeEditableFields() {
+        document.addEventListener('click', function(e) {
+            const field = e.target.closest('.editable-field');
+            if (!field || isDragging) return;
+
+            const fieldType = field.dataset.field;
+            const geneId = field.dataset.geneId;
+            const currentValue = field.dataset.currentValue;
+            const currentText = field.textContent.trim().replace(/[^\w\s]/gi, '').trim();
+
+            let options = [];
+            if (fieldType === 'instructor') {
+                options = getEligibleInstructors();
+            } else if (fieldType === 'room') {
+                const activityType = field.dataset.activityType;
+                options = getAvailableRooms(activityType);
+            }
+
+            createEditSelect(field, fieldType, geneId, currentValue, currentText, options);
+        });
+    }
+
+    function createEditSelect(field, fieldType, geneId, currentValue, currentText, options) {
+        const select = document.createElement('select');
+        select.className = 'form-select form-select-sm';
+        select.style.fontSize = '10px';
+        select.dataset.field = fieldType;
+        select.dataset.geneId = geneId;
+        select.dataset.originalValue = currentValue;
+        select.dataset.originalText = currentText;
+
+        Object.keys(field.dataset).forEach(key => {
+            select.dataset[key] = field.dataset[key];
+        });
+
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = `Select ${fieldType}...`;
+        select.appendChild(defaultOption);
+
+        options.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.id;
+            option.textContent = item.name;
+            if (item.id == currentValue) option.selected = true;
+            select.appendChild(option);
+        });
+
+        field.replaceWith(select);
+
+        $(select).select2({
+            width: '100%',
+            placeholder: `Select ${fieldType}...`,
+            dropdownParent: $(select.closest('.session-block'))
+        }).focus();
+
+        $(select).on('select2:select', function() {
+            const selectedText = $(this).find(':selected').text();
+            const selectedValue = $(this).val();
+            if (selectedValue) {
+                updateFieldValue(this, fieldType, geneId, selectedText, selectedValue);
+            }
+        });
+
+        $(select).on('select2:close', function() {
+            if (!$(this).val()) {
+                revertToOriginalField(this, fieldType);
+            }
+        });
+    }
+
+    function updateFieldValue(select, fieldType, geneId, newText, newValue) {
+        const oldValue = select.dataset.originalValue;
+        const oldText = select.dataset.originalText;
+
+        const div = createFieldDiv(fieldType, geneId, newText, select.dataset);
+        $(select).replaceWith(div);
+
+        pendingChanges.push({
+            type: 'edit',
+            gene_id: geneId,
+            field: fieldType,
+            new_value_id: newValue,
+            oldValue: oldValue,
+            timestamp: Date.now()
+        });
+
+        updateChangesIndicator();
+        showToast(`${fieldType} updated`, 'success');
+    }
+
+    function createFieldDiv(fieldType, geneId, text, dataAttrs) {
+        const icon = fieldType === 'instructor' ? 'fa-user' : 'fa-door-open';
+        const div = document.createElement('div');
+        div.className = 'editable-field';
+        div.dataset.field = fieldType;
+        div.dataset.geneId = geneId;
+        div.dataset.currentValue = dataAttrs.newValueId || dataAttrs.currentValue;
+        div.title = `Click to change ${fieldType}`;
+        div.innerHTML = `<i class="fas ${icon}"></i> ${text}<i class="fas fa-edit"></i>`;
+
+        Object.keys(dataAttrs).forEach(key => {
+            if (key !== 'field' && key !== 'geneId') {
+                div.dataset[key] = dataAttrs[key];
+            }
+        });
+
+        return div;
+    }
+
+    function revertToOriginalField(select, fieldType) {
+        const div = createFieldDiv(fieldType, select.dataset.geneId, select.dataset.originalText, select.dataset);
+        $(select).replaceWith(div);
+    }
+
+    // ===== HELPERS =====
+    function getEligibleInstructors() {
+        return allInstructors.map(i => ({ id: i.id, name: i.name }));
+    }
+
+    function getAvailableRooms(activityType) {
+        return allRooms.filter(r => {
+            if (activityType === 'Theory') {
+                return r.category_id == 1; // نظري
+            } else {
+                return r.category_id == 2; // عملي
+            }
+        }).map(r => ({ id: r.id, name: r.name }));
+    }
+
+    // ===== BUTTONS =====
+    function initializeButtons() {
+        document.getElementById('saveChangesBtn').addEventListener('click', performSave);
+        document.getElementById('undoPendingBtn').addEventListener('click', performUndo);
+
+        const dismissBtn = document.getElementById('dismissChanges');
+        if (dismissBtn) {
+            dismissBtn.addEventListener('click', () => {
+                document.getElementById('changesIndicator').classList.add('d-none');
+            });
         }
-    );
+    }
 
-    // Click للتفاصيل (Modal أو Alert)
-    $('.session-block').click(function() {
-        const subject = $(this).data('subject');
-        const instructor = $(this).data('instructor');
-        const room = $(this).data('room');
-        const time = $(this).data('time');
+    async function performSave() {
+        if (pendingChanges.length === 0) {
+            showToast('No changes to save', 'info');
+            return;
+        }
 
-        const message = `Subject: ${subject}\nInstructor: ${instructor}\nRoom: ${room}\nTime: ${time}`;
-        alert(message);
+        const saveBtn = document.getElementById('saveChangesBtn');
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+
+        try {
+            const response = await fetch(saveUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({
+                    chromosome_id: chromosomeId,
+                    changes: pendingChanges
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                pendingChanges = [];
+                updateChangesIndicator();
+                showToast('Changes saved successfully!', 'success');
+
+                saveBtn.innerHTML = '<i class="fas fa-check me-1"></i>Saved!';
+                setTimeout(() => {
+                    saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>Save';
+                    saveBtn.disabled = false;
+                }, 2000);
+            } else {
+                throw new Error(result.message || 'Save failed');
+            }
+        } catch (error) {
+            console.error('Save error:', error);
+            showToast('Failed to save: ' + error.message, 'danger');
+            saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>Save';
+            saveBtn.disabled = false;
+        }
+    }
+
+    function performUndo() {
+        if (pendingChanges.length === 0) return;
+
+        const change = pendingChanges.pop();
+
+        if (change.type === 'move') {
+            const block = document.querySelector(`[data-gene-id="${change.gene_id}"]`);
+            if (block && change.oldStart !== undefined) {
+                block.style.left = (change.oldStart / 30) * 60 + 'px';
+                block.dataset.start = change.oldStart;
+                block.dataset.end = change.oldEnd;
+            }
+        } else if (change.type === 'edit') {
+            const block = document.querySelector(`[data-gene-id="${change.gene_id}"]`);
+            if (block) {
+                const field = block.querySelector(`[data-field="${change.field}"]`);
+                if (field) {
+                    const div = createFieldDiv(change.field, change.gene_id, change.oldText, {
+                        currentValue: change.oldValue,
+                        ...field.dataset
+                    });
+                    field.replaceWith(div);
+                }
+            }
+        }
+
+        updateChangesIndicator();
+        showToast('Change undone', 'warning');
+    }
+
+    function updateChangesIndicator() {
+        const saveBtn = document.getElementById('saveChangesBtn');
+        const undoBtn = document.getElementById('undoPendingBtn');
+        const undoCount = document.getElementById('undoCount');
+        const changesIndicator = document.getElementById('changesIndicator');
+        const changesText = document.getElementById('changesText');
+
+        if (undoCount) undoCount.textContent = pendingChanges.length;
+
+        if (pendingChanges.length > 0) {
+            saveBtn.classList.add('btn-warning');
+            saveBtn.classList.remove('btn-primary');
+            undoBtn.disabled = false;
+
+            if (changesIndicator) {
+                changesIndicator.classList.remove('d-none');
+                if (changesText) {
+                    changesText.textContent = `You have ${pendingChanges.length} unsaved changes`;
+                }
+            }
+        } else {
+            saveBtn.classList.remove('btn-warning');
+            saveBtn.classList.add('btn-primary');
+            undoBtn.disabled = true;
+
+            if (changesIndicator) {
+                changesIndicator.classList.add('d-none');
+            }
+        }
+    }
+
+    function showToast(message, type = 'info') {
+        let toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastContainer';
+            toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            toastContainer.style.zIndex = '9999';
+            document.body.appendChild(toastContainer);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0 show`;
+
+        const iconMap = {
+            success: 'fa-check-circle',
+            danger: 'fa-exclamation-circle',
+            warning: 'fa-exclamation-triangle',
+            info: 'fa-info-circle'
+        };
+
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas ${iconMap[type] || iconMap.info} me-2"></i>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+
+        toastContainer.appendChild(toast);
+
+        setTimeout(() => toast.remove(), 4000);
+    }
+
+    // Keyboard Shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey || e.metaKey) {
+            if (e.key === 's') {
+                e.preventDefault();
+                document.getElementById('saveChangesBtn').click();
+            } else if (e.key === 'z') {
+                e.preventDefault();
+                document.getElementById('undoPendingBtn').click();
+            }
+        }
     });
 
-    console.log('✅ Schedule loaded successfully');
-    console.log(`📊 Total conflicts detected: ${totalConflicts}`);
+    // Auto-save warning
+    window.addEventListener('beforeunload', function(e) {
+        if (pendingChanges.length > 0) {
+            const confirmationMessage = `You have ${pendingChanges.length} unsaved changes. Are you sure you want to leave?`;
+            e.returnValue = confirmationMessage;
+            return confirmationMessage;
+        }
+    });
+
+    console.log('✅ Enhanced Chromosome Schedule initialized');
+    console.log(`📊 Blocks: ${document.querySelectorAll('.draggable-course').length}`);
 });
 </script>
 @endpush

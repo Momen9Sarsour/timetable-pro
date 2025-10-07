@@ -2,21 +2,23 @@
 
 namespace App\Http\Controllers\Algorithm;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
-use App\Services\PopulationGeneratorServiceNew;
-use App\Services\GeneticAlgorithmServiceNew;
-use App\Services\PopulationSaveServiceNew;
-use App\Services\FitnessCalculatorServiceNew;
-use App\Models\Population;
+use Exception;
+use App\Models\Room;
 use App\Models\Chromosome;
+use App\Models\Instructor;
+use App\Models\Population;
+use App\Models\MutationType;
+use Illuminate\Http\Request;
 use App\Models\CrossoverType;
 use App\Models\SelectionType;
-use App\Models\MutationType;
-use Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Validator;
+use App\Services\PopulationSaveServiceNew;
+use App\Services\GeneticAlgorithmServiceNew;
+use App\Services\FitnessCalculatorServiceNew;
+use App\Services\PopulationGeneratorServiceNew;
 
 class NewPopulationController extends Controller
 {
@@ -371,8 +373,11 @@ class NewPopulationController extends Controller
                     'sub.subject_name',
                     'sub.subject_no',
                     'i.instructor_name',
+                    'i.id as instructor_id', // ✅ إضافة
                     'r.room_no',
                     'r.room_name',
+                    'r.id as room_id', // ✅ إضافة
+                    's.id as section_id', // ✅ إضافة
                     DB::raw('MIN(t.timeslot_day) as timeslot_day'),
                     DB::raw('MIN(t.start_time) as start_time'),
                     DB::raw('MAX(t.end_time) as end_time'),
@@ -391,15 +396,21 @@ class NewPopulationController extends Controller
                     'sub.subject_name',
                     'sub.subject_no',
                     'i.instructor_name',
+                    'i.id', // ✅ إضافة
                     'r.room_no',
                     'r.room_name',
+                    'r.id', // ✅ إضافة
                     's.activity_type',
-                    's.student_count'
+                    's.student_count',
+                    's.id' // ✅ إضافة
                 )
                 ->orderBy('pg.plan_id')
                 ->orderBy('pg.plan_level')
                 ->orderBy('pg.group_no')
                 ->get();
+
+            $allRooms = Room::select('id', 'room_name as name', 'room_category_id as category_id')->get();
+            $allInstructors = Instructor::select('id', 'instructor_name as name')->get();
 
             $groups = $sessions->groupBy(function ($item) {
                 return "{$item->plan_id}_{$item->plan_level}_{$item->group_no}";
@@ -426,7 +437,9 @@ class NewPopulationController extends Controller
                 'population',
                 'chromosome',
                 'groups',
-                'days'
+                'days',
+                'allRooms',
+                'allInstructors'
             ));
         } catch (Exception $e) {
             Log::error("Error loading chromosome schedule: " . $e->getMessage());

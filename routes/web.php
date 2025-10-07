@@ -367,7 +367,6 @@ Route::prefix('dashboard')->group(function () {
             ->name('populations.chromosome-schedule');
 
 
-
         // Schedule Views Routes
         Route::get('/schedules/groups', [ScheduleViewController::class, 'showGroupsSchedule'])
             ->name('schedules.groups');
@@ -377,5 +376,10 @@ Route::prefix('dashboard')->group(function () {
 
         Route::get('/schedules/rooms', [ScheduleViewController::class, 'showRoomsSchedule'])
             ->name('schedules.rooms');
+
+
+        // Schedule Editor Routes
+        Route::post('schedule/save-edits', [ScheduleViewController::class, 'saveEdits'])
+            ->name('schedule.save-edits');
     });
 });
